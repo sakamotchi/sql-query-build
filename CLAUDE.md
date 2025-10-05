@@ -4,10 +4,14 @@
 
 ## 開発コマンド
 
-- `npm run dev` - 開発サーバーを起動（Viteフロントエンド + Tauri）
+- `npm run tauri dev` - **Tauriアプリを起動（推奨）** - Viteフロントエンド + Rustバックエンド + デスクトップアプリ
+- `npm run dev` - Vite開発サーバーのみ起動（Tauri API使用不可、フロントエンドUI確認用）
 - `npm run build` - 本番アプリケーションをビルド（TypeScriptチェック + Viteビルド）
+- `npm run tauri build` - 本番用Tauriアプリをビルド（配布可能なインストーラー生成）
 - `npm run preview` - ビルドしたアプリケーションをプレビュー
 - `npm run tauri` - Tauri CLIコマンドにアクセス
+
+**重要**: 通常の開発では `npm run tauri dev` を使用してください。`npm run dev` だけではTauri APIが動作しません。
 
 ## アーキテクチャ概要
 

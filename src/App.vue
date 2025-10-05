@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
+import { useCounterStore } from './stores/counter';
 
 const greetMsg = ref("");
 const name = ref("");
+
+// Piniaストアを使用
+const counterStore = useCounterStore();
 
 async function greet() {
   // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -15,6 +19,25 @@ async function greet() {
   <main class="container">
     <h1>Welcome to Tauri + Vue</h1>
 
+    <!-- Pinia動作確認セクション -->
+    <div class="pinia-test">
+      <h2>Pinia Store Test</h2>
+      <p>Count: {{ counterStore.count }}</p>
+      <p>Double Count: {{ counterStore.doubleCount }}</p>
+      <p>Is Even: {{ counterStore.isEven ? 'Yes' : 'No' }}</p>
+      <div class="button-group">
+        <button @click="counterStore.increment">+1</button>
+        <button @click="counterStore.decrement">-1</button>
+        <button @click="counterStore.reset">Reset</button>
+      </div>
+      <p v-if="counterStore.lastUpdated">
+        Last updated: {{ counterStore.lastUpdated.toLocaleString() }}
+      </p>
+    </div>
+
+    <hr />
+
+    <!-- 既存のTauriテストセクション -->
     <div class="row">
       <a href="https://vite.dev" target="_blank">
         <img src="/vite.svg" class="logo vite" alt="Vite logo" />
@@ -37,6 +60,31 @@ async function greet() {
 </template>
 
 <style scoped>
+.pinia-test {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 2px solid #42b983;
+  border-radius: 8px;
+  background-color: rgba(66, 185, 131, 0.1);
+}
+
+.pinia-test h2 {
+  margin-top: 0;
+  color: #42b983;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+hr {
+  margin: 2rem 0;
+  border: 1px solid #ccc;
+}
+
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }
