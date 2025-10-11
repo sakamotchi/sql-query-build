@@ -1,3 +1,4 @@
+mod crypto;
 mod storage;
 
 use storage::{FileStorage, PathManager};
