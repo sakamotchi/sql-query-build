@@ -31,7 +31,11 @@ sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "mysql
 
 # 暗号化・セキュリティ
 aes-gcm = "0.10"
+pbkdf2 = "0.12"
 sha2 = "0.10"
+rand = "0.8"
+zeroize = { version = "1.6", features = ["derive"] }
+base64 = "0.21"
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 
 # ストレージモジュール用
