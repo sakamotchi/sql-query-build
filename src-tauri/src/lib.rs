@@ -1,6 +1,7 @@
 mod crypto;
 mod storage;
 
+use crypto::MasterKeyManager;
 use storage::{FileStorage, PathManager};
 use tauri::State;
 
@@ -63,6 +64,49 @@ async fn storage_exists(
     Ok(storage.exists(&key))
 }
 
+// ===== マスターキー管理コマンド =====
+
+/// マスターキーマネージャーの初期化チェック
+#[tauri::command]
+async fn is_master_key_initialized(
+    manager: State<'_, MasterKeyManager>,
+) -> Result<bool, String> {
+    Ok(manager.is_initialized())
+}
+
+/// マスターキーを初期化
+#[tauri::command]
+async fn initialize_master_key(
+    manager: State<'_, MasterKeyManager>,
+) -> Result<(), String> {
+    manager
+        .initialize()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// マスターキーを削除（リセット）
+#[tauri::command]
+async fn delete_master_key(
+    manager: State<'_, MasterKeyManager>,
+) -> Result<(), String> {
+    manager
+        .delete_master_key()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// マスターキーを再生成
+#[tauri::command]
+async fn regenerate_master_key(
+    manager: State<'_, MasterKeyManager>,
+) -> Result<(), String> {
+    manager
+        .regenerate()
+        .await
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // PathManagerを初期化
@@ -77,16 +121,24 @@ pub fn run() {
     let storage = FileStorage::new(path_manager.data_dir())
         .expect("Failed to initialize FileStorage");
 
+    // MasterKeyManagerを初期化
+    let master_key_manager = MasterKeyManager::new();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(storage)
+        .manage(master_key_manager)
         .invoke_handler(tauri::generate_handler![
             greet,
             storage_write,
             storage_read,
             storage_delete,
             storage_list_keys,
-            storage_exists
+            storage_exists,
+            is_master_key_initialized,
+            initialize_master_key,
+            delete_master_key,
+            regenerate_master_key
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
