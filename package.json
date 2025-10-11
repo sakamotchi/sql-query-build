@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -20,8 +23,12 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/ui": "^3.2.4",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^20.0.0",
     "typescript": "~5.6.2",
     "vite": "^6.0.3",
+    "vitest": "^3.2.4",
     "vue-tsc": "^2.1.10"
   }
 }
