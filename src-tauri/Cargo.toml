@@ -34,6 +34,10 @@ aes-gcm = "0.10"
 sha2 = "0.10"
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 
+# ストレージモジュール用
+thiserror = "1.0"
+directories = "5.0"
+
 [dev-dependencies]
 # テスト用一時ファイル・ディレクトリ作成
 tempfile = "3.0"
