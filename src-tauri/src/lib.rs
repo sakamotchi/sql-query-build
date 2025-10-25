@@ -1,5 +1,6 @@
 mod crypto;
 mod storage;
+mod connection;
 
 use crypto::MasterKeyManager;
 use storage::{FileStorage, PathManager};
