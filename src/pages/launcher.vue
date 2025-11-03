@@ -23,6 +23,26 @@
         />
       </v-container>
     </v-main>
+
+    <!-- 接続設定フォームダイアログ -->
+    <v-dialog v-model="showConnectionForm" max-width="800px" persistent>
+      <ConnectionForm
+        :connection="editingConnection"
+        :mode="formMode"
+        @save="handleSaveConnection"
+        @cancel="handleCancelForm"
+        @test-connection="handleTestConnection"
+      />
+    </v-dialog>
+
+    <!-- 接続テスト結果スナックバー -->
+    <v-snackbar
+      v-model="showTestResult"
+      :color="testResult.success ? 'success' : 'error'"
+      :timeout="3000"
+    >
+      {{ testResult.message }}
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -32,6 +52,7 @@ import type { Connection } from '@/types/connection'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
 import ConnectionList from '@/components/connection/ConnectionList.vue'
+import ConnectionForm from '@/pages/connection-form.vue'
 
 // 状態管理
 const searchQuery = ref('')
@@ -39,6 +60,15 @@ const environmentFilter = ref('all')
 const sortOption = ref('name')
 const loading = ref(false)
 const connections = ref<Connection[]>([])
+
+// フォーム状態
+const showConnectionForm = ref(false)
+const editingConnection = ref<Connection | undefined>(undefined)
+const formMode = ref<'create' | 'edit' | 'duplicate'>('create')
+
+// 接続テスト結果
+const showTestResult = ref(false)
+const testResult = ref({ success: false, message: '' })
 
 // フィルタリングとソートされた接続リスト
 const filteredConnections = computed(() => {
@@ -83,8 +113,9 @@ const filteredConnections = computed(() => {
 
 // イベントハンドラー
 const handleNewConnection = () => {
-  console.log('新規接続ボタンがクリックされました')
-  // TODO: 接続設定画面への遷移を実装
+  editingConnection.value = undefined
+  formMode.value = 'create'
+  showConnectionForm.value = true
 }
 
 const handleOpenSettings = () => {
@@ -98,8 +129,9 @@ const handleSelectConnection = (connection: Connection) => {
 }
 
 const handleEditConnection = (connection: Connection) => {
-  console.log('接続の編集:', connection)
-  // TODO: 接続設定画面への遷移を実装（編集モード）
+  editingConnection.value = connection
+  formMode.value = 'edit'
+  showConnectionForm.value = true
 }
 
 const handleDeleteConnection = async (connection: Connection) => {
@@ -113,8 +145,50 @@ const handleDeleteConnection = async (connection: Connection) => {
 }
 
 const handleDuplicateConnection = (connection: Connection) => {
-  console.log('接続の複製:', connection)
-  // TODO: 接続設定画面への遷移を実装（複製モード）
+  editingConnection.value = connection
+  formMode.value = 'duplicate'
+  showConnectionForm.value = true
+}
+
+const handleSaveConnection = (connection: Connection) => {
+  console.log('接続を保存:', connection)
+
+  // 既存の接続を更新または新規追加
+  const existingIndex = connections.value.findIndex(c => c.id === connection.id)
+  if (existingIndex >= 0) {
+    connections.value[existingIndex] = connection
+  } else {
+    connections.value.push(connection)
+  }
+
+  // TODO: Tauri経由でバックエンドに保存
+
+  showConnectionForm.value = false
+  editingConnection.value = undefined
+}
+
+const handleCancelForm = () => {
+  showConnectionForm.value = false
+  editingConnection.value = undefined
+}
+
+const handleTestConnection = async (connection: Partial<Connection>) => {
+  console.log('接続テスト:', connection)
+
+  // TODO: Tauri経由でバックエンドの接続テスト処理を呼び出し
+  // 仮の処理
+  await new Promise(resolve => setTimeout(resolve, 1000))
+
+  // ランダムで成功/失敗をシミュレート
+  const success = Math.random() > 0.3
+
+  testResult.value = {
+    success,
+    message: success
+      ? '接続に成功しました'
+      : '接続に失敗しました。設定を確認してください'
+  }
+  showTestResult.value = true
 }
 
 // サンプルデータの読み込み
@@ -136,8 +210,11 @@ const loadConnections = async () => {
         database: 'dev_db',
         username: 'dev_user',
         password: '',
+        savePassword: true,
         dbType: 'postgresql',
         ssl: false,
+        sshTunnel: false,
+        timeout: 30,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lastUsedAt: new Date().toISOString()
@@ -152,8 +229,11 @@ const loadConnections = async () => {
         database: 'test_db',
         username: 'test_user',
         password: '',
+        savePassword: true,
         dbType: 'mysql',
         ssl: true,
+        sshTunnel: false,
+        timeout: 30,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       },
@@ -167,8 +247,11 @@ const loadConnections = async () => {
         database: 'staging_db',
         username: 'staging_user',
         password: '',
+        savePassword: true,
         dbType: 'postgresql',
         ssl: true,
+        sshTunnel: false,
+        timeout: 30,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lastUsedAt: new Date(Date.now() - 86400000).toISOString() // 1日前
@@ -183,8 +266,11 @@ const loadConnections = async () => {
         database: 'prod_db',
         username: 'prod_user',
         password: '',
+        savePassword: true,
         dbType: 'postgresql',
         ssl: true,
+        sshTunnel: false,
+        timeout: 30,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lastUsedAt: new Date(Date.now() - 172800000).toISOString() // 2日前

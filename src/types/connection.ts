@@ -15,8 +15,15 @@ export interface Connection {
   database: string;              // データベース名
   username: string;              // ユーザー名
   password: string;              // 暗号化されたパスワード
+  savePassword: boolean;         // パスワード保存フラグ
   dbType: DatabaseType;          // データベース種別
   ssl: boolean;                  // SSL使用フラグ
+  sshTunnel: boolean;            // SSHトンネル使用フラグ
+  sshHost?: string;              // SSHホスト名
+  sshPort?: number;              // SSHポート番号
+  sshUsername?: string;          // SSHユーザー名
+  sshPassword?: string;          // SSHパスワード
+  timeout: number;               // 接続タイムアウト(秒)
   createdAt: string;             // 作成日時 (ISO 8601)
   updatedAt: string;             // 更新日時 (ISO 8601)
   lastUsedAt?: string;           // 最終使用日時 (ISO 8601)
