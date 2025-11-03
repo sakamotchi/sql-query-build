@@ -29,4 +29,10 @@ pub enum ConnectionError {
 
     #[error("接続情報が見つかりません")]
     NotFound,
+
+    #[error("ストレージエラー: {0}")]
+    StorageError(String),
+
+    #[error("暗号化エラー: {0}")]
+    EncryptionError(String),
 }
