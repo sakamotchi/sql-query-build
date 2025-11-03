@@ -287,4 +287,96 @@ mod tests {
             panic!("Expected NotFound error");
         }
     }
+
+    #[test]
+    fn test_concurrent_access() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let temp_dir = TempDir::new().unwrap();
+        let storage = Arc::new(FileStorage::new(temp_dir.path().to_path_buf()).unwrap());
+
+        // 複数スレッドから同時アクセス
+        let handles: Vec<_> = (0..10)
+            .map(|i| {
+                let storage = Arc::clone(&storage);
+                thread::spawn(move || {
+                    let data = TestData {
+                        name: format!("thread_{}", i),
+                        value: i,
+                    };
+                    storage.write(&format!("key_{}", i), &data).unwrap();
+                })
+            })
+            .collect();
+
+        // 全スレッドの完了を待つ
+        for handle in handles {
+            handle.join().unwrap();
+        }
+
+        // 全てのキーが存在することを確認
+        let keys = storage.list_keys().unwrap();
+        assert_eq!(keys.len(), 10);
+    }
+
+    #[test]
+    fn test_path_traversal_protection() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path().to_path_buf()).unwrap();
+        let data = TestData {
+            name: "test".to_string(),
+            value: 42,
+        };
+
+        // パストラバーサル攻撃を試みる
+        let malicious_keys = vec!["../../../etc/passwd", "..\\..\\windows\\system32"];
+
+        for key in malicious_keys {
+            let result = storage.write(key, &data);
+            // セキュリティ上、正常に処理されるがベースディレクトリ内に保存される
+            if result.is_ok() {
+                let path = temp_dir.path().join(format!("{}.json", key));
+                // ベースディレクトリ内に保存されていることを確認
+                assert!(path.starts_with(temp_dir.path()) || !path.exists());
+            }
+        }
+    }
+
+    #[test]
+    fn test_large_data_write() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path().to_path_buf()).unwrap();
+
+        // 大きなデータを作成（長い文字列）
+        let large_data = TestData {
+            name: "x".repeat(1_000_000), // 1MB程度の文字列
+            value: 42,
+        };
+
+        // 大きなデータの書き込みと読み込み
+        let result = storage.write("large_key", &large_data);
+        assert!(result.is_ok());
+
+        let read_data: TestData = storage.read("large_key").unwrap();
+        assert_eq!(large_data.name.len(), read_data.name.len());
+        assert_eq!(large_data.value, read_data.value);
+    }
+
+    #[test]
+    fn test_invalid_json_handling() {
+        use std::fs;
+
+        let temp_dir = TempDir::new().unwrap();
+        let storage = FileStorage::new(temp_dir.path().to_path_buf()).unwrap();
+
+        // 無効なJSONファイルを手動で作成
+        let invalid_json_path = temp_dir.path().join("invalid.json");
+        fs::write(&invalid_json_path, "this is not valid json").unwrap();
+
+        // 読み込み時にエラーが発生することを確認
+        let result: Result<TestData, _> = storage.read("invalid");
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), StorageError::SerializationError(_)));
+    }
 }

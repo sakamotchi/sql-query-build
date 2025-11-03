@@ -2,7 +2,6 @@ use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
-use base64::{engine::general_purpose, Engine as _};
 use rand::RngCore;
 
 use super::error::{CryptoError, CryptoResult};
@@ -141,6 +140,7 @@ pub fn decrypt_string(encrypted_base64: &str, master_key: &[u8]) -> CryptoResult
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::{engine::general_purpose, Engine};
 
     #[test]
     fn test_encrypt_decrypt() {
@@ -308,5 +308,95 @@ mod tests {
 
         let decrypted = encryptor.decrypt(&encrypted, master_key).unwrap();
         assert_eq!(plaintext, decrypted.as_slice());
+    }
+
+    #[test]
+    fn test_encryption_performance() {
+        use std::time::Instant;
+
+        // テスト用に反復回数を減らす（10,000回 = デフォルトの1/60）
+        let encryptor = AesGcmEncryptor::with_iterations(10_000);
+        let master_key = b"test-master-key-32-bytes-long!!!";
+        let plaintext = b"performance test data";
+
+        let start = Instant::now();
+
+        // 10回暗号化（パフォーマンスの著しい劣化がないことを確認）
+        for _ in 0..10 {
+            let _ = encryptor.encrypt(plaintext, master_key).unwrap();
+        }
+
+        let duration = start.elapsed();
+
+        // 10回で30秒以内に完了することを確認（十分な余裕を持たせる）
+        assert!(duration.as_secs() < 30, "Encryption took {} seconds, expected < 30", duration.as_secs());
+    }
+
+    #[test]
+    fn test_key_derivation_consistency() {
+        let encryptor = AesGcmEncryptor::new();
+        let master_key = b"test-master-key-32-bytes-long!!!";
+        let salt = [0x42u8; 32];
+
+        // 同じソルトから導出されるキーは常に同じ
+        let key1 = encryptor.derive_key(master_key, &salt).unwrap();
+        let key2 = encryptor.derive_key(master_key, &salt).unwrap();
+
+        // 導出されるキーが同じであることを確認
+        assert_eq!(key1.as_bytes(), key2.as_bytes());
+
+        // 異なるソルトからは異なるキーが導出される
+        let different_salt = [0x43u8; 32];
+        let key3 = encryptor.derive_key(master_key, &different_salt).unwrap();
+        assert_ne!(key1.as_bytes(), key3.as_bytes());
+    }
+
+    #[test]
+    fn test_large_data_encryption() {
+        let encryptor = AesGcmEncryptor::new();
+        let master_key = b"test-master-key-32-bytes-long!!!";
+
+        // 大きなデータ（1MB）
+        let large_plaintext = vec![0x42u8; 1_000_000];
+
+        // 暗号化
+        let encrypted = encryptor.encrypt(&large_plaintext, master_key).unwrap();
+
+        // 復号化
+        let decrypted = encryptor.decrypt(&encrypted, master_key).unwrap();
+
+        // データが一致することを確認
+        assert_eq!(large_plaintext, decrypted);
+    }
+
+    #[test]
+    fn test_empty_data_encryption() {
+        let encryptor = AesGcmEncryptor::new();
+        let master_key = b"test-master-key-32-bytes-long!!!";
+        let empty_plaintext = b"";
+
+        // 空データの暗号化
+        let encrypted = encryptor.encrypt(empty_plaintext, master_key).unwrap();
+
+        // 復号化
+        let decrypted = encryptor.decrypt(&encrypted, master_key).unwrap();
+
+        // 空データが正しく処理されることを確認
+        assert_eq!(empty_plaintext, decrypted.as_slice());
+    }
+
+    #[test]
+    fn test_unicode_string_encryption() {
+        let master_key = b"test-master-key-32-bytes-long!!!";
+        let unicode_text = "こんにちは世界 🌍 Hello World!";
+
+        // Unicode文字列の暗号化
+        let encrypted = encrypt_string(unicode_text, master_key).unwrap();
+
+        // 復号化
+        let decrypted = decrypt_string(&encrypted, master_key).unwrap();
+
+        // Unicode文字列が正しく処理されることを確認
+        assert_eq!(unicode_text, decrypted);
     }
 }

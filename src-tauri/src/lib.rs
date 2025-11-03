@@ -1,6 +1,6 @@
-mod crypto;
-mod storage;
-mod connection;
+pub mod crypto;
+pub mod storage;
+pub mod connection;
 
 use crypto::MasterKeyManager;
 use storage::{FileStorage, PathManager};
