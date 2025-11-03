@@ -19,6 +19,7 @@
           @select-connection="handleSelectConnection"
           @edit-connection="handleEditConnection"
           @delete-connection="handleDeleteConnection"
+          @duplicate-connection="handleDuplicateConnection"
         />
       </v-container>
     </v-main>
@@ -109,6 +110,11 @@ const handleDeleteConnection = async (connection: Connection) => {
     // TODO: Tauri経由でバックエンドの削除処理を呼び出し
     connections.value = connections.value.filter(c => c.id !== connection.id)
   }
+}
+
+const handleDuplicateConnection = (connection: Connection) => {
+  console.log('接続の複製:', connection)
+  // TODO: 接続設定画面への遷移を実装（複製モード）
 }
 
 // サンプルデータの読み込み

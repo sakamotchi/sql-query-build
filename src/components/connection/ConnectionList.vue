@@ -36,6 +36,7 @@
           @select="$emit('select-connection', connection)"
           @edit="$emit('edit-connection', connection)"
           @delete="$emit('delete-connection', connection)"
+          @duplicate="$emit('duplicate-connection', connection)"
         />
       </v-col>
     </v-row>
@@ -55,5 +56,6 @@ defineEmits<{
   'select-connection': [connection: Connection]
   'edit-connection': [connection: Connection]
   'delete-connection': [connection: Connection]
+  'duplicate-connection': [connection: Connection]
 }>()
 </script>
