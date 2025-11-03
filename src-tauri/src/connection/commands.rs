@@ -1,14 +1,16 @@
 use tauri::State;
-use crate::connection::{ConnectionInfo, service::ConnectionService};
+use crate::connection::{ConnectionInfo, FrontendConnection, service::ConnectionService};
 
 /// すべての接続情報を取得
 #[tauri::command]
 pub async fn get_connections(
     service: State<'_, ConnectionService>,
-) -> Result<Vec<ConnectionInfo>, String> {
-    service
+) -> Result<Vec<FrontendConnection>, String> {
+    let connections = service
         .get_all()
-        .map_err(|e| format!("Failed to get connections: {}", e))
+        .map_err(|e| format!("Failed to get connections: {}", e))?;
+
+    Ok(connections.into_iter().map(FrontendConnection::from).collect())
 }
 
 /// IDで接続情報を取得
@@ -17,35 +19,47 @@ pub async fn get_connection(
     id: String,
     include_password_decrypted: bool,
     service: State<'_, ConnectionService>,
-) -> Result<Option<ConnectionInfo>, String> {
-    service
+) -> Result<Option<FrontendConnection>, String> {
+    let connection = service
         .get_by_id(&id, include_password_decrypted)
         .await
-        .map_err(|e| format!("Failed to get connection: {}", e))
+        .map_err(|e| format!("Failed to get connection: {}", e))?;
+
+    Ok(connection.map(FrontendConnection::from))
 }
 
 /// 接続情報を作成
 #[tauri::command]
 pub async fn create_connection(
-    connection: ConnectionInfo,
+    connection: FrontendConnection,
     service: State<'_, ConnectionService>,
-) -> Result<ConnectionInfo, String> {
-    service
-        .create(connection)
+) -> Result<FrontendConnection, String> {
+    let conn_info: ConnectionInfo = connection.try_into()
+        .map_err(|e: String| format!("Failed to convert connection: {}", e))?;
+
+    let created = service
+        .create(conn_info)
         .await
-        .map_err(|e| format!("Failed to create connection: {}", e))
+        .map_err(|e| format!("Failed to create connection: {}", e))?;
+
+    Ok(FrontendConnection::from(created))
 }
 
 /// 接続情報を更新
 #[tauri::command]
 pub async fn update_connection(
-    connection: ConnectionInfo,
+    connection: FrontendConnection,
     service: State<'_, ConnectionService>,
-) -> Result<ConnectionInfo, String> {
-    service
-        .update(connection)
+) -> Result<FrontendConnection, String> {
+    let conn_info: ConnectionInfo = connection.try_into()
+        .map_err(|e: String| format!("Failed to convert connection: {}", e))?;
+
+    let updated = service
+        .update(conn_info)
         .await
-        .map_err(|e| format!("Failed to update connection: {}", e))
+        .map_err(|e| format!("Failed to update connection: {}", e))?;
+
+    Ok(FrontendConnection::from(updated))
 }
 
 /// 接続情報を削除

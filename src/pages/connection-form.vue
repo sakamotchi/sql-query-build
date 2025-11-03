@@ -23,6 +23,8 @@
               required
               variant="outlined"
               prepend-inner-icon="mdi-label"
+              autocomplete="off"
+              autocapitalize="off"
             ></v-text-field>
 
             <v-select
@@ -80,6 +82,8 @@
               variant="outlined"
               prepend-inner-icon="mdi-server-network"
               placeholder="localhost"
+              autocomplete="off"
+              autocapitalize="off"
             ></v-text-field>
 
             <v-text-field
@@ -90,6 +94,7 @@
               type="number"
               variant="outlined"
               prepend-inner-icon="mdi-numeric"
+              autocomplete="off"
             ></v-text-field>
 
             <v-text-field
@@ -99,6 +104,8 @@
               required
               variant="outlined"
               prepend-inner-icon="mdi-database"
+              autocomplete="off"
+              autocapitalize="off"
             ></v-text-field>
           </v-card-text>
         </v-card>
@@ -115,6 +122,7 @@
               variant="outlined"
               prepend-inner-icon="mdi-account"
               autocomplete="username"
+              autocapitalize="off"
             ></v-text-field>
 
             <v-text-field
@@ -127,6 +135,7 @@
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
               @click:append-inner="showPassword = !showPassword"
               autocomplete="current-password"
+              autocapitalize="off"
             ></v-text-field>
 
             <v-checkbox
@@ -176,6 +185,8 @@
                     label="SSHホスト"
                     variant="outlined"
                     density="compact"
+                    autocomplete="off"
+                    autocapitalize="off"
                   ></v-text-field>
 
                   <v-text-field
@@ -184,6 +195,7 @@
                     type="number"
                     variant="outlined"
                     density="compact"
+                    autocomplete="off"
                   ></v-text-field>
 
                   <v-text-field
@@ -191,6 +203,8 @@
                     label="SSHユーザー名"
                     variant="outlined"
                     density="compact"
+                    autocomplete="off"
+                    autocapitalize="off"
                   ></v-text-field>
 
                   <v-text-field
@@ -201,6 +215,8 @@
                     density="compact"
                     :append-inner-icon="showSshPassword ? 'mdi-eye-off' : 'mdi-eye'"
                     @click:append-inner="showSshPassword = !showSshPassword"
+                    autocomplete="off"
+                    autocapitalize="off"
                   ></v-text-field>
                 </div>
               </v-expand-transition>
@@ -213,6 +229,7 @@
                 hint="0で無制限"
                 persistent-hint
                 class="mt-4"
+                autocomplete="off"
               ></v-text-field>
             </v-expansion-panel-text>
           </v-expansion-panel>
@@ -242,7 +259,8 @@
       <v-btn
         color="primary"
         variant="flat"
-        :disabled="!formValid"
+        :loading="savingConnection"
+        :disabled="savingConnection"
         @click="handleSave"
       >
         保存
@@ -293,6 +311,7 @@ const formValid = ref(false);
 const showPassword = ref(false);
 const showSshPassword = ref(false);
 const testingConnection = ref(false);
+const savingConnection = ref(false);
 
 // フォームデータ
 const formData = reactive<ConnectionFormData>({
@@ -425,8 +444,16 @@ const initializeForm = () => {
 
 // 保存処理
 const handleSave = async () => {
-  const valid = await formRef.value?.validate();
-  if (!valid) return;
+  // Vuetify 3のvalidateは{ valid: boolean }を返す
+  const result = await formRef.value?.validate();
+  if (!result?.valid) {
+    console.log('フォームのバリデーションエラー');
+    return;
+  }
+
+  console.log('接続データを保存:', formData);
+
+  savingConnection.value = true;
 
   const connectionData: Connection = {
     id: props.connection?.id || crypto.randomUUID(),
@@ -435,7 +462,13 @@ const handleSave = async () => {
     updatedAt: new Date().toISOString(),
   };
 
+  console.log('保存するデータ:', connectionData);
   emit('save', connectionData);
+};
+
+// 保存完了通知を受け取る
+const finishSaving = () => {
+  savingConnection.value = false;
 };
 
 // キャンセル処理
@@ -445,8 +478,11 @@ const handleCancel = () => {
 
 // 接続テスト
 const handleTestConnection = async () => {
-  const valid = await formRef.value?.validate();
-  if (!valid) return;
+  const result = await formRef.value?.validate();
+  if (!result?.valid) {
+    console.log('フォームのバリデーションエラー');
+    return;
+  }
 
   testingConnection.value = true;
   emit('test-connection', formData);
@@ -463,5 +499,6 @@ initializeForm();
 // エクスポート (親コンポーネントから呼び出せるメソッド)
 defineExpose({
   finishTestConnection,
+  finishSaving,
 });
 </script>
