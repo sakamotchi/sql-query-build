@@ -4,7 +4,9 @@ pub mod connection;
 
 use crypto::MasterKeyManager;
 use storage::{FileStorage, PathManager};
+use connection::{ConnectionStorage, ConnectionService};
 use tauri::State;
+use std::sync::Arc;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -119,16 +121,29 @@ pub fn run() {
         .expect("Failed to initialize directories");
 
     // FileStorageを初期化（接続情報用のストレージ）
-    let storage = FileStorage::new(path_manager.data_dir())
+    let file_storage_1 = FileStorage::new(path_manager.data_dir())
+        .expect("Failed to initialize FileStorage");
+    let file_storage_2 = FileStorage::new(path_manager.data_dir())
         .expect("Failed to initialize FileStorage");
 
     // MasterKeyManagerを初期化
-    let master_key_manager = MasterKeyManager::new();
+    let master_key_manager_1 = MasterKeyManager::new();
+    let master_key_manager_2 = MasterKeyManager::new();
+
+    // ConnectionStorageを初期化
+    let connection_storage = Arc::new(ConnectionStorage::new(Arc::new(file_storage_1)));
+
+    // ConnectionServiceを初期化
+    let connection_service = ConnectionService::new(
+        Arc::clone(&connection_storage),
+        Arc::new(master_key_manager_1)
+    );
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .manage(storage)
-        .manage(master_key_manager)
+        .manage(file_storage_2)
+        .manage(master_key_manager_2)
+        .manage(connection_service)
         .invoke_handler(tauri::generate_handler![
             greet,
             storage_write,
@@ -139,7 +154,14 @@ pub fn run() {
             is_master_key_initialized,
             initialize_master_key,
             delete_master_key,
-            regenerate_master_key
+            regenerate_master_key,
+            connection::commands::get_connections,
+            connection::commands::get_connection,
+            connection::commands::create_connection,
+            connection::commands::update_connection,
+            connection::commands::delete_connection,
+            connection::commands::mark_connection_used,
+            connection::commands::test_connection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
