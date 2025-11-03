@@ -2,6 +2,7 @@ mod error;
 mod types;
 mod collection;
 mod builder;
+mod frontend_types;
 pub mod storage;
 pub mod service;
 pub mod commands;
@@ -19,6 +20,7 @@ pub use types::{
     ThemeVariant,
     ConnectionMetadata,
 };
+pub use frontend_types::FrontendConnection;
 pub use collection::ConnectionCollection;
 pub use builder::ConnectionInfoBuilder;
 pub use storage::ConnectionStorage;

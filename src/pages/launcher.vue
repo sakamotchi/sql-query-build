@@ -27,6 +27,7 @@
     <!-- 接続設定フォームダイアログ -->
     <v-dialog v-model="showConnectionForm" max-width="800px" persistent>
       <ConnectionForm
+        ref="connectionFormRef"
         :connection="editingConnection"
         :mode="formMode"
         @save="handleSaveConnection"
@@ -43,28 +44,50 @@
     >
       {{ testResult.message }}
     </v-snackbar>
+
+    <!-- 編集中のローディングオーバーレイ -->
+    <v-overlay
+      v-model="loadingEdit"
+      persistent
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        indeterminate
+        size="64"
+        color="primary"
+      ></v-progress-circular>
+      <div class="text-h6 mt-4">接続情報を読み込み中...</div>
+    </v-overlay>
   </v-app>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { Connection } from '@/types/connection'
+import type { Connection, Environment } from '@/types/connection'
+import { useConnectionStore } from '@/stores/connection'
+import { storeToRefs } from 'pinia'
+import { ask } from '@tauri-apps/plugin-dialog'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
 import ConnectionList from '@/components/connection/ConnectionList.vue'
 import ConnectionForm from '@/pages/connection-form.vue'
 
+// Piniaストアを使用
+const connectionStore = useConnectionStore()
+const { connections, loading: storeLoading } = storeToRefs(connectionStore)
+
 // 状態管理
 const searchQuery = ref('')
 const environmentFilter = ref('all')
 const sortOption = ref('name')
-const loading = ref(false)
-const connections = ref<Connection[]>([])
+const loading = computed(() => storeLoading.value)
 
 // フォーム状態
 const showConnectionForm = ref(false)
 const editingConnection = ref<Connection | undefined>(undefined)
 const formMode = ref<'create' | 'edit' | 'duplicate'>('create')
+const connectionFormRef = ref<any>(null)
+const loadingEdit = ref(false)
 
 // 接続テスト結果
 const showTestResult = ref(false)
@@ -101,7 +124,7 @@ const filteredConnections = computed(() => {
         if (!b.lastUsedAt) return -1
         return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()
       case 'environment':
-        const envOrder = { development: 0, test: 1, staging: 2, production: 3 }
+        const envOrder: Record<Environment, number> = { development: 0, test: 1, staging: 2, production: 3 }
         return envOrder[a.environment] - envOrder[b.environment]
       default:
         return 0
@@ -123,48 +146,89 @@ const handleOpenSettings = () => {
   // TODO: 設定画面への遷移を実装
 }
 
-const handleSelectConnection = (connection: Connection) => {
+const handleSelectConnection = async (connection: Connection) => {
   console.log('接続が選択されました:', connection)
+
+  // 最終使用日時を更新
+  await connectionStore.markConnectionAsUsed(connection.id)
+
   // TODO: クエリビルダー画面を新規ウィンドウで起動
 }
 
-const handleEditConnection = (connection: Connection) => {
-  editingConnection.value = connection
-  formMode.value = 'edit'
-  showConnectionForm.value = true
+const handleEditConnection = async (connection: Connection) => {
+  loadingEdit.value = true
+  try {
+    // パスワードを復号化して取得
+    const connectionWithPassword = await connectionStore.fetchConnectionById(connection.id, true)
+
+    if (connectionWithPassword) {
+      editingConnection.value = connectionWithPassword
+      formMode.value = 'edit'
+      showConnectionForm.value = true
+    } else {
+      console.error('接続情報が見つかりませんでした')
+      alert('接続情報の取得に失敗しました')
+    }
+  } catch (error) {
+    console.error('接続情報の取得に失敗しました:', error)
+    alert('接続情報の取得に失敗しました')
+  } finally {
+    loadingEdit.value = false
+  }
 }
 
 const handleDeleteConnection = async (connection: Connection) => {
   console.log('接続の削除:', connection)
-  // TODO: 削除確認ダイアログの表示と削除処理を実装
-  // 仮の確認ダイアログ
-  if (confirm(`「${connection.name}」を削除してもよろしいですか?`)) {
-    // TODO: Tauri経由でバックエンドの削除処理を呼び出し
-    connections.value = connections.value.filter(c => c.id !== connection.id)
+
+  const confirmed = await ask(`「${connection.name}」を削除してもよろしいですか?`, {
+    title: '接続の削除',
+    kind: 'warning'
+  })
+
+  if (confirmed) {
+    try {
+      await connectionStore.deleteConnection(connection.id)
+      console.log('接続を削除しました:', connection.name)
+    } catch (error) {
+      console.error('接続の削除に失敗しました:', error)
+      alert('接続の削除に失敗しました')
+    }
   }
 }
 
-const handleDuplicateConnection = (connection: Connection) => {
-  editingConnection.value = connection
-  formMode.value = 'duplicate'
-  showConnectionForm.value = true
+const handleDuplicateConnection = async (connection: Connection) => {
+  try {
+    const duplicated = await connectionStore.duplicateConnection(connection.id)
+    console.log('接続を複製しました:', duplicated.name)
+  } catch (error) {
+    console.error('接続の複製に失敗しました:', error)
+    alert('接続の複製に失敗しました')
+  }
 }
 
-const handleSaveConnection = (connection: Connection) => {
+const handleSaveConnection = async (connection: Connection) => {
   console.log('接続を保存:', connection)
 
-  // 既存の接続を更新または新規追加
-  const existingIndex = connections.value.findIndex(c => c.id === connection.id)
-  if (existingIndex >= 0) {
-    connections.value[existingIndex] = connection
-  } else {
-    connections.value.push(connection)
+  try {
+    // 既存の接続を更新または新規追加
+    const existingIndex = connections.value.findIndex(c => c.id === connection.id)
+    if (existingIndex >= 0) {
+      await connectionStore.updateConnection(connection)
+      console.log('接続を更新しました:', connection.name)
+    } else {
+      await connectionStore.createConnection(connection)
+      console.log('接続を作成しました:', connection.name)
+    }
+
+    showConnectionForm.value = false
+    editingConnection.value = undefined
+  } catch (error) {
+    console.error('接続の保存に失敗しました:', error)
+    alert('接続の保存に失敗しました')
+  } finally {
+    // 保存完了をフォームに通知
+    connectionFormRef.value?.finishSaving()
   }
-
-  // TODO: Tauri経由でバックエンドに保存
-
-  showConnectionForm.value = false
-  editingConnection.value = undefined
 }
 
 const handleCancelForm = () => {
@@ -191,95 +255,13 @@ const handleTestConnection = async (connection: Partial<Connection>) => {
   showTestResult.value = true
 }
 
-// サンプルデータの読み込み
+// 接続情報の読み込み
 const loadConnections = async () => {
-  loading.value = true
   try {
-    // TODO: Tauri経由でバックエンドから接続情報を取得
-    // const result = await invoke('get_connections')
-
-    // 開発用のサンプルデータ
-    connections.value = [
-      {
-        id: '1',
-        name: '開発環境DB',
-        environment: 'development',
-        themeColor: '#1976D2',
-        host: 'localhost',
-        port: 5432,
-        database: 'dev_db',
-        username: 'dev_user',
-        password: '',
-        savePassword: true,
-        dbType: 'postgresql',
-        ssl: false,
-        sshTunnel: false,
-        timeout: 30,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastUsedAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'テスト環境DB',
-        environment: 'test',
-        themeColor: '#FB8C00',
-        host: 'test.example.com',
-        port: 3306,
-        database: 'test_db',
-        username: 'test_user',
-        password: '',
-        savePassword: true,
-        dbType: 'mysql',
-        ssl: true,
-        sshTunnel: false,
-        timeout: 30,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: '3',
-        name: 'ステージング環境DB',
-        environment: 'staging',
-        themeColor: '#9C27B0',
-        host: 'staging.example.com',
-        port: 5432,
-        database: 'staging_db',
-        username: 'staging_user',
-        password: '',
-        savePassword: true,
-        dbType: 'postgresql',
-        ssl: true,
-        sshTunnel: false,
-        timeout: 30,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastUsedAt: new Date(Date.now() - 86400000).toISOString() // 1日前
-      },
-      {
-        id: '4',
-        name: '本番環境DB',
-        environment: 'production',
-        themeColor: '#F44336',
-        host: 'prod.example.com',
-        port: 5432,
-        database: 'prod_db',
-        username: 'prod_user',
-        password: '',
-        savePassword: true,
-        dbType: 'postgresql',
-        ssl: true,
-        sshTunnel: false,
-        timeout: 30,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        lastUsedAt: new Date(Date.now() - 172800000).toISOString() // 2日前
-      }
-    ]
+    await connectionStore.fetchConnections()
   } catch (error) {
     console.error('接続情報の取得に失敗しました:', error)
-  } finally {
-    loading.value = false
+    alert('接続情報の取得に失敗しました')
   }
 }
 
