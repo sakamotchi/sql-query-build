@@ -55,7 +55,7 @@ impl Keychain for OsKeychain {
     }
 }
 
-#[cfg(test)]
+// 統合テストからも使用されるため、常に公開する
 pub mod tests {
     use super::*;
     use std::collections::HashMap;
