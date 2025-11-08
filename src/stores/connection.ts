@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
-import { invoke } from '@tauri-apps/api/core';
+import { ConnectionAPI } from '@/api/connection';
+import { Logger } from '@/utils/logger';
+import { getUserFriendlyErrorMessage } from '@/utils/errorHandler';
 import type {
   Connection,
   ConnectionFilter,
@@ -154,11 +156,14 @@ export const useConnectionStore = defineStore('connection', {
       this.error = null;
 
       try {
-        const connections = await invoke<Connection[]>('get_connections');
+        Logger.info('接続情報を取得中...');
+        const connections = await ConnectionAPI.getAll();
         this.connections = connections;
+        Logger.info('接続情報を取得しました', { count: connections.length });
       } catch (error) {
-        this.error = `接続情報の取得に失敗しました: ${error}`;
-        console.error('Failed to fetch connections:', error);
+        const message = getUserFriendlyErrorMessage(error);
+        this.error = message;
+        Logger.error('接続情報の取得に失敗しました', error);
         throw error;
       } finally {
         this.loading = false;
@@ -170,14 +175,14 @@ export const useConnectionStore = defineStore('connection', {
      */
     async fetchConnectionById(id: string, includePassword: boolean = false): Promise<Connection | null> {
       try {
-        const connection = await invoke<Connection | null>('get_connection', {
-          id,
-          includePasswordDecrypted: includePassword,
-        });
+        Logger.debug('接続情報を取得中', { id, includePassword });
+        const connection = await ConnectionAPI.getById(id, includePassword);
+        Logger.debug('接続情報を取得しました', { id, found: connection !== null });
         return connection;
       } catch (error) {
-        this.error = `接続情報の取得に失敗しました: ${error}`;
-        console.error('Failed to fetch connection by id:', error);
+        const message = getUserFriendlyErrorMessage(error);
+        this.error = message;
+        Logger.error('接続情報の取得に失敗しました', error);
         throw error;
       }
     },
@@ -190,15 +195,15 @@ export const useConnectionStore = defineStore('connection', {
       this.error = null;
 
       try {
-        const created = await invoke<Connection>('create_connection', {
-          connection,
-        });
-
+        Logger.info('接続を作成中', { name: connection.name });
+        const created = await ConnectionAPI.create(connection);
         this.connections.push(created);
+        Logger.info('接続を作成しました', { id: created.id, name: created.name });
         return created;
       } catch (error) {
-        this.error = `接続の作成に失敗しました: ${error}`;
-        console.error('Failed to create connection:', error);
+        const message = getUserFriendlyErrorMessage(error);
+        this.error = message;
+        Logger.error('接続の作成に失敗しました', error);
         throw error;
       } finally {
         this.loading = false;
@@ -213,19 +218,20 @@ export const useConnectionStore = defineStore('connection', {
       this.error = null;
 
       try {
-        const updated = await invoke<Connection>('update_connection', {
-          connection,
-        });
+        Logger.info('接続を更新中', { id: connection.id, name: connection.name });
+        const updated = await ConnectionAPI.update(connection);
 
         const index = this.connections.findIndex((c: Connection) => c.id === updated.id);
         if (index !== -1) {
           this.connections[index] = updated;
         }
 
+        Logger.info('接続を更新しました', { id: updated.id });
         return updated;
       } catch (error) {
-        this.error = `接続の更新に失敗しました: ${error}`;
-        console.error('Failed to update connection:', error);
+        const message = getUserFriendlyErrorMessage(error);
+        this.error = message;
+        Logger.error('接続の更新に失敗しました', error);
         throw error;
       } finally {
         this.loading = false;
@@ -236,33 +242,28 @@ export const useConnectionStore = defineStore('connection', {
      * 接続を削除
      */
     async deleteConnection(id: string) {
-      console.log('[deleteConnection] 開始 - ID:', id);
-      console.log('[deleteConnection] 削除前の接続数:', this.connections.length);
+      Logger.info('接続を削除中', { id });
 
       this.loading = true;
       this.error = null;
 
       try {
-        console.log('[deleteConnection] Tauriコマンド呼び出し中...');
-        await invoke('delete_connection', { id });
-        console.log('[deleteConnection] Tauriコマンド成功');
+        await ConnectionAPI.delete(id);
 
         const index = this.connections.findIndex((c: Connection) => c.id === id);
-        console.log('[deleteConnection] 配列内のインデックス:', index);
-
         if (index !== -1) {
           this.connections.splice(index, 1);
-          console.log('[deleteConnection] 配列から削除完了 - 削除後の接続数:', this.connections.length);
+          Logger.info('接続を削除しました', { id });
         } else {
-          console.warn('[deleteConnection] 配列内に該当IDが見つかりませんでした');
+          Logger.warn('削除対象の接続が見つかりませんでした', { id });
         }
       } catch (error) {
-        this.error = `接続の削除に失敗しました: ${error}`;
-        console.error('[deleteConnection] エラー発生:', error);
+        const message = getUserFriendlyErrorMessage(error);
+        this.error = message;
+        Logger.error('接続の削除に失敗しました', error);
         throw error;
       } finally {
         this.loading = false;
-        console.log('[deleteConnection] 終了');
       }
     },
 
@@ -271,7 +272,8 @@ export const useConnectionStore = defineStore('connection', {
      */
     async markConnectionAsUsed(id: string) {
       try {
-        await invoke('mark_connection_used', { id });
+        Logger.debug('最終使用日時を更新中', { id });
+        await ConnectionAPI.markAsUsed(id);
 
         // ローカルの状態も更新
         const connection = this.connections.find((c: Connection) => c.id === id);
@@ -279,8 +281,8 @@ export const useConnectionStore = defineStore('connection', {
           connection.lastUsedAt = new Date().toISOString();
         }
       } catch (error) {
-        console.error('Failed to mark connection as used:', error);
         // エラーは無視(致命的ではない)
+        Logger.warn('最終使用日時の更新に失敗しました', error);
       }
     },
 
