@@ -41,6 +41,7 @@ keyring = { version = "3", features = ["apple-native", "windows-native", "sync-s
 
 # ストレージモジュール用
 thiserror = "1.0"
+anyhow = "1.0"
 directories = "5.0"
 
 # 接続情報データモデル用

@@ -89,7 +89,9 @@ pub async fn mark_connection_used(
 pub async fn test_connection(
     id: String,
     service: State<'_, ConnectionService>,
-) -> Result<String, String> {
+) -> Result<crate::connection::TestConnectionResult, String> {
+    use crate::connection::ConnectionTestService;
+
     // 接続情報を取得（パスワード復号化あり）
     let connection = service
         .get_by_id(&id, true)
@@ -97,19 +99,8 @@ pub async fn test_connection(
         .map_err(|e| format!("Failed to get connection: {}", e))?
         .ok_or_else(|| "Connection not found".to_string())?;
 
-    // 接続文字列を生成
-    let password = match &connection.connection {
-        crate::connection::ConnectionConfig::Network(network_config) => {
-            network_config.encrypted_password.as_deref()
-        }
-        _ => None,
-    };
-
-    let _connection_string = connection
-        .build_connection_string(password)
-        .map_err(|e| format!("Failed to build connection string: {}", e))?;
-
-    // TODO: 実際にDBに接続してテストする
-    // 現時点では接続文字列が生成できることだけ確認
-    Ok(format!("Connection test successful (connection string generated)"))
+    // 接続テストを実行（デフォルトタイムアウト30秒）
+    ConnectionTestService::test_connection(&connection, 30)
+        .await
+        .map_err(|e| format!("Connection test failed: {}", e))
 }

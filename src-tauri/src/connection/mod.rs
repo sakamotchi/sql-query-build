@@ -6,6 +6,7 @@ mod frontend_types;
 pub mod storage;
 pub mod service;
 pub mod commands;
+pub mod connection_test_service;
 
 pub use error::ConnectionError;
 pub use types::{
@@ -25,6 +26,7 @@ pub use collection::ConnectionCollection;
 pub use builder::ConnectionInfoBuilder;
 pub use storage::ConnectionStorage;
 pub use service::ConnectionService;
+pub use connection_test_service::{ConnectionTestService, TestConnectionResult, ServerInfo};
 
 #[cfg(test)]
 mod tests;
