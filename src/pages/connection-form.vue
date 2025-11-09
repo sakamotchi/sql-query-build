@@ -27,23 +27,9 @@
               autocapitalize="off"
             ></v-text-field>
 
-            <v-select
+            <EnvironmentSelector
               v-model="formData.environment"
-              :items="environmentOptions"
-              label="環境"
-              :rules="validationRules.environment"
-              required
-              variant="outlined"
-              prepend-inner-icon="mdi-server"
-            >
-              <template v-slot:item="{ item, props }">
-                <v-list-item v-bind="props">
-                  <template v-slot:prepend>
-                    <v-icon :color="item.raw.color">{{ item.raw.icon }}</v-icon>
-                  </template>
-                </v-list-item>
-              </template>
-            </v-select>
+            />
 
             <EnvironmentColorPicker
               v-model="formData.themeColor"
@@ -273,6 +259,7 @@
 import { ref, reactive } from 'vue';
 import type { Connection, Environment, DatabaseType } from '@/types/connection';
 import EnvironmentColorPicker from '@/components/connection/EnvironmentColorPicker.vue';
+import EnvironmentSelector from '@/components/connection/EnvironmentSelector.vue';
 
 interface ConnectionFormData {
   name: string;
@@ -334,34 +321,6 @@ const formData = reactive<ConnectionFormData>({
   timeout: 30,
 });
 
-// 環境オプション
-const environmentOptions = [
-  {
-    title: '開発環境',
-    value: 'development',
-    icon: 'mdi-laptop',
-    color: '#4CAF50',
-  },
-  {
-    title: 'テスト環境',
-    value: 'test',
-    icon: 'mdi-flask',
-    color: '#2196F3',
-  },
-  {
-    title: 'ステージング環境',
-    value: 'staging',
-    icon: 'mdi-server',
-    color: '#FF9800',
-  },
-  {
-    title: '本番環境',
-    value: 'production',
-    icon: 'mdi-alert-circle',
-    color: '#F44336',
-  },
-];
-
 // データベース種別オプション
 const databaseTypeOptions = [
   {
@@ -389,9 +348,6 @@ const validationRules = {
   name: [
     (v: string) => !!v || '接続名は必須です',
     (v: string) => v.length <= 100 || '接続名は100文字以内で入力してください',
-  ],
-  environment: [
-    (v: string) => !!v || '環境は必須です',
   ],
 };
 
