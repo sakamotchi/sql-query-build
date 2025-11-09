@@ -8,12 +8,44 @@
     <v-main>
       <v-container fluid>
         <LauncherToolbar
-          v-model:search="searchQuery"
-          v-model:filter="environmentFilter"
-          v-model:sort="sortOption"
+          :search="filter.searchQuery || ''"
+          :filter="filter.environment || 'all'"
+          :db-type-filter="filter.dbType || 'all'"
+          :sort="sort"
+          :result-count="filteredConnections.length"
+          @update:search="handleSearchUpdate"
+          @update:filter="handleEnvironmentFilterUpdate"
+          @update:db-type-filter="handleDbTypeFilterUpdate"
+          @update:sort="handleSortUpdate"
+          @clear-filters="handleClearFilters"
         />
 
+        <!-- アクティブフィルターインジケーター -->
+        <ActiveFilters />
+
+        <!-- 空状態メッセージ -->
+        <div
+          v-if="filteredConnections.length === 0 && hasActiveFilters"
+          class="empty-state text-center py-12"
+        >
+          <v-icon size="64" color="grey-lighten-1">mdi-filter-off-outline</v-icon>
+          <div class="text-h6 mt-4 text-grey">検索条件に一致する接続がありません</div>
+          <div class="text-body-2 text-grey-darken-1 mt-2">
+            別の検索条件を試すか、フィルターをクリアしてください
+          </div>
+          <v-btn
+            color="primary"
+            variant="outlined"
+            class="mt-4"
+            @click="handleClearFilters"
+          >
+            フィルターをクリア
+          </v-btn>
+        </div>
+
+        <!-- 接続リスト -->
         <ConnectionList
+          v-else
           :connections="filteredConnections"
           :loading="loading"
           @select-connection="handleSelectConnection"
@@ -63,23 +95,21 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { Connection, Environment } from '@/types/connection'
+import type { Connection } from '@/types/connection'
 import { useConnectionStore } from '@/stores/connection'
 import { storeToRefs } from 'pinia'
 import { ask } from '@tauri-apps/plugin-dialog'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
+import ActiveFilters from '@/components/connection/ActiveFilters.vue'
 import ConnectionList from '@/components/connection/ConnectionList.vue'
 import ConnectionForm from '@/pages/connection-form.vue'
 
 // Piniaストアを使用
 const connectionStore = useConnectionStore()
-const { connections, loading: storeLoading } = storeToRefs(connectionStore)
+const { loading: storeLoading, filter, sort, filteredConnections } = storeToRefs(connectionStore)
 
 // 状態管理
-const searchQuery = ref('')
-const environmentFilter = ref('all')
-const sortOption = ref('name')
 const loading = computed(() => storeLoading.value)
 
 // フォーム状態
@@ -93,46 +123,35 @@ const loadingEdit = ref(false)
 const showTestResult = ref(false)
 const testResult = ref({ success: false, message: '' })
 
-// フィルタリングとソートされた接続リスト
-const filteredConnections = computed(() => {
-  let result = [...connections.value]
-
-  // 検索フィルター
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(conn =>
-      conn.name.toLowerCase().includes(query) ||
-      conn.host.toLowerCase().includes(query) ||
-      conn.database.toLowerCase().includes(query)
-    )
-  }
-
-  // 環境フィルター
-  if (environmentFilter.value !== 'all') {
-    result = result.filter(conn => conn.environment === environmentFilter.value)
-  }
-
-  // ソート
-  result.sort((a, b) => {
-    switch (sortOption.value) {
-      case 'name':
-        return a.name.localeCompare(b.name, 'ja')
-      case 'lastUsed':
-        // lastUsedAtが存在しない場合は後ろに配置
-        if (!a.lastUsedAt && !b.lastUsedAt) return 0
-        if (!a.lastUsedAt) return 1
-        if (!b.lastUsedAt) return -1
-        return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime()
-      case 'environment':
-        const envOrder: Record<Environment, number> = { development: 0, test: 1, staging: 2, production: 3 }
-        return envOrder[a.environment] - envOrder[b.environment]
-      default:
-        return 0
-    }
-  })
-
-  return result
+// アクティブフィルターがあるかチェック
+const hasActiveFilters = computed(() => {
+  return (
+    filter.value.searchQuery ||
+    filter.value.environment !== 'all' ||
+    filter.value.dbType !== 'all'
+  )
 })
+
+// フィルター更新ハンドラー
+const handleSearchUpdate = (value: string) => {
+  connectionStore.setFilter({ searchQuery: value })
+}
+
+const handleEnvironmentFilterUpdate = (value: string) => {
+  connectionStore.setFilter({ environment: value as any })
+}
+
+const handleDbTypeFilterUpdate = (value: string) => {
+  connectionStore.setFilter({ dbType: value as any })
+}
+
+const handleSortUpdate = (value: string) => {
+  connectionStore.setSort(value as any)
+}
+
+const handleClearFilters = () => {
+  connectionStore.resetFilter()
+}
 
 // イベントハンドラー
 const handleNewConnection = () => {
@@ -211,8 +230,8 @@ const handleSaveConnection = async (connection: Connection) => {
 
   try {
     // 既存の接続を更新または新規追加
-    const existingIndex = connections.value.findIndex(c => c.id === connection.id)
-    if (existingIndex >= 0) {
+    const existingConnection = connectionStore.getConnectionById(connection.id)
+    if (existingConnection) {
       await connectionStore.updateConnection(connection)
       console.log('接続を更新しました:', connection.name)
     } else {
