@@ -19,7 +19,7 @@ function sortConnections(connections: Connection[], sortBy: ConnectionSort): Con
 
   switch (sortBy) {
     case 'name':
-      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      return sorted.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
 
     case 'lastUsed':
       return sorted.sort((a, b) => {
@@ -38,9 +38,11 @@ function sortConnections(connections: Connection[], sortBy: ConnectionSort): Con
         staging: 2,
         production: 3,
       };
-      return sorted.sort(
-        (a, b) => envOrder[a.environment] - envOrder[b.environment]
-      );
+      return sorted.sort((a, b) => {
+        const orderDiff = envOrder[a.environment] - envOrder[b.environment];
+        // 環境が同じ場合は名前順
+        return orderDiff !== 0 ? orderDiff : a.name.localeCompare(b.name, 'ja');
+      });
 
     case 'createdAt':
       return sorted.sort(
@@ -75,12 +77,13 @@ export const useConnectionStore = defineStore('connection', {
 
       // 検索フィルター
       if (state.filter.searchQuery) {
-        const query = state.filter.searchQuery.toLowerCase();
+        const query = state.filter.searchQuery.toLowerCase().trim();
         filtered = filtered.filter(
           (conn) =>
             conn.name.toLowerCase().includes(query) ||
             conn.host.toLowerCase().includes(query) ||
-            conn.database.toLowerCase().includes(query)
+            conn.database.toLowerCase().includes(query) ||
+            conn.username.toLowerCase().includes(query)
         );
       }
 
