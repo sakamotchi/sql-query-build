@@ -1,6 +1,7 @@
 pub mod crypto;
 pub mod storage;
 pub mod connection;
+pub mod window;
 
 use crypto::MasterKeyManager;
 use storage::{FileStorage, PathManager};
@@ -163,6 +164,8 @@ pub fn run() {
             connection::commands::delete_connection,
             connection::commands::mark_connection_used,
             connection::commands::test_connection,
+            window::get_window_environment,
+            window::open_query_builder_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
