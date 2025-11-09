@@ -1,58 +1,45 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
-import App from './App.vue'
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { defineComponent } from 'vue';
+import App from './App.vue';
 
-// Tauri APIのモック
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn((cmd: string, args: any) => {
-    if (cmd === 'greet') {
-      return Promise.resolve(`Hello, ${args.name}! You've been greeted from Rust!`)
-    }
-    return Promise.resolve('')
-  })
-}))
+vi.mock('./pages/launcher.vue', () => ({
+  default: defineComponent({
+    name: 'MockLauncherPage',
+    template: '<div class="mock-launcher">Launcher Page</div>',
+  }),
+}));
+
+vi.mock('./pages/query-builder.vue', () => ({
+  default: defineComponent({
+    name: 'MockQueryBuilderPage',
+    template: '<div class="mock-query-builder">Query Builder</div>',
+  }),
+}));
+
+const setWindowLocation = (url: string) => {
+  Object.defineProperty(window, 'location', {
+    value: new URL(url),
+    writable: true,
+    configurable: true,
+  });
+};
 
 describe('App.vue', () => {
   beforeEach(() => {
-    // 各テストの前にPiniaストアを初期化
-    setActivePinia(createPinia())
-  })
+    setWindowLocation('http://localhost/');
+  });
 
-  it('レンダリングできる', () => {
-    const wrapper = mount(App)
-    expect(wrapper.text()).toContain('Welcome to Tauri + Vue')
-  })
+  it('ルートパスではランチャーを表示する', () => {
+    const wrapper = mount(App);
+    expect(wrapper.find('.mock-launcher').exists()).toBe(true);
+    expect(wrapper.find('.mock-query-builder').exists()).toBe(false);
+  });
 
-  it('Piniaストアのカウンターが動作する', async () => {
-    const wrapper = mount(App)
-
-    // 初期値の確認
-    expect(wrapper.text()).toContain('Count: 0')
-
-    // インクリメントボタンを探してクリック
-    const buttons = wrapper.findAll('button')
-    const incrementButton = buttons.find(btn => btn.text() === '+1')
-
-    if (incrementButton) {
-      await incrementButton.trigger('click')
-      expect(wrapper.text()).toContain('Count: 1')
-    }
-  })
-
-  it('greet関数が呼び出せる', async () => {
-    const wrapper = mount(App)
-    const { invoke } = await import('@tauri-apps/api/core')
-
-    // 入力フィールドに名前を入力
-    const input = wrapper.find('#greet-input')
-    await input.setValue('Test User')
-
-    // フォームを送信
-    const form = wrapper.find('form')
-    await form.trigger('submit')
-
-    // Tauri invokeが呼び出されたことを確認
-    expect(invoke).toHaveBeenCalledWith('greet', { name: 'Test User' })
-  })
-})
+  it('query-builderパスではクエリビルダーを表示する', () => {
+    setWindowLocation('http://localhost/query-builder?connectionId=1');
+    const wrapper = mount(App);
+    expect(wrapper.find('.mock-query-builder').exists()).toBe(true);
+    expect(wrapper.find('.mock-launcher').exists()).toBe(false);
+  });
+});

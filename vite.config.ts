@@ -42,5 +42,6 @@ export default defineConfig(async () => ({
   test: {
     globals: true,
     environment: "happy-dom",
+    css: true,
   },
 }));

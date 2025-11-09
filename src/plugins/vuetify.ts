@@ -75,6 +75,13 @@ const productionTheme: ThemeDefinition = {
   },
 };
 
+export const environmentThemes: Record<ThemeType, ThemeDefinition> = {
+  development: developmentTheme,
+  test: testTheme,
+  staging: stagingTheme,
+  production: productionTheme,
+};
+
 const defaultTheme: ThemeType = 'development';
 
 export default createVuetify({
@@ -82,12 +89,7 @@ export default createVuetify({
   directives,
   theme: {
     defaultTheme,
-    themes: {
-      development: developmentTheme,
-      test: testTheme,
-      staging: stagingTheme,
-      production: productionTheme,
-    },
+    themes: environmentThemes,
   },
   defaults: {
     VBtn: {

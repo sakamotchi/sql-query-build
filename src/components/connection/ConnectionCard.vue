@@ -3,6 +3,7 @@
     :class="['connection-card', `environment-${connection.environment}`]"
     :style="{ borderTopColor: environmentColor }"
     :aria-label="`${connection.name}への接続。${environmentLabel}。${databaseTypeLabel}。${connection.host}`"
+    :data-environment="connection.environment"
     role="button"
     tabindex="0"
     elevation="2"

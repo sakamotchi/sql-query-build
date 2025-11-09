@@ -1,11 +1,19 @@
 <template>
   <v-app>
+    <div
+      class="sr-only"
+      role="status"
+      aria-live="polite"
+    >
+      {{ currentThemeInfo.label }}に切り替えました
+    </div>
+
     <LauncherAppBar
       @new-connection="handleNewConnection"
       @open-settings="handleOpenSettings"
     />
 
-    <v-main>
+    <v-main :style="{ backgroundColor: currentThemeInfo.background }">
       <v-container fluid>
         <LauncherToolbar
           :search="filter.searchQuery || ''"
@@ -99,6 +107,8 @@ import type { Connection } from '@/types/connection'
 import { useConnectionStore } from '@/stores/connection'
 import { storeToRefs } from 'pinia'
 import { ask } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
+import { useTheme } from '@/composables/useTheme'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
 import ActiveFilters from '@/components/connection/ActiveFilters.vue'
@@ -108,6 +118,14 @@ import ConnectionForm from '@/pages/connection-form.vue'
 // Piniaストアを使用
 const connectionStore = useConnectionStore()
 const { loading: storeLoading, filter, sort, filteredConnections } = storeToRefs(connectionStore)
+const { currentThemeInfo, safeSetTheme } = useTheme()
+const isTauriEnvironment = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_IPC__' in window)
+
+interface WindowConfig {
+  connection_id: string
+  environment: Connection['environment']
+  connection_name: string
+}
 
 // 状態管理
 const loading = computed(() => storeLoading.value)
@@ -168,10 +186,32 @@ const handleOpenSettings = () => {
 const handleSelectConnection = async (connection: Connection) => {
   console.log('接続が選択されました:', connection)
 
-  // 最終使用日時を更新
-  await connectionStore.markConnectionAsUsed(connection.id)
+  try {
+    await connectionStore.markConnectionAsUsed(connection.id)
+  } catch (error) {
+    console.warn('最終使用日時の更新に失敗しましたが処理を続行します', error)
+  }
 
-  // TODO: クエリビルダー画面を新規ウィンドウで起動
+  const config: WindowConfig = {
+    connection_id: connection.id,
+    environment: connection.environment,
+    connection_name: connection.name
+  }
+
+  const queryBuilderUrl = `query-builder?connectionId=${encodeURIComponent(connection.id)}&environment=${connection.environment}&connectionName=${encodeURIComponent(connection.name)}`
+
+  if (!isTauriEnvironment) {
+    console.warn('Tauri環境が検出できないため、同一ウィンドウで遷移します')
+    window.location.href = queryBuilderUrl
+    return
+  }
+
+  try {
+    await invoke('open_query_builder_window', { config })
+  } catch (error) {
+    console.error('クエリビルダーの起動に失敗しました。フォールバックとして同一ウィンドウで開きます:', error)
+    window.location.href = queryBuilderUrl
+  }
 }
 
 const handleEditConnection = async (connection: Connection) => {
@@ -286,6 +326,7 @@ const loadConnections = async () => {
 
 // マウント時に接続情報を読み込み
 onMounted(() => {
+  safeSetTheme('development')
   loadConnections()
 })
 
