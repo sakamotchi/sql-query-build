@@ -1,0 +1,12 @@
+// テーマ切り替え時のトランジション
+.v-application {
+  transition: background-color 0.3s ease-in-out;
+}
+
+.v-app-bar,
+.v-card,
+.v-btn {
+  transition:
+    background-color 0.3s ease-in-out,
+    color 0.3s ease-in-out;
+}

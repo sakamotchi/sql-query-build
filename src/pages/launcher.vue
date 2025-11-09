@@ -99,11 +99,18 @@ import type { Connection } from '@/types/connection'
 import { useConnectionStore } from '@/stores/connection'
 import { storeToRefs } from 'pinia'
 import { ask } from '@tauri-apps/plugin-dialog'
+import { invoke } from '@tauri-apps/api/core'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
 import ActiveFilters from '@/components/connection/ActiveFilters.vue'
 import ConnectionList from '@/components/connection/ConnectionList.vue'
 import ConnectionForm from '@/pages/connection-form.vue'
+
+interface WindowConfig {
+  connection_id: string
+  environment: string
+  connection_name: string
+}
 
 // Piniaストアを使用
 const connectionStore = useConnectionStore()
@@ -168,10 +175,20 @@ const handleOpenSettings = () => {
 const handleSelectConnection = async (connection: Connection) => {
   console.log('接続が選択されました:', connection)
 
-  // 最終使用日時を更新
-  await connectionStore.markConnectionAsUsed(connection.id)
+  try {
+    await connectionStore.markConnectionAsUsed(connection.id)
 
-  // TODO: クエリビルダー画面を新規ウィンドウで起動
+    const config: WindowConfig = {
+      connection_id: connection.id,
+      environment: connection.environment,
+      connection_name: connection.name,
+    }
+
+    await invoke('open_query_builder_window', { config })
+  } catch (error) {
+    console.error('クエリビルダーの起動に失敗しました:', error)
+    alert('クエリビルダーの起動に失敗しました。もう一度お試しください。')
+  }
 }
 
 const handleEditConnection = async (connection: Connection) => {
