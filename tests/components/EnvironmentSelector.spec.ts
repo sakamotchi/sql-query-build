@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { mount, config } from '@vue/test-utils';
+import { mount } from '@vue/test-utils';
 import EnvironmentSelector from '@/components/connection/EnvironmentSelector.vue';
+import { createVuetifyStubs } from '../utils/vuetifyStubs';
 
-config.compilerOptions = {
-  ...(config.compilerOptions || {}),
-  isCustomElement: (tag) => tag.startsWith('v-'),
-};
+const vuetifyStubs = createVuetifyStubs();
 
 describe('EnvironmentSelector', () => {
   const mountComponent = () =>
     mount(EnvironmentSelector, {
+      global: {
+        stubs: vuetifyStubs,
+      },
       props: {
         modelValue: 'development',
       },
