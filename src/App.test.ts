@@ -1,7 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { setActivePinia, createPinia } from 'pinia';
 import { defineComponent } from 'vue';
 import App from './App.vue';
+
+vi.mock('vuetify', () => ({
+  useTheme: () => ({
+    global: {
+      name: {
+        value: 'development',
+      },
+    },
+  }),
+}));
 
 vi.mock('./pages/launcher.vue', () => ({
   default: defineComponent({
@@ -27,6 +38,8 @@ const setWindowLocation = (url: string) => {
 
 describe('App.vue', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
+    localStorage.clear();
     setWindowLocation('http://localhost/');
   });
 
