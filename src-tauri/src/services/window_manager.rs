@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 use crate::models::window::{WindowCreateOptions, WindowInfo, WindowState, WindowType};
 use crate::storage::window_state::WindowStateStorage;
@@ -51,7 +51,7 @@ impl WindowManager {
         // ウィンドウサイズと位置の決定
         let (width, height) = saved_state
             .as_ref()
-            .map(|s| (s.width, s.height))
+            .map(|s| self.normalize_size(app_handle, s.width, s.height))
             .unwrap_or((options.width.unwrap_or(1200), options.height.unwrap_or(800)));
 
         // URLの決定
@@ -89,9 +89,18 @@ impl WindowManager {
             builder = builder.center();
         }
 
-        let _window = builder
+        let window = builder
             .build()
             .map_err(|e| format!("Failed to create window: {}", e))?;
+
+        let label_for_event = label.clone();
+        let app_handle_for_event = app_handle.clone();
+        window.on_window_event(move |event| {
+            if matches!(event, WindowEvent::Destroyed) {
+                let manager = app_handle_for_event.state::<WindowManager>();
+                let _ = manager.delete_window_state(&label_for_event);
+            }
+        });
 
         // ウィンドウ状態を記録
         let mut window_state = WindowState::new(options.window_type.clone(), options.connection_id.clone());
@@ -100,6 +109,9 @@ impl WindowManager {
             .lock()
             .unwrap()
             .insert(label.clone(), window_state);
+
+        // 初期状態を保存しておく（強制終了時でも復元できるように）
+        let _ = self.save_window_state(app_handle, &label);
 
         Ok(WindowInfo {
             label,
@@ -200,14 +212,17 @@ impl WindowManager {
 
         let mut windows = self.windows.lock().unwrap();
         if let Some(state) = windows.get_mut(label) {
+            let scale_factor = window.scale_factor().unwrap_or(1.0);
             // 現在の状態を取得
             if let Ok(position) = window.outer_position() {
-                state.x = Some(position.x);
-                state.y = Some(position.y);
+                let logical: tauri::LogicalPosition<f64> = position.to_logical(scale_factor);
+                state.x = Some(logical.x.round() as i32);
+                state.y = Some(logical.y.round() as i32);
             }
             if let Ok(size) = window.inner_size() {
-                state.width = size.width;
-                state.height = size.height;
+                let logical: tauri::LogicalSize<f64> = size.to_logical(scale_factor);
+                state.width = logical.width.round() as u32;
+                state.height = logical.height.round() as u32;
             }
             state.maximized = window.is_maximized().unwrap_or(false);
             state.minimized = window.is_minimized().unwrap_or(false);
@@ -274,6 +289,48 @@ impl WindowManager {
         }
 
         Ok(restored)
+    }
+
+    /// 保存された状態を取得
+    pub fn get_saved_states(&self) -> Result<Vec<WindowState>, String> {
+        self.storage.load_all_states()
+    }
+
+    /// 保存された状態をクリア
+    pub fn clear_saved_states(&self) -> Result<(), String> {
+        self.storage.clear_all_states()
+    }
+
+    /// 指定ラベルの状態を削除
+    pub fn delete_window_state(&self, label: &str) -> Result<(), String> {
+        self.storage.delete_state(label)?;
+        self.windows.lock().unwrap().remove(label);
+        Ok(())
+    }
+
+    /// 保存サイズをスケール・画面サイズに合わせて補正
+    fn normalize_size(&self, app_handle: &AppHandle, width: u32, height: u32) -> (u32, u32) {
+        if let Ok(Some(monitor)) = app_handle.primary_monitor() {
+            let scale = monitor.scale_factor();
+            let logical_size: tauri::LogicalSize<f64> = monitor.size().to_logical(scale);
+            let logical_width_limit = logical_size.width.round() as u32;
+            let logical_height_limit = logical_size.height.round() as u32;
+
+            let mut w = width;
+            let mut h = height;
+
+            let exceeds_screen = w > logical_width_limit || h > logical_height_limit;
+            if exceeds_screen && scale > 0.0 {
+                w = (w as f64 / scale).round() as u32;
+                h = (h as f64 / scale).round() as u32;
+            }
+
+            w = w.min(logical_width_limit).max(1);
+            h = h.min(logical_height_limit).max(1);
+            return (w, h);
+        }
+
+        (width.max(1), height.max(1))
     }
 
     /// ウィンドウタイトルを生成

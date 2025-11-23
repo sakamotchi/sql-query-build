@@ -6,6 +6,24 @@ import type { Environment } from '@/types/connection';
 export type WindowType = 'launcher' | 'query_builder' | 'settings';
 
 /**
+ * 保存されたウィンドウ状態
+ */
+export interface WindowState {
+  id: string;
+  window_type: WindowType;
+  connection_id?: string | null;
+  x?: number | null;
+  y?: number | null;
+  width: number;
+  height: number;
+  maximized: boolean;
+  minimized: boolean;
+  fullscreen: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * ウィンドウ情報
  */
 export interface WindowInfo {

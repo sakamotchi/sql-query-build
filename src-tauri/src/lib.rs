@@ -179,6 +179,9 @@ pub fn run() {
             commands::window::get_current_window_info,
             commands::window::restore_windows,
             commands::window::save_all_window_states,
+            commands::window::get_saved_window_states,
+            commands::window::clear_window_states,
+            commands::window::delete_window_state,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -91,6 +91,15 @@ impl WindowStateStorage {
 
         self.save_all_states(&states)
     }
+
+    /// すべての状態をクリア
+    pub fn clear_all_states(&self) -> Result<(), String> {
+        if self.storage_path.exists() {
+            fs::remove_file(&self.storage_path)
+                .map_err(|e| format!("Failed to delete window states: {}", e))?;
+        }
+        Ok(())
+    }
 }
 
 impl Default for WindowStateStorage {

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { WindowInfo } from '@/types/window';
+import type { WindowInfo, WindowState } from '@/types/window';
 
 /**
  * ウィンドウAPI
@@ -81,5 +81,26 @@ export const windowApi = {
    */
   async saveAllWindowStates(): Promise<void> {
     return invoke('save_all_window_states');
+  },
+
+  /**
+   * 保存されたウィンドウ状態を取得
+   */
+  async getSavedWindowStates(): Promise<WindowState[]> {
+    return invoke('get_saved_window_states');
+  },
+
+  /**
+   * ウィンドウ状態をクリア
+   */
+  async clearWindowStates(): Promise<void> {
+    return invoke('clear_window_states');
+  },
+
+  /**
+   * 特定ウィンドウの状態を削除
+   */
+  async deleteWindowState(label: string): Promise<void> {
+    return invoke('delete_window_state', { label });
   },
 };
