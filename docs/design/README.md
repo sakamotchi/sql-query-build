@@ -27,7 +27,12 @@ docs/design/
 ├── 1.4.3_environment_color_settings_ui.md   # 環境色設定UI実装
 ├── 1.4.4_environment_header_component.md    # 環境識別ヘッダーコンポーネント
 ├── 1.4.5_theme_store.md                     # テーマStore実装
-└── 1.4.6_theme_preview.md                   # テーマプレビュー機能
+├── 1.4.6_theme_preview.md                   # テーマプレビュー機能
+├── 1.5.1_window_management_module.md        # Tauriウィンドウ管理モジュール実装
+├── 1.5.2_window_launch_command.md           # ウィンドウ起動コマンド実装
+├── 1.5.3_window_independence.md             # ウィンドウ間独立性確保
+├── 1.5.4_window_title_environment.md        # ウィンドウタイトル・環境色設定
+└── 1.5.5_window_state_restore.md            # ウィンドウ状態復元機能
 ```
 
 ---
@@ -296,6 +301,109 @@ docs/design/
 
 ---
 
+## 📋 WBS 1.5: マルチウィンドウ機能 設計書一覧
+
+### 1.5.1 Tauriウィンドウ管理モジュール実装
+
+**ファイル**: [1.5.1_window_management_module.md](./1.5.1_window_management_module.md)
+
+**概要**: Tauriの複数ウィンドウ機能を活用し、ウィンドウの生成・管理・破棄を行うモジュール
+
+**主要モジュール**:
+- `src-tauri/src/models/window.rs` - ウィンドウデータモデル
+- `src-tauri/src/services/window_manager.rs` - ウィンドウ管理サービス
+- `src-tauri/src/storage/window_state.rs` - ウィンドウ状態永続化
+
+**主要機能**:
+- ウィンドウの生成・破棄
+- ウィンドウ状態の管理
+- ウィンドウ情報の取得・検索
+
+**工数**: 2日
+
+---
+
+### 1.5.2 ウィンドウ起動コマンド実装
+
+**ファイル**: [1.5.2_window_launch_command.md](./1.5.2_window_launch_command.md)
+
+**概要**: フロントエンドからウィンドウを操作するためのTauriコマンド
+
+**主要コマンド**:
+- `open_query_builder_window` - クエリビルダーウィンドウを開く
+- `open_settings_window` - 設定ウィンドウを開く
+- `close_window` - ウィンドウを閉じる
+- `focus_window` - ウィンドウにフォーカス
+- `list_windows` - 全ウィンドウを取得
+
+**ファイル**:
+- `src-tauri/src/commands/window.rs` - Tauriコマンド
+- `src/api/window.ts` - フロントエンドAPIクライアント
+
+**工数**: 1日
+
+---
+
+### 1.5.3 ウィンドウ間独立性確保
+
+**ファイル**: [1.5.3_window_independence.md](./1.5.3_window_independence.md)
+
+**概要**: 各ウィンドウが独立した状態を持ち、互いに干渉せずに動作できるようにする
+
+**主要コンポーネント**:
+- `src/types/window.ts` - ウィンドウ型定義
+- `src/stores/window.ts` - ウィンドウ状態管理ストア
+- `src/composables/useWindow.ts` - ウィンドウ操作コンポーザブル
+
+**主要機能**:
+- ウィンドウコンテキスト管理
+- ウィンドウ別の状態分離
+- ウィンドウタイプの判定
+
+**工数**: 2日
+
+---
+
+### 1.5.4 ウィンドウタイトル・環境色設定
+
+**ファイル**: [1.5.4_window_title_environment.md](./1.5.4_window_title_environment.md)
+
+**概要**: 各ウィンドウのタイトルと環境色を接続情報に基づいて設定
+
+**主要コンポーネント**:
+- WindowEnvironmentProvider.vue - 環境設定プロバイダー
+- EnvironmentIndicator.vue - 環境インジケーター
+- EnvironmentWarningBanner.vue - 警告バナー
+
+**主要機能**:
+- ウィンドウタイトルの動的設定
+- 環境色の適用
+- 本番環境の警告表示
+
+**工数**: 1日
+
+---
+
+### 1.5.5 ウィンドウ状態復元機能
+
+**ファイル**: [1.5.5_window_state_restore.md](./1.5.5_window_state_restore.md)
+
+**概要**: アプリケーション終了時にウィンドウの状態を保存し、次回起動時に復元
+
+**主要コンポーネント**:
+- `src/stores/settings.ts` - アプリケーション設定ストア
+- RestoreWindowsDialog.vue - 復元確認ダイアログ
+- WindowRestoreSettings.vue - 復元設定UI
+
+**主要機能**:
+- ウィンドウ位置・サイズの保存
+- 前回のウィンドウ状態の復元
+- 復元オプションの設定
+
+**工数**: 1日
+
+---
+
 ## 📊 進捗管理
 
 ### 設計完了状況
@@ -321,8 +429,13 @@ docs/design/
 | 1.4.4 | 環境識別ヘッダーコンポーネント | ✅ | 完了 |
 | 1.4.5 | テーマStore実装 | ✅ | 完了 |
 | 1.4.6 | テーマプレビュー機能 | ✅ | 完了 |
+| 1.5.1 | Tauriウィンドウ管理モジュール実装 | ✅ | 完了 |
+| 1.5.2 | ウィンドウ起動コマンド実装 | ✅ | 完了 |
+| 1.5.3 | ウィンドウ間独立性確保 | ✅ | 完了 |
+| 1.5.4 | ウィンドウタイトル・環境色設定 | ✅ | 完了 |
+| 1.5.5 | ウィンドウ状態復元機能 | ✅ | 完了 |
 
-**フェーズ1 合計工数**: 20.5日 (1.2系: 5.5日 + 1.3系: 13日 + 1.4系: 5日)
+**フェーズ1 合計工数**: 27.5日 (1.2系: 5.5日 + 1.3系: 13日 + 1.4系: 5日 + 1.5系: 7日)
 
 ---
 
@@ -362,6 +475,13 @@ docs/design/
 #### ステップ6: 機能拡張 (1.3系)
    - 1.3.8 検索・フィルター機能実装
    - 1.3.7 接続テスト機能実装
+
+#### ステップ7: マルチウィンドウ機能 (1.5系)
+   - 1.5.1 Tauriウィンドウ管理モジュール実装
+   - 1.5.2 ウィンドウ起動コマンド実装
+   - 1.5.3 ウィンドウ間独立性確保
+   - 1.5.4 ウィンドウタイトル・環境色設定
+   - 1.5.5 ウィンドウ状態復元機能
 
 ---
 
@@ -420,5 +540,5 @@ docs/design/
 
 ---
 
-**最終更新日**: 2025-11-03
+**最終更新日**: 2025-11-23
 **作成者**: Claude Code
