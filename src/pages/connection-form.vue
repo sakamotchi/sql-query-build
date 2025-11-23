@@ -12,31 +12,42 @@
 
     <v-card-text>
       <v-form ref="formRef" v-model="formValid" @submit.prevent="handleSave">
-        <!-- 基本情報 -->
-        <v-card variant="outlined" class="mb-4">
-          <v-card-title class="text-subtitle-1">基本情報</v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model="formData.name"
-              label="接続名"
-              :rules="validationRules.name"
-              required
-              variant="outlined"
-              prepend-inner-icon="mdi-label"
-              autocomplete="off"
-              autocapitalize="off"
-            ></v-text-field>
+        <!-- 基本情報 + プレビュー -->
+        <v-row class="mb-4" align="stretch">
+          <v-col cols="12" md="7">
+            <v-card variant="outlined" class="h-100">
+              <v-card-title class="text-subtitle-1">基本情報</v-card-title>
+              <v-card-text>
+                <v-text-field
+                  v-model="formData.name"
+                  label="接続名"
+                  :rules="validationRules.name"
+                  required
+                  variant="outlined"
+                  prepend-inner-icon="mdi-label"
+                  autocomplete="off"
+                  autocapitalize="off"
+                ></v-text-field>
 
-            <EnvironmentSelector
-              v-model="formData.environment"
-            />
+                <EnvironmentSelector
+                  v-model="formData.environment"
+                />
 
-            <EnvironmentColorPicker
-              v-model="formData.themeColor"
+                <EnvironmentColorPicker
+                  v-model="formData.themeColor"
+                  :environment="formData.environment"
+                />
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12" md="5">
+            <ThemePreview
               :environment="formData.environment"
+              :connection-name="formData.name || 'サンプル接続'"
             />
-          </v-card-text>
-        </v-card>
+          </v-col>
+        </v-row>
 
         <!-- データベース設定 -->
         <v-card variant="outlined" class="mb-4">
@@ -260,6 +271,7 @@ import { ref, reactive } from 'vue';
 import type { Connection, Environment, DatabaseType } from '@/types/connection';
 import EnvironmentColorPicker from '@/components/connection/EnvironmentColorPicker.vue';
 import EnvironmentSelector from '@/components/connection/EnvironmentSelector.vue';
+import ThemePreview from '@/components/connection/ThemePreview.vue';
 
 interface ConnectionFormData {
   name: string;

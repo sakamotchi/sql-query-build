@@ -13,6 +13,7 @@ const vuetifyTags = [
   'v-card-title',
   'v-card-subtitle',
   'v-card-text',
+  'v-card-actions',
   'v-chip',
   'v-chip-group',
   'v-container',
