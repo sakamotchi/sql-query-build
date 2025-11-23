@@ -119,7 +119,9 @@ import ConnectionForm from '@/pages/connection-form.vue'
 const connectionStore = useConnectionStore()
 const { loading: storeLoading, filter, sort, filteredConnections } = storeToRefs(connectionStore)
 const { currentThemeInfo, safeSetTheme } = useTheme()
-const isTauriEnvironment = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_IPC__' in window)
+const isTauriEnvironment =
+  typeof window !== 'undefined' &&
+  ('__TAURI_IPC__' in window || '__TAURI__' in window || '__TAURI_INTERNALS__' in window)
 
 // 状態管理
 const loading = computed(() => storeLoading.value)
