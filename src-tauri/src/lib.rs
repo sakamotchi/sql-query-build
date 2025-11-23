@@ -2,10 +2,13 @@ pub mod crypto;
 pub mod storage;
 pub mod connection;
 pub mod window;
+pub mod models;
+pub mod services;
 
 use crypto::MasterKeyManager;
 use storage::{FileStorage, PathManager};
 use connection::{ConnectionStorage, ConnectionService};
+use services::WindowManager;
 use tauri::State;
 use std::sync::Arc;
 
@@ -143,6 +146,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(WindowManager::new())
         .manage(file_storage_2)
         .manage(master_key_manager_2)
         .manage(connection_service)
