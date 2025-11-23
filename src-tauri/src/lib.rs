@@ -1,7 +1,7 @@
 pub mod crypto;
 pub mod storage;
 pub mod connection;
-pub mod window;
+pub mod commands;
 pub mod models;
 pub mod services;
 
@@ -168,8 +168,17 @@ pub fn run() {
             connection::commands::delete_connection,
             connection::commands::mark_connection_used,
             connection::commands::test_connection,
-            window::get_window_environment,
-            window::open_query_builder_window,
+            commands::window::get_window_environment,
+            commands::window::open_query_builder_window,
+            commands::window::open_settings_window,
+            commands::window::close_window,
+            commands::window::focus_window,
+            commands::window::list_windows,
+            commands::window::find_window_by_connection,
+            commands::window::set_window_title,
+            commands::window::get_current_window_info,
+            commands::window::restore_windows,
+            commands::window::save_all_window_states,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

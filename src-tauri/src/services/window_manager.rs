@@ -28,6 +28,7 @@ impl WindowManager {
         options: WindowCreateOptions,
     ) -> Result<WindowInfo, String> {
         let label = self.generate_window_label(&options.window_type, &options.connection_id);
+        let environment = options.environment.clone();
 
         // 同じ接続のウィンドウが既に存在するかチェック
         if let Some(connection_id) = &options.connection_id {
@@ -57,9 +58,11 @@ impl WindowManager {
         let url = match options.window_type {
             WindowType::Launcher => WebviewUrl::App("index.html".into()),
             WindowType::QueryBuilder => {
-                let path = match &options.connection_id {
-                    Some(id) => format!("query-builder?connectionId={}", id),
-                    None => "query-builder".to_string(),
+                let path = match (&options.connection_id, environment.as_deref()) {
+                    (Some(id), Some(env)) => format!("query-builder?connectionId={}&environment={}", id, env),
+                    (Some(id), None) => format!("query-builder?connectionId={}", id),
+                    (None, Some(env)) => format!("query-builder?environment={}", env),
+                    (None, None) => "query-builder".to_string(),
                 };
                 WebviewUrl::App(path.into())
             }
@@ -257,6 +260,7 @@ impl WindowManager {
                     title: self.generate_title(&state),
                     window_type: state.window_type.clone(),
                     connection_id: state.connection_id.clone(),
+                    environment: None,
                     width: Some(state.width),
                     height: Some(state.height),
                     center: false,

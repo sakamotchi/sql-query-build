@@ -107,8 +107,8 @@ import type { Connection } from '@/types/connection'
 import { useConnectionStore } from '@/stores/connection'
 import { storeToRefs } from 'pinia'
 import { ask } from '@tauri-apps/plugin-dialog'
-import { invoke } from '@tauri-apps/api/core'
 import { useTheme } from '@/composables/useTheme'
+import { windowApi } from '@/api/window'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
 import ActiveFilters from '@/components/connection/ActiveFilters.vue'
@@ -120,12 +120,6 @@ const connectionStore = useConnectionStore()
 const { loading: storeLoading, filter, sort, filteredConnections } = storeToRefs(connectionStore)
 const { currentThemeInfo, safeSetTheme } = useTheme()
 const isTauriEnvironment = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_IPC__' in window)
-
-interface WindowConfig {
-  connection_id: string
-  environment: Connection['environment']
-  connection_name: string
-}
 
 // 状態管理
 const loading = computed(() => storeLoading.value)
@@ -179,8 +173,14 @@ const handleNewConnection = () => {
 }
 
 const handleOpenSettings = () => {
-  console.log('設定ボタンがクリックされました')
-  // TODO: 設定画面への遷移を実装
+  if (!isTauriEnvironment) {
+    console.log('設定画面はTauri環境でのみ起動できます')
+    return
+  }
+
+  windowApi.openSettings().catch(error => {
+    console.error('設定ウィンドウの起動に失敗しました', error)
+  })
 }
 
 const handleSelectConnection = async (connection: Connection) => {
@@ -192,12 +192,6 @@ const handleSelectConnection = async (connection: Connection) => {
     console.warn('最終使用日時の更新に失敗しましたが処理を続行します', error)
   }
 
-  const config: WindowConfig = {
-    connection_id: connection.id,
-    environment: connection.environment,
-    connection_name: connection.name
-  }
-
   const queryBuilderUrl = `query-builder?connectionId=${encodeURIComponent(connection.id)}&environment=${connection.environment}&connectionName=${encodeURIComponent(connection.name)}`
 
   if (!isTauriEnvironment) {
@@ -207,7 +201,14 @@ const handleSelectConnection = async (connection: Connection) => {
   }
 
   try {
-    await invoke('open_query_builder_window', { config })
+    const existing = await windowApi.findWindowByConnection(connection.id)
+
+    if (existing) {
+      await windowApi.focusWindow(existing.label)
+      return
+    }
+
+    await windowApi.openQueryBuilder(connection.id, connection.name, connection.environment)
   } catch (error) {
     console.error('クエリビルダーの起動に失敗しました。フォールバックとして同一ウィンドウで開きます:', error)
     window.location.href = queryBuilderUrl

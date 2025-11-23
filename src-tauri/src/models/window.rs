@@ -71,6 +71,8 @@ pub struct WindowCreateOptions {
     pub window_type: WindowType,
     /// 関連する接続ID
     pub connection_id: Option<String>,
+    /// 環境名（例: development, staging）
+    pub environment: Option<String>,
     /// ウィンドウ幅
     pub width: Option<u32>,
     /// ウィンドウ高さ
@@ -87,6 +89,7 @@ impl Default for WindowCreateOptions {
             title: "SQL Query Builder".to_string(),
             window_type: WindowType::QueryBuilder,
             connection_id: None,
+            environment: None,
             width: Some(1200),
             height: Some(800),
             center: true,
@@ -97,6 +100,7 @@ impl Default for WindowCreateOptions {
 
 /// ウィンドウ情報（フロントエンドへの返却用）
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WindowInfo {
     /// ウィンドウラベル（Tauri内部識別子）
     pub label: String,
