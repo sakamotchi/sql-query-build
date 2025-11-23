@@ -1,10 +1,11 @@
 <template>
   <v-chip
-    :color="themeInfo.primary"
+    :color="chipColor"
     :variant="variant"
     :size="chipSize"
     class="environment-badge"
     :aria-label="`${themeInfo.label}バッジ`"
+    :text-color="chipTextColor"
     rounded="lg"
   >
     <v-icon
@@ -30,6 +31,8 @@ const props = withDefaults(
     size?: 'small' | 'default' | 'large';
     showIcon?: boolean;
     variant?: 'elevated' | 'flat' | 'tonal' | 'outlined';
+    color?: string;
+    textColor?: string;
   }>(),
   {
     size: 'small',
@@ -57,6 +60,9 @@ const chipSize = computed(() => {
   };
   return sizes[props.size];
 });
+
+const chipColor = computed(() => props.color || themeInfo.value.primary);
+const chipTextColor = computed(() => props.textColor || undefined);
 
 const environmentIcon = computed(() => {
   const icons: Record<Environment, string> = {
