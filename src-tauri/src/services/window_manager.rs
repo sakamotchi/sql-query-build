@@ -1,0 +1,289 @@
+use std::collections::HashMap;
+use std::sync::Mutex;
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+
+use crate::models::window::{WindowCreateOptions, WindowInfo, WindowState, WindowType};
+use crate::storage::window_state::WindowStateStorage;
+
+/// ウィンドウ管理サービス
+pub struct WindowManager {
+    /// アクティブなウィンドウの状態
+    windows: Mutex<HashMap<String, WindowState>>,
+    /// ウィンドウ状態ストレージ
+    storage: WindowStateStorage,
+}
+
+impl WindowManager {
+    pub fn new() -> Self {
+        Self {
+            windows: Mutex::new(HashMap::new()),
+            storage: WindowStateStorage::new(),
+        }
+    }
+
+    /// 新しいウィンドウを作成
+    pub fn create_window(
+        &self,
+        app_handle: &AppHandle,
+        options: WindowCreateOptions,
+    ) -> Result<WindowInfo, String> {
+        let label = self.generate_window_label(&options.window_type, &options.connection_id);
+
+        // 同じ接続のウィンドウが既に存在するかチェック
+        if let Some(connection_id) = &options.connection_id {
+            if let Some(existing) = self.find_window_by_connection(app_handle, connection_id) {
+                // 既存のウィンドウにフォーカス
+                if let Some(window) = app_handle.get_webview_window(&existing.label) {
+                    let _ = window.set_focus();
+                }
+                return Ok(existing);
+            }
+        }
+
+        // 以前の状態を復元
+        let saved_state = if options.restore_state {
+            self.storage.load_state(&label).ok()
+        } else {
+            None
+        };
+
+        // ウィンドウサイズと位置の決定
+        let (width, height) = saved_state
+            .as_ref()
+            .map(|s| (s.width, s.height))
+            .unwrap_or((options.width.unwrap_or(1200), options.height.unwrap_or(800)));
+
+        // URLの決定
+        let url = match options.window_type {
+            WindowType::Launcher => WebviewUrl::App("index.html".into()),
+            WindowType::QueryBuilder => {
+                let path = match &options.connection_id {
+                    Some(id) => format!("query-builder?connectionId={}", id),
+                    None => "query-builder".to_string(),
+                };
+                WebviewUrl::App(path.into())
+            }
+            WindowType::Settings => WebviewUrl::App("settings".into()),
+        };
+
+        // ウィンドウを作成
+        let mut builder = WebviewWindowBuilder::new(app_handle, &label, url)
+            .title(&options.title)
+            .inner_size(width as f64, height as f64)
+            .min_inner_size(800.0, 600.0)
+            .resizable(true)
+            .decorations(true);
+
+        // 保存された位置を復元
+        if let Some(ref state) = saved_state {
+            if let (Some(x), Some(y)) = (state.x, state.y) {
+                builder = builder.position(x as f64, y as f64);
+            }
+            if state.maximized {
+                builder = builder.maximized(true);
+            }
+        } else if options.center {
+            builder = builder.center();
+        }
+
+        let _window = builder
+            .build()
+            .map_err(|e| format!("Failed to create window: {}", e))?;
+
+        // ウィンドウ状態を記録
+        let mut window_state = WindowState::new(options.window_type.clone(), options.connection_id.clone());
+        window_state.id = label.clone();
+        self.windows
+            .lock()
+            .unwrap()
+            .insert(label.clone(), window_state);
+
+        Ok(WindowInfo {
+            label,
+            title: options.title,
+            window_type: options.window_type,
+            connection_id: options.connection_id,
+            focused: true,
+            visible: true,
+        })
+    }
+
+    /// ウィンドウを閉じる
+    pub fn close_window(&self, app_handle: &AppHandle, label: &str) -> Result<(), String> {
+        // 状態を保存
+        self.save_window_state(app_handle, label)?;
+
+        // ウィンドウを閉じる
+        if let Some(window) = app_handle.get_webview_window(label) {
+            window.close().map_err(|e| format!("Failed to close window: {}", e))?;
+        }
+
+        // 記録から削除
+        self.windows.lock().unwrap().remove(label);
+
+        Ok(())
+    }
+
+    /// すべてのウィンドウ情報を取得
+    pub fn list_windows(&self, app_handle: &AppHandle) -> Vec<WindowInfo> {
+        let windows = self.windows.lock().unwrap();
+        windows
+            .iter()
+            .filter_map(|(label, state)| {
+                app_handle.get_webview_window(label).map(|window| WindowInfo {
+                    label: label.clone(),
+                    title: window.title().unwrap_or_default(),
+                    window_type: state.window_type.clone(),
+                    connection_id: state.connection_id.clone(),
+                    focused: window.is_focused().unwrap_or(false),
+                    visible: window.is_visible().unwrap_or(false),
+                })
+            })
+            .collect()
+    }
+
+    /// 接続IDでウィンドウを検索
+    pub fn find_window_by_connection(
+        &self,
+        app_handle: &AppHandle,
+        connection_id: &str,
+    ) -> Option<WindowInfo> {
+        let windows = self.windows.lock().unwrap();
+        windows.iter().find_map(|(label, state)| {
+            if state.connection_id.as_deref() == Some(connection_id) {
+                app_handle.get_webview_window(label).map(|window| WindowInfo {
+                    label: label.clone(),
+                    title: window.title().unwrap_or_default(),
+                    window_type: state.window_type.clone(),
+                    connection_id: state.connection_id.clone(),
+                    focused: window.is_focused().unwrap_or(false),
+                    visible: window.is_visible().unwrap_or(false),
+                })
+            } else {
+                None
+            }
+        })
+    }
+
+    /// ウィンドウにフォーカス
+    pub fn focus_window(&self, app_handle: &AppHandle, label: &str) -> Result<(), String> {
+        if let Some(window) = app_handle.get_webview_window(label) {
+            window.set_focus().map_err(|e| format!("Failed to focus window: {}", e))?;
+            window.unminimize().ok();
+        }
+        Ok(())
+    }
+
+    /// ウィンドウタイトルを更新
+    pub fn set_window_title(
+        &self,
+        app_handle: &AppHandle,
+        label: &str,
+        title: &str,
+    ) -> Result<(), String> {
+        if let Some(window) = app_handle.get_webview_window(label) {
+            window
+                .set_title(title)
+                .map_err(|e| format!("Failed to set window title: {}", e))?;
+        }
+        Ok(())
+    }
+
+    /// ウィンドウ状態を保存
+    pub fn save_window_state(&self, app_handle: &AppHandle, label: &str) -> Result<(), String> {
+        let window = app_handle
+            .get_webview_window(label)
+            .ok_or("Window not found")?;
+
+        let mut windows = self.windows.lock().unwrap();
+        if let Some(state) = windows.get_mut(label) {
+            // 現在の状態を取得
+            if let Ok(position) = window.outer_position() {
+                state.x = Some(position.x);
+                state.y = Some(position.y);
+            }
+            if let Ok(size) = window.inner_size() {
+                state.width = size.width;
+                state.height = size.height;
+            }
+            state.maximized = window.is_maximized().unwrap_or(false);
+            state.minimized = window.is_minimized().unwrap_or(false);
+            state.fullscreen = window.is_fullscreen().unwrap_or(false);
+            state.updated_at = chrono::Utc::now().to_rfc3339();
+
+            // ストレージに保存
+            self.storage.save_state(label, state)?;
+        }
+
+        Ok(())
+    }
+
+    /// ウィンドウラベルを生成
+    fn generate_window_label(&self, window_type: &WindowType, connection_id: &Option<String>) -> String {
+        match window_type {
+            WindowType::Launcher => "launcher".to_string(),
+            WindowType::QueryBuilder => {
+                match connection_id {
+                    Some(id) => format!("query-builder-{}", id),
+                    None => format!("query-builder-{}", uuid::Uuid::new_v4()),
+                }
+            }
+            WindowType::Settings => "settings".to_string(),
+        }
+    }
+
+    /// すべてのウィンドウ状態を保存
+    pub fn save_all_window_states(&self, app_handle: &AppHandle) -> Result<(), String> {
+        let labels: Vec<String> = {
+            let windows = self.windows.lock().unwrap();
+            windows.keys().cloned().collect()
+        };
+
+        for label in labels {
+            self.save_window_state(app_handle, &label)?;
+        }
+        Ok(())
+    }
+
+    /// 保存されたウィンドウ状態を復元
+    pub fn restore_windows(&self, app_handle: &AppHandle) -> Result<Vec<WindowInfo>, String> {
+        let saved_states = self.storage.load_all_states()?;
+        let mut restored = Vec::new();
+
+        for state in saved_states {
+            // ランチャー以外のウィンドウを復元
+            if state.window_type != WindowType::Launcher {
+                let options = WindowCreateOptions {
+                    title: self.generate_title(&state),
+                    window_type: state.window_type.clone(),
+                    connection_id: state.connection_id.clone(),
+                    width: Some(state.width),
+                    height: Some(state.height),
+                    center: false,
+                    restore_state: true,
+                };
+
+                if let Ok(info) = self.create_window(app_handle, options) {
+                    restored.push(info);
+                }
+            }
+        }
+
+        Ok(restored)
+    }
+
+    /// ウィンドウタイトルを生成
+    fn generate_title(&self, state: &WindowState) -> String {
+        match state.window_type {
+            WindowType::Launcher => "SQL Query Builder".to_string(),
+            WindowType::QueryBuilder => "SQL Query Builder".to_string(),
+            WindowType::Settings => "設定 - SQL Query Builder".to_string(),
+        }
+    }
+}
+
+impl Default for WindowManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
