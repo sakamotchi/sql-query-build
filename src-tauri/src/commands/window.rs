@@ -1,7 +1,7 @@
 use tauri::{command, AppHandle, Manager, State, WebviewWindow};
 
 use crate::connection::{ConnectionService, EnvironmentType};
-use crate::models::window::{WindowCreateOptions, WindowInfo, WindowType};
+use crate::models::window::{WindowCreateOptions, WindowInfo, WindowState, WindowType};
 use crate::services::window_manager::WindowManager;
 
 /// クエリビルダーウィンドウを開く
@@ -130,6 +130,31 @@ pub async fn save_all_window_states(
     window_manager: State<'_, WindowManager>,
 ) -> Result<(), String> {
     window_manager.save_all_window_states(&app_handle)
+}
+
+/// 保存されたウィンドウ状態を取得
+#[command]
+pub async fn get_saved_window_states(
+    window_manager: State<'_, WindowManager>,
+) -> Result<Vec<WindowState>, String> {
+    window_manager.get_saved_states()
+}
+
+/// 保存されたウィンドウ状態をクリア
+#[command]
+pub async fn clear_window_states(
+    window_manager: State<'_, WindowManager>,
+) -> Result<(), String> {
+    window_manager.clear_saved_states()
+}
+
+/// 指定ウィンドウの状態を削除
+#[command]
+pub async fn delete_window_state(
+    window_manager: State<'_, WindowManager>,
+    label: String,
+) -> Result<(), String> {
+    window_manager.delete_window_state(&label)
 }
 
 /// 現在のウィンドウに紐づく環境名を取得

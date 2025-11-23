@@ -40,4 +40,20 @@ describe('windowApi', () => {
 
     expect(invokeMock).toHaveBeenCalledWith('list_windows');
   });
+
+  it('getSavedWindowStatesが呼ばれる', async () => {
+    invokeMock.mockResolvedValueOnce([]);
+
+    await windowApi.getSavedWindowStates();
+
+    expect(invokeMock).toHaveBeenCalledWith('get_saved_window_states');
+  });
+
+  it('clearWindowStatesが呼ばれる', async () => {
+    invokeMock.mockResolvedValueOnce(undefined);
+
+    await windowApi.clearWindowStates();
+
+    expect(invokeMock).toHaveBeenCalledWith('clear_window_states');
+  });
 });
