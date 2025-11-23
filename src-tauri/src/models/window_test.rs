@@ -30,6 +30,7 @@ mod tests {
         assert_eq!(options.title, "SQL Query Builder");
         assert_eq!(options.window_type, WindowType::QueryBuilder);
         assert!(options.connection_id.is_none());
+        assert!(options.environment.is_none());
         assert_eq!(options.width, Some(1200));
         assert_eq!(options.height, Some(800));
         assert!(options.center);
