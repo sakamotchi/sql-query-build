@@ -1,53 +1,44 @@
 <template>
-  <v-app>
-    <v-layout>
-      <div
-        class="sr-only"
-        role="status"
-        aria-live="polite"
-      >
-        {{ currentThemeInfo.label }}に切り替えました
-      </div>
+  <WindowEnvironmentProvider>
+    <v-app>
+      <v-layout>
+        <div
+          class="sr-only"
+          role="status"
+          aria-live="polite"
+        >
+          {{ currentThemeInfo.label }}に切り替えました
+        </div>
 
-      <!-- 警告バナー -->
-      <v-alert
-        v-if="connection && shouldShowWarning"
-        :color="warningColor"
-        variant="flat"
-        density="comfortable"
-        class="warning-banner"
-        :class="warningBannerClass"
-        role="alert"
-      >
-        <template #prepend>
-          <v-icon icon="mdi-alert"></v-icon>
-        </template>
-        <strong>{{ warningMessage }}</strong>
-      </v-alert>
+        <EnvironmentWarningBanner />
 
-      <!-- 環境ヘッダー (App Bar) -->
-      <v-app-bar
-        v-if="connection"
-        :color="currentThemeInfo.primary"
-        role="banner"
-        class="environment-app-bar"
-        elevation="2"
-        :height="appBarHeight"
-        app
-      >
-        <EnvironmentHeader
-          :environment="connection.environment"
-          :connection-id="connection.id"
-          :connection-name="connection.name"
-          :db-type="connection.dbType"
-          :host="connection.host"
-          :port="connection.port"
-          :database="connection.database"
-          :connected="isConnected"
-          @settings="handleOpenSettings"
-          @disconnect="handleDisconnect"
-        />
-      </v-app-bar>
+        <!-- 環境ヘッダー (App Bar) -->
+        <v-app-bar
+          v-if="connection"
+          :color="currentThemeInfo.primary"
+          role="banner"
+          class="environment-app-bar"
+          elevation="2"
+          :height="appBarHeight"
+          app
+        >
+          <EnvironmentHeader
+            :environment="connection.environment"
+            :connection-id="connection.id"
+            :connection-name="connection.name"
+            :db-type="connection.dbType"
+            :host="connection.host"
+            :port="connection.port"
+            :database="connection.database"
+            :connected="isConnected"
+            @settings="handleOpenSettings"
+            @disconnect="handleDisconnect"
+          >
+            <template #indicator>
+              <EnvironmentIndicator />
+            </template>
+          </EnvironmentHeader>
+        </v-app-bar>
 
       <!-- ローディング状態 -->
       <v-sheet
@@ -97,6 +88,7 @@
       </v-main>
     </v-layout>
   </v-app>
+</WindowEnvironmentProvider>
 </template>
 
 <script setup lang="ts">
@@ -109,10 +101,14 @@ import { useWindow } from '@/composables/useWindow';
 import { useConnectionStore } from '@/stores/connection';
 import type { Connection } from '@/types/connection';
 import EnvironmentHeader from '@/components/common/EnvironmentHeader.vue';
+import WindowEnvironmentProvider from '@/components/common/WindowEnvironmentProvider.vue';
+import EnvironmentWarningBanner from '@/components/common/EnvironmentWarningBanner.vue';
+import EnvironmentIndicator from '@/components/common/EnvironmentIndicator.vue';
+import { updateCurrentWindowTitle } from '@/utils/windowTitle';
 
 const urlParams = new URLSearchParams(window.location.search);
 const connectionStore = useConnectionStore();
-const { availableThemes, safeSetTheme, currentThemeInfo, isProductionTheme, isStagingTheme } = useTheme();
+const { availableThemes, safeSetTheme, currentThemeInfo, setThemeByEnvironment } = useTheme();
 const { setConnectionContext, connectionId: windowConnectionId, isQueryBuilder: isQueryBuilderWindow } = useWindow();
 const { mdAndDown } = useDisplay();
 
@@ -137,37 +133,15 @@ const connectionIdForDisplay = computed(() => windowConnectionId.value || connec
 
 const connectionErrorMessage = computed(() => connectionError.value ?? '');
 
-// 警告バナー関連
-const isProduction = computed(() => {
-  return isProductionTheme.value || connection.value?.environment === 'production';
-});
-
-const isStaging = computed(() => {
-  return isStagingTheme.value || connection.value?.environment === 'staging';
-});
-
-const shouldShowWarning = computed(() => {
-  return isProduction.value || isStaging.value;
-});
-
-const warningMessage = computed(() => {
-  if (isProduction.value) {
-    return '⚠️ 本番環境 - UPDATE / DELETE 操作には十分注意してください';
-  }
-  if (isStaging.value) {
-    return '⚠️ ステージング環境 - 本番相当のデータを扱っています';
-  }
-  return '';
-});
-
-const warningColor = computed(() => (isProduction.value ? 'error' : 'warning'));
-
-const warningBannerClass = computed(() => {
-  if (!shouldShowWarning.value) return '';
-  return isProduction.value ? 'production-warning' : 'staging-warning';
-});
-
 const appBarHeight = computed(() => (mdAndDown.value ? 120 : 72));
+
+const isTauriEnvironment =
+  typeof window !== 'undefined' && '__TAURI_IPC__' in window;
+
+const setWindowTitle = async (conn: Connection) => {
+  if (!isTauriEnvironment) return;
+  await updateCurrentWindowTitle(conn.name, conn.environment);
+};
 
 const loadConnection = async () => {
   if (!connectionId.value) {
@@ -175,6 +149,7 @@ const loadConnection = async () => {
     connection.value = null;
     isLoadingConnection.value = false;
     syncWindowContext(null);
+    safeSetTheme(fallbackEnvironment.value);
     return;
   }
 
@@ -189,8 +164,9 @@ const loadConnection = async () => {
 
     if (found) {
       connection.value = found;
-      safeSetTheme(found.environment);
+      setThemeByEnvironment(found.environment as ThemeType);
       syncWindowContext(connection.value);
+      await setWindowTitle(found);
     } else {
       connectionError.value = '接続情報が見つかりませんでした。';
       connection.value = null;
@@ -227,8 +203,6 @@ const handleDisconnect = () => {
   console.info('接続を切断しました（UI上の表示のみ）。');
 };
 
-const isTauriEnvironment = typeof window !== 'undefined' && '__TAURI_IPC__' in window;
-
 onMounted(async () => {
   safeSetTheme(fallbackEnvironment.value);
   await loadConnection();
@@ -254,26 +228,6 @@ onMounted(async () => {
 .environment-app-bar :deep(.v-toolbar__content) {
   height: 100%;
   padding: 12px 16px;
-}
-
-.warning-banner {
-  border-radius: 0;
-  margin-bottom: 0;
-  animation: pulse-warning 2s ease-in-out infinite;
-}
-
-.warning-banner.staging-warning {
-  animation-duration: 2.8s;
-}
-
-@keyframes pulse-warning {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.85;
-  }
 }
 
 .sr-only {

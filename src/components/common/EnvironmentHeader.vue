@@ -20,8 +20,11 @@
             :environment="environment"
             size="large"
             show-icon
-            variant="tonal"
+            variant="elevated"
           />
+          <div class="indicator-slot">
+            <slot name="indicator" />
+          </div>
           <span class="connection-name">{{ connectionName }}</span>
         </div>
         <div class="connection-details">
@@ -206,6 +209,30 @@ const connectionStatusColor = computed(() =>
   letter-spacing: 0.02em;
 }
 
+.environment-title :deep(.environment-badge) {
+  color: #fff;
+}
+
+.environment-title :deep(.environment-badge__label),
+.environment-title :deep(.v-icon) {
+  color: #fff !important;
+}
+
+.indicator-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.indicator-slot :deep(.environment-chip) {
+  color: rgb(var(--v-theme-on-primary));
+  background-color: rgba(var(--v-theme-on-primary), 0.16);
+  border-color: rgba(var(--v-theme-on-primary), 0.24);
+}
+
+.indicator-slot :deep(.environment-chip .v-icon) {
+  color: rgb(var(--v-theme-on-primary));
+}
+
 .connection-name {
   font-size: 1.05rem;
   font-weight: 600;
@@ -274,6 +301,10 @@ const connectionStatusColor = computed(() =>
   .environment-avatar {
     width: 40px;
     height: 40px;
+  }
+
+  .indicator-slot {
+    width: 100%;
   }
 }
 </style>
