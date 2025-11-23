@@ -87,7 +87,7 @@
           <v-card class="query-builder-placeholder">
             <v-card-title>クエリビルダー</v-card-title>
             <v-card-subtitle>
-              接続ID: {{ connectionId || 'unknown' }}
+              接続ID: {{ connectionIdForDisplay || 'unknown' }}
             </v-card-subtitle>
             <v-card-text>
               クエリビルダーの詳細機能は別タスクで実装予定です。現在はテーマ切り替えとウィンドウ起動の挙動を確認できます。
@@ -105,6 +105,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useDisplay } from 'vuetify';
 import type { ThemeType } from '@/types/theme';
 import { useTheme } from '@/composables/useTheme';
+import { useWindow } from '@/composables/useWindow';
 import { useConnectionStore } from '@/stores/connection';
 import type { Connection } from '@/types/connection';
 import EnvironmentHeader from '@/components/common/EnvironmentHeader.vue';
@@ -112,6 +113,7 @@ import EnvironmentHeader from '@/components/common/EnvironmentHeader.vue';
 const urlParams = new URLSearchParams(window.location.search);
 const connectionStore = useConnectionStore();
 const { availableThemes, safeSetTheme, currentThemeInfo, isProductionTheme, isStagingTheme } = useTheme();
+const { setConnectionContext, connectionId: windowConnectionId, isQueryBuilder: isQueryBuilderWindow } = useWindow();
 const { mdAndDown } = useDisplay();
 
 const normalizeEnvironment = (value: string | null): ThemeType => {
@@ -131,6 +133,7 @@ const connection = ref<Connection | null>(null);
 const isLoadingConnection = ref(true);
 const connectionError = ref<string | null>(null);
 const isConnected = ref(true);
+const connectionIdForDisplay = computed(() => windowConnectionId.value || connectionId.value);
 
 const connectionErrorMessage = computed(() => connectionError.value ?? '');
 
@@ -171,6 +174,7 @@ const loadConnection = async () => {
     connectionError.value = '接続IDが指定されていません。ランチャーから開き直してください。';
     connection.value = null;
     isLoadingConnection.value = false;
+    syncWindowContext(null);
     return;
   }
 
@@ -186,18 +190,31 @@ const loadConnection = async () => {
     if (found) {
       connection.value = found;
       safeSetTheme(found.environment);
+      syncWindowContext(connection.value);
     } else {
       connectionError.value = '接続情報が見つかりませんでした。';
       connection.value = null;
       safeSetTheme(fallbackEnvironment.value);
+      syncWindowContext(null);
     }
   } catch (error) {
     console.error('Failed to load connection info', error);
     connectionError.value = '接続情報の取得に失敗しました。ランチャーから再度お試しください。';
     connection.value = null;
     safeSetTheme(fallbackEnvironment.value);
+    syncWindowContext(null);
   } finally {
     isLoadingConnection.value = false;
+  }
+};
+
+const syncWindowContext = (conn: Connection | null) => {
+  if (!isQueryBuilderWindow.value) return;
+
+  if (conn) {
+    setConnectionContext(conn.id, conn.environment);
+  } else if (connectionId.value) {
+    setConnectionContext(connectionId.value, fallbackEnvironment.value);
   }
 };
 
