@@ -1,57 +1,77 @@
 import { computed } from 'vue';
 import { useTheme as useVuetifyTheme } from 'vuetify';
+import { useThemeStore } from '@/stores/theme';
 import type { ThemeType } from '@/types/theme';
 import { THEME_COLORS } from '@/types/theme';
 
 /**
- * テーマ切り替え用コンポーザブル
+ * テーマ管理コンポーザブル
  */
 export function useTheme() {
+  const store = useThemeStore();
   const vuetifyTheme = useVuetifyTheme();
 
+  const applyVuetifyTheme = (theme: ThemeType) => {
+    vuetifyTheme.global.name.value = theme;
+  };
+
   /**
-   * 現在のテーマ名
+   * 現在のテーマ
    */
-  const currentTheme = computed<ThemeType>({
-    get: () => (vuetifyTheme.global.name.value as ThemeType) ?? 'development',
-    set: (themeName: ThemeType) => {
-      vuetifyTheme.global.name.value = themeName;
+  const currentTheme = computed({
+    get: () => store.currentTheme,
+    set: (value: ThemeType) => {
+      store.setTheme(value);
+      applyVuetifyTheme(store.currentTheme);
     },
   });
 
   /**
-   * 現在のテーマカラー情報
+   * 現在のテーマ情報
    */
-  const currentThemeInfo = computed(() => {
-    return THEME_COLORS[currentTheme.value];
-  });
+  const currentThemeInfo = computed(() => store.currentThemeInfo);
 
   /**
-   * 現在のプライマリーカラー
+   * プライマリーカラー
    */
-  const primaryColor = computed(() => {
-    return vuetifyTheme.current.value.colors.primary;
-  });
+  const primaryColor = computed(() => currentThemeInfo.value.primary);
 
   /**
-   * 現在のバックグラウンドカラー
+   * バックグラウンドカラー
    */
-  const backgroundColor = computed(() => {
-    return vuetifyTheme.current.value.colors.background;
-  });
+  const backgroundColor = computed(() => currentThemeInfo.value.background);
 
   /**
-   * 環境に応じてテーマを切り替え
+   * 環境に応じてテーマを設定
    */
   const setThemeByEnvironment = (environment: ThemeType) => {
-    vuetifyTheme.global.name.value = environment;
+    if (store.preferences.autoSwitchTheme) {
+      store.setTheme(environment);
+      applyVuetifyTheme(store.currentTheme);
+    }
   };
 
   /**
-   * テーマをデフォルトに戻す
+   * ウィンドウ別にテーマを設定
+   */
+  const setWindowTheme = (windowId: string, theme: ThemeType) => {
+    store.setWindowTheme(windowId, theme);
+    applyVuetifyTheme(store.currentTheme);
+  };
+
+  /**
+   * テーマをリセット
    */
   const resetTheme = () => {
-    vuetifyTheme.global.name.value = 'development';
+    store.resetTheme();
+    applyVuetifyTheme(store.currentTheme);
+  };
+
+  /**
+   * テーマ情報を取得
+   */
+  const getThemeInfo = (themeName: ThemeType) => {
+    return THEME_COLORS[themeName];
   };
 
   /**
@@ -62,65 +82,59 @@ export function useTheme() {
   });
 
   /**
-   * 指定されたテーマ情報
+   * 安全にテーマを設定（存在しないテーマはデフォルトへフォールバック）
    */
-  const getThemeInfo = (themeName: ThemeType) => {
-    return THEME_COLORS[themeName];
-  };
-
-  /**
-   * 本番環境テーマかどうか
-   */
-  const isProductionTheme = computed(() => {
-    return currentTheme.value === 'production';
-  });
-
-  /**
-   * ステージング環境テーマかどうか
-   */
-  const isStagingTheme = computed(() => {
-    return currentTheme.value === 'staging';
-  });
-
-  /**
-   * 注意が必要な環境かどうか
-   */
-  const needsWarning = computed(() => {
-    return isProductionTheme.value || isStagingTheme.value;
-  });
-
-  /**
-   * エラーハンドリング付きのテーマ切り替え
-   */
-  const safeSetTheme = (environment: ThemeType) => {
+  const safeSetTheme = (themeName: ThemeType) => {
     try {
-      if (!availableThemes.value.includes(environment)) {
-        console.warn(`Unknown theme: ${environment}, falling back to development`);
-        resetTheme();
+      if (!availableThemes.value.includes(themeName)) {
+        console.warn(`Unknown theme: ${themeName}, falling back to default`);
+        store.resetTheme();
+        applyVuetifyTheme(store.currentTheme);
         return false;
       }
 
-      setThemeByEnvironment(environment);
+      store.setTheme(themeName);
+      applyVuetifyTheme(store.currentTheme);
       return true;
     } catch (error) {
       console.error('Failed to set theme:', error);
-      resetTheme();
+      store.resetTheme();
+      applyVuetifyTheme(store.currentTheme);
       return false;
     }
   };
 
   return {
+    // 状態
     currentTheme,
     currentThemeInfo,
     primaryColor,
     backgroundColor,
+
+    // ゲッター
+    isProductionTheme: computed(() => store.isProductionTheme),
+    isStagingTheme: computed(() => store.isStagingTheme),
+    needsWarning: computed(() => store.needsWarning),
+    shouldShowWarning: computed(() => store.shouldShowWarning),
+    animationsEnabled: computed(() => store.animationsEnabled),
     availableThemes,
-    isProductionTheme,
-    isStagingTheme,
-    needsWarning,
+
+    // アクション
     setThemeByEnvironment,
+    setWindowTheme,
     resetTheme,
     getThemeInfo,
     safeSetTheme,
+
+    // 設定
+    updatePreferences: store.updatePreferences,
+    toggleWarningBanner: store.toggleWarningBanner,
+    toggleAnimations: store.toggleAnimations,
+
+    // Vuetify同期
+    syncVuetifyTheme: applyVuetifyTheme,
+
+    // ストアの参照
+    store,
   };
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ref, computed } from 'vue';
+import { setActivePinia, createPinia } from 'pinia';
 import type { ThemeType } from '@/types/theme';
 import { THEME_COLORS } from '@/types/theme';
 import { useTheme } from '@/composables/useTheme';
@@ -30,48 +31,61 @@ vi.mock('vuetify', () => {
 });
 
 beforeEach(() => {
+  setActivePinia(createPinia());
   mockThemeRef.value = 'development';
+  localStorage.clear();
 });
 
 describe('useTheme', () => {
-  it('should switch theme by environment', () => {
+  it('autoSwitchが有効なら環境に応じてテーマを切り替える', () => {
     const theme = useTheme();
 
     theme.setThemeByEnvironment('production');
     expect(theme.currentTheme.value).toBe('production');
+    expect(theme.currentThemeInfo.value.primary).toBe(THEME_COLORS.production.primary);
+    expect(mockThemeRef.value).toBe('production');
+  });
 
-    theme.setThemeByEnvironment('development');
+  it('autoSwitchが無効ならsetThemeByEnvironmentで切り替わらない', () => {
+    const theme = useTheme();
+    theme.updatePreferences({ autoSwitchTheme: false });
+
+    theme.setThemeByEnvironment('production');
     expect(theme.currentTheme.value).toBe('development');
   });
 
-  it('should return correct theme info', () => {
+  it('警告表示関連のフラグを取得できる', () => {
     const theme = useTheme();
 
-    theme.setThemeByEnvironment('production');
-    expect(theme.currentThemeInfo.value.label).toBe('本番環境');
-    expect(theme.currentThemeInfo.value.primary).toBe('#F44336');
-  });
-
-  it('should detect production theme', () => {
-    const theme = useTheme();
-
-    theme.setThemeByEnvironment('production');
+    theme.store.setTheme('production');
     expect(theme.isProductionTheme.value).toBe(true);
+    expect(theme.needsWarning.value).toBe(true);
+    expect(theme.shouldShowWarning.value).toBe(true);
 
-    theme.setThemeByEnvironment('development');
-    expect(theme.isProductionTheme.value).toBe(false);
+    theme.toggleWarningBanner();
+    expect(theme.shouldShowWarning.value).toBe(false);
   });
 
-  it('should detect warning environments', () => {
+  it('アニメーション設定をトグルできる', () => {
     const theme = useTheme();
 
-    theme.setThemeByEnvironment('production');
-    expect(theme.needsWarning.value).toBe(true);
+    const initial = theme.animationsEnabled.value;
+    theme.toggleAnimations();
+    expect(theme.animationsEnabled.value).toBe(!initial);
+  });
 
-    theme.setThemeByEnvironment('staging');
-    expect(theme.needsWarning.value).toBe(true);
+  it('safeSetThemeで未知のテーマはデフォルトにフォールバックする', () => {
+    const theme = useTheme();
 
-    theme.setThemeByEnvironment('development');
-    expect(theme.needsWarning.value).toBe(false);
+    const result = theme.safeSetTheme('production');
+    expect(result).toBe(true);
+    expect(theme.currentTheme.value).toBe('production');
+    expect(mockThemeRef.value).toBe('production');
+
+    // @ts-expect-error テスト用に未知テーマを渡す
+    const invalidResult = theme.safeSetTheme('unknown');
+    expect(invalidResult).toBe(false);
+    expect(theme.currentTheme.value).toBe(theme.store.defaultTheme);
+    expect(mockThemeRef.value).toBe(theme.store.defaultTheme);
   });
 });
