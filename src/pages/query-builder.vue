@@ -40,55 +40,76 @@
           </EnvironmentHeader>
         </v-app-bar>
 
-      <!-- ローディング状態 -->
-      <v-sheet
-        v-else-if="isLoadingConnection"
-        class="environment-header--placeholder"
-      >
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="32"
-        ></v-progress-circular>
-        <span class="ml-3 text-body-2">接続情報を読み込み中...</span>
-      </v-sheet>
+        <!-- ローディング状態 -->
+        <v-sheet
+          v-else-if="isLoadingConnection"
+          class="environment-header--placeholder"
+        >
+          <v-progress-circular
+            indeterminate
+            color="primary"
+            size="32"
+          ></v-progress-circular>
+          <span class="ml-3 text-body-2">接続情報を読み込み中...</span>
+        </v-sheet>
 
-      <!-- エラー状態 -->
-      <v-alert
-        v-else-if="connectionErrorMessage"
-        type="error"
-        variant="tonal"
-        class="environment-header--error"
-        prominent
-      >
-        {{ connectionErrorMessage }}
-      </v-alert>
+        <!-- エラー状態 -->
+        <v-alert
+          v-else-if="connectionErrorMessage"
+          type="error"
+          variant="tonal"
+          class="environment-header--error"
+          prominent
+        >
+          {{ connectionErrorMessage }}
+        </v-alert>
 
-      <v-main :style="{ backgroundColor: currentThemeInfo.background }">
-        <v-container fluid class="py-6">
-          <v-alert
-            v-if="connectionErrorMessage"
-            type="error"
-            variant="tonal"
-            class="mb-4"
-          >
-            {{ connectionErrorMessage }}
-          </v-alert>
+        <v-main
+          class="query-builder-main"
+          :style="{ backgroundColor: currentThemeInfo.background }"
+        >
+          <div class="query-builder-page">
+            <v-alert
+              v-if="connectionErrorMessage"
+              type="error"
+              variant="tonal"
+              class="mb-4"
+            >
+              {{ connectionErrorMessage }}
+            </v-alert>
 
-          <v-card class="query-builder-placeholder">
-            <v-card-title>クエリビルダー</v-card-title>
-            <v-card-subtitle>
-              接続ID: {{ connectionIdForDisplay || 'unknown' }}
-            </v-card-subtitle>
-            <v-card-text>
-              クエリビルダーの詳細機能は別タスクで実装予定です。現在はテーマ切り替えとウィンドウ起動の挙動を確認できます。
-            </v-card-text>
-          </v-card>
-        </v-container>
-      </v-main>
-    </v-layout>
-  </v-app>
-</WindowEnvironmentProvider>
+            <div
+              v-else-if="isLoadingConnection"
+              class="loading-placeholder"
+            >
+              <v-progress-circular
+                indeterminate
+                color="primary"
+                size="32"
+              ></v-progress-circular>
+              <span class="ml-3 text-body-2">クエリビルダーを準備中です...</span>
+            </div>
+
+            <v-alert
+              v-else-if="!connection"
+              type="warning"
+              variant="tonal"
+              class="mb-4"
+            >
+              接続情報が取得できませんでした。ランチャーから開き直してください。
+            </v-alert>
+
+            <div
+              v-else
+              class="layout-shell"
+            >
+              <QueryBuilderLayout />
+            </div>
+          </div>
+        </v-main>
+      </v-layout>
+    </v-app>
+  </WindowEnvironmentProvider>
 </template>
 
 <script setup lang="ts">
@@ -105,11 +126,12 @@ import WindowEnvironmentProvider from '@/components/common/WindowEnvironmentProv
 import EnvironmentWarningBanner from '@/components/common/EnvironmentWarningBanner.vue';
 import EnvironmentIndicator from '@/components/common/EnvironmentIndicator.vue';
 import { updateCurrentWindowTitle } from '@/utils/windowTitle';
+import QueryBuilderLayout from '@/components/query-builder/QueryBuilderLayout.vue';
 
 const urlParams = new URLSearchParams(window.location.search);
 const connectionStore = useConnectionStore();
 const { availableThemes, safeSetTheme, currentThemeInfo, setThemeByEnvironment } = useTheme();
-const { setConnectionContext, connectionId: windowConnectionId, isQueryBuilder: isQueryBuilderWindow } = useWindow();
+const { setConnectionContext, isQueryBuilder: isQueryBuilderWindow } = useWindow();
 const { mdAndDown } = useDisplay();
 
 const normalizeEnvironment = (value: string | null): ThemeType => {
@@ -129,7 +151,6 @@ const connection = ref<Connection | null>(null);
 const isLoadingConnection = ref(true);
 const connectionError = ref<string | null>(null);
 const isConnected = ref(true);
-const connectionIdForDisplay = computed(() => windowConnectionId.value || connectionId.value);
 
 const connectionErrorMessage = computed(() => connectionError.value ?? '');
 
@@ -242,10 +263,6 @@ onMounted(async () => {
   border-width: 0;
 }
 
-.query-builder-placeholder {
-  min-height: 320px;
-}
-
 .environment-header--placeholder,
 .environment-header--error {
   position: sticky;
@@ -261,6 +278,39 @@ onMounted(async () => {
 .environment-header--placeholder {
   background: rgba(0, 0, 0, 0.35);
   color: #fff;
+}
+
+.query-builder-main {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.query-builder-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.layout-shell {
+  flex: 1;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.loading-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 320px;
+  border: 1px dashed rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 12px;
 }
 
 @media (max-width: 960px) {
