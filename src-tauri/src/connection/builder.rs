@@ -1,7 +1,7 @@
 use super::error::ConnectionError;
 use super::types::{
-    ConnectionConfig, ConnectionInfo, DatabaseType, EnvironmentConfig, EnvironmentType,
-    FileConfig, NetworkConfig,
+    ConnectionConfig, ConnectionInfo, DatabaseType, EnvironmentConfig, EnvironmentType, FileConfig,
+    NetworkConfig,
 };
 
 /// 接続情報ビルダー

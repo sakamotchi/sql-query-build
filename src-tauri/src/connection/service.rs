@@ -1,7 +1,7 @@
-use std::sync::Arc;
-use crate::connection::{ConnectionInfo, ConnectionError, ConnectionConfig};
 use crate::connection::storage::ConnectionStorage;
+use crate::connection::{ConnectionConfig, ConnectionError, ConnectionInfo};
 use crate::crypto::{AesGcmEncryptor, Encryptor, MasterKeyManager};
+use std::sync::Arc;
 
 /// 接続情報のビジネスロジックを管理するサービス
 pub struct ConnectionService {
@@ -45,7 +45,10 @@ impl ConnectionService {
     }
 
     /// 接続情報を作成
-    pub async fn create(&self, connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
+    pub async fn create(
+        &self,
+        connection: ConnectionInfo,
+    ) -> Result<ConnectionInfo, ConnectionError> {
         // バリデーション
         connection.validate()?;
 
@@ -57,7 +60,10 @@ impl ConnectionService {
     }
 
     /// 接続情報を更新
-    pub async fn update(&self, connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
+    pub async fn update(
+        &self,
+        connection: ConnectionInfo,
+    ) -> Result<ConnectionInfo, ConnectionError> {
         // バリデーション
         connection.validate()?;
 
@@ -79,7 +85,10 @@ impl ConnectionService {
     }
 
     /// パスワードを暗号化
-    async fn encrypt_password(&self, mut connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
+    async fn encrypt_password(
+        &self,
+        mut connection: ConnectionInfo,
+    ) -> Result<ConnectionInfo, ConnectionError> {
         // ネットワーク接続の場合のみパスワードを暗号化
         if let ConnectionConfig::Network(ref mut network_config) = connection.connection {
             if let Some(ref password) = network_config.encrypted_password {
@@ -92,7 +101,8 @@ impl ConnectionService {
                 }
 
                 // マスターキーを取得
-                let master_key = self.master_key_manager
+                let master_key = self
+                    .master_key_manager
                     .get_master_key()
                     .await
                     .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
@@ -118,19 +128,23 @@ impl ConnectionService {
     }
 
     /// パスワードを復号化
-    async fn decrypt_password(&self, mut connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
+    async fn decrypt_password(
+        &self,
+        mut connection: ConnectionInfo,
+    ) -> Result<ConnectionInfo, ConnectionError> {
         // ネットワーク接続の場合のみパスワードを復号化
         if let ConnectionConfig::Network(ref mut network_config) = connection.connection {
             if let Some(ref encrypted_password) = network_config.encrypted_password {
                 // マスターキーが初期化されているか確認
                 if !self.master_key_manager.is_initialized() {
                     return Err(ConnectionError::EncryptionError(
-                        "Master key is not initialized".to_string()
+                        "Master key is not initialized".to_string(),
                     ));
                 }
 
                 // マスターキーを取得
-                let master_key = self.master_key_manager
+                let master_key = self
+                    .master_key_manager
                     .get_master_key()
                     .await
                     .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
@@ -139,8 +153,9 @@ impl ConnectionService {
                 let encryptor = AesGcmEncryptor::new();
 
                 // Base64デコードしてEncryptedDataにデシリアライズ
-                let encrypted_data = crate::crypto::types::EncryptedData::from_base64(encrypted_password)
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
+                let encrypted_data =
+                    crate::crypto::types::EncryptedData::from_base64(encrypted_password)
+                        .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
 
                 // 復号化
                 let decrypted = encryptor
@@ -162,9 +177,9 @@ impl ConnectionService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
+    use crate::connection::{ConnectionConfig, DatabaseType, NetworkConfig};
     use crate::storage::FileStorage;
-    use crate::connection::{DatabaseType, ConnectionConfig, NetworkConfig};
+    use tempfile::TempDir;
 
     fn create_test_service() -> (ConnectionService, TempDir) {
         let temp_dir = TempDir::new().unwrap();
@@ -186,11 +201,7 @@ mod tests {
             options: None,
         });
 
-        ConnectionInfo::new(
-            name.to_string(),
-            DatabaseType::PostgreSQL,
-            config,
-        )
+        ConnectionInfo::new(name.to_string(), DatabaseType::PostgreSQL, config)
     }
 
     #[tokio::test]
@@ -255,7 +266,11 @@ mod tests {
         assert_eq!(updated.name, "Updated DB");
 
         // 取得して確認
-        let found = service.get_by_id(&created.id, false).await.unwrap().unwrap();
+        let found = service
+            .get_by_id(&created.id, false)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(found.name, "Updated DB");
     }
 
@@ -282,7 +297,11 @@ mod tests {
         let created = service.create(connection).await.unwrap();
 
         // 最初はNone
-        let found = service.get_by_id(&created.id, false).await.unwrap().unwrap();
+        let found = service
+            .get_by_id(&created.id, false)
+            .await
+            .unwrap()
+            .unwrap();
         assert!(found.metadata.last_connected_at.is_none());
         assert_eq!(found.metadata.connection_count, 0);
 
@@ -290,7 +309,11 @@ mod tests {
         service.mark_as_used(&created.id).unwrap();
 
         // 更新されていることを確認
-        let found = service.get_by_id(&created.id, false).await.unwrap().unwrap();
+        let found = service
+            .get_by_id(&created.id, false)
+            .await
+            .unwrap()
+            .unwrap();
         assert!(found.metadata.last_connected_at.is_some());
         assert_eq!(found.metadata.connection_count, 1);
     }

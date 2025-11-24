@@ -1,16 +1,16 @@
-pub mod crypto;
-pub mod storage;
-pub mod connection;
 pub mod commands;
+pub mod connection;
+pub mod crypto;
 pub mod models;
 pub mod services;
+pub mod storage;
 
+use connection::{ConnectionService, ConnectionStorage};
 use crypto::{MasterKeyManager, SecurityConfigStorage, SecurityProviderManager};
-use storage::{FileStorage, PathManager};
-use connection::{ConnectionStorage, ConnectionService};
 use services::WindowManager;
-use tauri::State;
 use std::sync::Arc;
+use storage::{FileStorage, PathManager};
+use tauri::State;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -25,9 +25,7 @@ async fn storage_write(
     data: serde_json::Value,
     storage: State<'_, FileStorage>,
 ) -> Result<(), String> {
-    storage
-        .write(&key, &data)
-        .map_err(|e| e.to_string())
+    storage.write(&key, &data).map_err(|e| e.to_string())
 }
 
 /// ストレージからデータを読み込む
@@ -36,38 +34,24 @@ async fn storage_read(
     key: String,
     storage: State<'_, FileStorage>,
 ) -> Result<serde_json::Value, String> {
-    storage
-        .read(&key)
-        .map_err(|e| e.to_string())
+    storage.read(&key).map_err(|e| e.to_string())
 }
 
 /// ストレージからデータを削除する
 #[tauri::command]
-async fn storage_delete(
-    key: String,
-    storage: State<'_, FileStorage>,
-) -> Result<(), String> {
-    storage
-        .delete(&key)
-        .map_err(|e| e.to_string())
+async fn storage_delete(key: String, storage: State<'_, FileStorage>) -> Result<(), String> {
+    storage.delete(&key).map_err(|e| e.to_string())
 }
 
 /// ストレージ内の全てのキーを取得する
 #[tauri::command]
-async fn storage_list_keys(
-    storage: State<'_, FileStorage>,
-) -> Result<Vec<String>, String> {
-    storage
-        .list_keys()
-        .map_err(|e| e.to_string())
+async fn storage_list_keys(storage: State<'_, FileStorage>) -> Result<Vec<String>, String> {
+    storage.list_keys().map_err(|e| e.to_string())
 }
 
 /// データが存在するかチェック
 #[tauri::command]
-async fn storage_exists(
-    key: String,
-    storage: State<'_, FileStorage>,
-) -> Result<bool, String> {
+async fn storage_exists(key: String, storage: State<'_, FileStorage>) -> Result<bool, String> {
     Ok(storage.exists(&key))
 }
 
@@ -75,60 +59,43 @@ async fn storage_exists(
 
 /// マスターキーマネージャーの初期化チェック
 #[tauri::command]
-async fn is_master_key_initialized(
-    manager: State<'_, MasterKeyManager>,
-) -> Result<bool, String> {
+async fn is_master_key_initialized(manager: State<'_, MasterKeyManager>) -> Result<bool, String> {
     Ok(manager.is_initialized())
 }
 
 /// マスターキーを初期化
 #[tauri::command]
-async fn initialize_master_key(
-    manager: State<'_, MasterKeyManager>,
-) -> Result<(), String> {
-    manager
-        .initialize()
-        .await
-        .map_err(|e| e.to_string())
+async fn initialize_master_key(manager: State<'_, MasterKeyManager>) -> Result<(), String> {
+    manager.initialize().await.map_err(|e| e.to_string())
 }
 
 /// マスターキーを削除（リセット）
 #[tauri::command]
-async fn delete_master_key(
-    manager: State<'_, MasterKeyManager>,
-) -> Result<(), String> {
-    manager
-        .delete_master_key()
-        .await
-        .map_err(|e| e.to_string())
+async fn delete_master_key(manager: State<'_, MasterKeyManager>) -> Result<(), String> {
+    manager.delete_master_key().await.map_err(|e| e.to_string())
 }
 
 /// マスターキーを再生成
 #[tauri::command]
-async fn regenerate_master_key(
-    manager: State<'_, MasterKeyManager>,
-) -> Result<(), String> {
-    manager
-        .regenerate()
-        .await
-        .map_err(|e| e.to_string())
+async fn regenerate_master_key(manager: State<'_, MasterKeyManager>) -> Result<(), String> {
+    manager.regenerate().await.map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // PathManagerを初期化
-    let path_manager = PathManager::new()
-        .expect("Failed to initialize PathManager");
+    let path_manager = PathManager::new().expect("Failed to initialize PathManager");
 
     // 必要なディレクトリを初期化
-    path_manager.initialize_directories()
+    path_manager
+        .initialize_directories()
         .expect("Failed to initialize directories");
 
     // FileStorageを初期化（接続情報用のストレージ）
-    let file_storage_1 = FileStorage::new(path_manager.data_dir())
-        .expect("Failed to initialize FileStorage");
-    let file_storage_2 = FileStorage::new(path_manager.data_dir())
-        .expect("Failed to initialize FileStorage");
+    let file_storage_1 =
+        FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage");
+    let file_storage_2 =
+        FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage");
     let security_storage = Arc::new(
         FileStorage::new(path_manager.settings_dir())
             .expect("Failed to initialize security FileStorage"),
@@ -144,7 +111,7 @@ pub fn run() {
     // ConnectionServiceを初期化
     let connection_service = ConnectionService::new(
         Arc::clone(&connection_storage),
-        Arc::new(master_key_manager_1)
+        Arc::new(master_key_manager_1),
     );
 
     // セキュリティプロバイダー設定ストレージとマネージャーを初期化
@@ -185,6 +152,9 @@ pub fn run() {
             connection::commands::test_connection,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,
+            commands::security::initialize_master_password,
+            commands::security::unlock_with_master_password,
+            commands::security::check_password_strength,
             commands::window::get_window_environment,
             commands::window::open_query_builder_window,
             commands::window::open_settings_window,

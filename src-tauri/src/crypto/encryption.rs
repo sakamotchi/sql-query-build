@@ -329,7 +329,11 @@ mod tests {
         let duration = start.elapsed();
 
         // 10回で30秒以内に完了することを確認（十分な余裕を持たせる）
-        assert!(duration.as_secs() < 30, "Encryption took {} seconds, expected < 30", duration.as_secs());
+        assert!(
+            duration.as_secs() < 30,
+            "Encryption took {} seconds, expected < 30",
+            duration.as_secs()
+        );
     }
 
     #[test]

@@ -34,11 +34,7 @@ impl EnvironmentInfo {
 
     /// 収集した情報をバイト列にまとめる
     pub(crate) fn to_bytes(&self) -> Vec<u8> {
-        format!(
-            "{}:{}:{}",
-            self.hostname, self.username, self.app_data_path
-        )
-        .into_bytes()
+        format!("{}:{}:{}", self.hostname, self.username, self.app_data_path).into_bytes()
     }
 }
 

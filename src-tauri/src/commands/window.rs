@@ -142,9 +142,7 @@ pub async fn get_saved_window_states(
 
 /// 保存されたウィンドウ状態をクリア
 #[command]
-pub async fn clear_window_states(
-    window_manager: State<'_, WindowManager>,
-) -> Result<(), String> {
+pub async fn clear_window_states(window_manager: State<'_, WindowManager>) -> Result<(), String> {
     window_manager.clear_saved_states()
 }
 

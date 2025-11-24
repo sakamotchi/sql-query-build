@@ -107,7 +107,9 @@ impl SecurityProviderManager {
             SecurityProviderType::Simple => {
                 Ok(Box::new(SimpleProvider::new().with_storage(storage)))
             }
-            SecurityProviderType::MasterPassword => Ok(Box::new(MasterPasswordProvider::new())),
+            SecurityProviderType::MasterPassword => Ok(Box::new(
+                MasterPasswordProvider::new().with_storage(storage),
+            )),
             SecurityProviderType::Keychain => Ok(Box::new(KeychainProvider::new())),
         }
     }

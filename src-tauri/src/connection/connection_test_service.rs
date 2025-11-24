@@ -1,7 +1,7 @@
-use std::time::{Duration, Instant};
+use crate::connection::{ConnectionConfig, ConnectionInfo, DatabaseType};
 use anyhow::{Context, Result};
+use std::time::{Duration, Instant};
 use tokio::time::timeout;
-use crate::connection::{ConnectionInfo, DatabaseType, ConnectionConfig};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,16 +49,16 @@ pub struct ConnectionTestService;
 
 impl ConnectionTestService {
     /// 接続をテスト
-    pub async fn test_connection(connection: &ConnectionInfo, timeout_secs: u64) -> Result<TestConnectionResult> {
+    pub async fn test_connection(
+        connection: &ConnectionInfo,
+        timeout_secs: u64,
+    ) -> Result<TestConnectionResult> {
         let start = Instant::now();
         let timeout_duration = Duration::from_secs(timeout_secs);
         let target = connection_target_description(connection);
 
         // タイムアウト付きで接続テストを実行
-        let result = timeout(
-            timeout_duration,
-            Self::execute_test(connection),
-        ).await;
+        let result = timeout(timeout_duration, Self::execute_test(connection)).await;
 
         let duration = start.elapsed().as_millis() as u64;
 
@@ -85,7 +85,10 @@ impl ConnectionTestService {
             }),
             Err(_) => Ok(TestConnectionResult {
                 success: false,
-                message: format!("接続がタイムアウトしました ({} 秒)", timeout_duration.as_secs()),
+                message: format!(
+                    "接続がタイムアウトしました ({} 秒)",
+                    timeout_duration.as_secs()
+                ),
                 duration: Some(duration),
                 server_version: None,
                 server_info: None,
@@ -128,7 +131,8 @@ impl ConnectionTestService {
             }
         }
 
-        let pool = PgPool::connect_with(options).await
+        let pool = PgPool::connect_with(options)
+            .await
             .context("Failed to connect to PostgreSQL")?;
 
         // サーバー情報を取得
@@ -186,7 +190,8 @@ impl ConnectionTestService {
             }
         }
 
-        let pool = MySqlPool::connect_with(options).await
+        let pool = MySqlPool::connect_with(options)
+            .await
             .context("Failed to connect to MySQL")?;
 
         // サーバー情報を取得
@@ -224,7 +229,8 @@ impl ConnectionTestService {
 
         let options = SqliteConnectOptions::from_str(database_path)?;
 
-        let pool = SqlitePool::connect_with(options).await
+        let pool = SqlitePool::connect_with(options)
+            .await
             .context("Failed to connect to SQLite")?;
 
         // サーバー情報を取得
@@ -246,7 +252,7 @@ impl ConnectionTestService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::connection::{ConnectionConfig, NetworkConfig, FileConfig, SslConfig};
+    use crate::connection::{ConnectionConfig, FileConfig, NetworkConfig, SslConfig};
 
     fn create_test_postgresql_connection() -> ConnectionInfo {
         let config = ConnectionConfig::Network(NetworkConfig {
@@ -278,11 +284,7 @@ mod tests {
             readonly: false,
         });
 
-        ConnectionInfo::new(
-            "Test SQLite".to_string(),
-            DatabaseType::SQLite,
-            config,
-        )
+        ConnectionInfo::new("Test SQLite".to_string(), DatabaseType::SQLite, config)
     }
 
     #[tokio::test]
@@ -313,11 +315,8 @@ mod tests {
             options: None,
         });
 
-        let connection = ConnectionInfo::new(
-            "Timeout Test".to_string(),
-            DatabaseType::PostgreSQL,
-            config,
-        );
+        let connection =
+            ConnectionInfo::new("Timeout Test".to_string(), DatabaseType::PostgreSQL, config);
 
         let result = ConnectionTestService::test_connection(&connection, 1).await;
 

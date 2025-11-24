@@ -1,8 +1,8 @@
+use crate::storage::error::{StorageError, StorageResult};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::RwLock;
-use crate::storage::error::{StorageError, StorageResult};
 
 /// ジェネリックなストレージ操作を定義するトレイト
 pub trait Storage<T>
@@ -197,8 +197,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use serde::{Deserialize, Serialize};
+    use tempfile::TempDir;
 
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
     struct TestData {
@@ -377,6 +377,9 @@ mod tests {
         // 読み込み時にエラーが発生することを確認
         let result: Result<TestData, _> = storage.read("invalid");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), StorageError::SerializationError(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            StorageError::SerializationError(_)
+        ));
     }
 }
