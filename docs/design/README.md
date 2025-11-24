@@ -33,6 +33,18 @@ docs/design/
 ├── 1.5.3_window_independence.md             # ウィンドウ間独立性確保
 ├── 1.5.4_window_title_environment.md        # ウィンドウタイトル・環境色設定
 ├── 1.5.5_window_state_restore.md            # ウィンドウ状態復元機能
+├── 1.5a.1_security_provider_trait.md        # セキュリティプロバイダートレイト設計
+├── 1.5a.2_simple_provider.md                # Simpleプロバイダー実装
+├── 1.5a.3_master_password_provider.md       # MasterPasswordプロバイダー実装
+├── 1.5a.4_keychain_provider.md              # Keychainプロバイダー実装
+├── 1.5a.5_credential_storage.md             # クレデンシャル分離ストレージ
+├── 1.5a.6_security_config_persistence.md    # セキュリティ設定永続化
+├── 1.5a.7_provider_switch.md                # プロバイダー切り替え機能
+├── 1.5a.8_provider_selection_ui.md          # プロバイダー選択UI
+├── 1.5a.9_master_password_setup_dialog.md   # マスターパスワード設定ダイアログ
+├── 1.5a.10_unlock_dialog.md                 # 起動時パスワード入力ダイアログ
+├── 1.5a.11_migration.md                     # 既存データマイグレーション
+├── 1.5a.12_integration_test.md              # セキュリティ機能統合テスト
 ├── 1.6.1_query_builder_layout.md            # クエリビルダー画面レイアウト作成
 ├── 1.6.2_database_structure_api.md          # データベース構造取得API実装
 ├── 1.6.3_database_tree.md                   # 左パネル(DB構造ツリー)実装
@@ -412,6 +424,203 @@ docs/design/
 
 ---
 
+## 📋 WBS 1.5a: セキュリティ情報格納方式変更 設計書一覧
+
+### 1.5a.1 SecurityProviderトレイト設計
+
+**ファイル**: [1.5a.1_security_provider_trait.md](./1.5a.1_security_provider_trait.md)
+
+**概要**: 複数のセキュリティプロバイダーを抽象化するトレイト設計
+
+**主要モジュール**:
+- `SecurityProvider` トレイト定義
+- `SecurityProviderType` enum
+- `ProviderState` enum
+- `SecurityProviderManager` 実装
+
+**工数**: 2日
+
+---
+
+### 1.5a.2 Simpleプロバイダー実装
+
+**ファイル**: [1.5a.2_simple_provider.md](./1.5a.2_simple_provider.md)
+
+**概要**: パスワード不要のデフォルトセキュリティプロバイダー
+
+**主要機能**:
+- 固定キーによる暗号化（APP_SEED + 環境情報 + ユーザーソルト）
+- AES-256-GCM暗号化
+- 自動初期化
+
+**工数**: 2日
+
+---
+
+### 1.5a.3 MasterPasswordプロバイダー実装
+
+**ファイル**: [1.5a.3_master_password_provider.md](./1.5a.3_master_password_provider.md)
+
+**概要**: マスターパスワードから導出した鍵で暗号化するプロバイダー
+
+**主要機能**:
+- PBKDF2による鍵導出（600,000イテレーション）
+- Argon2idによるパスワードハッシュ
+- セッション内鍵キャッシュ
+- パスワード変更機能
+
+**工数**: 3日
+
+---
+
+### 1.5a.4 Keychainプロバイダー実装
+
+**ファイル**: [1.5a.4_keychain_provider.md](./1.5a.4_keychain_provider.md)
+
+**概要**: OSキーチェーンを使用するオプションプロバイダー
+
+**主要機能**:
+- 既存MasterKeyManagerのラッパー
+- macOS/Windows/Linuxキーチェーン対応
+- OS認証による自動アンロック
+
+**工数**: 1日
+
+---
+
+### 1.5a.5 クレデンシャル分離ストレージ実装
+
+**ファイル**: [1.5a.5_credential_storage.md](./1.5a.5_credential_storage.md)
+
+**概要**: パスワードを接続情報から分離して管理するストレージ
+
+**主要機能**:
+- connections.json（接続情報）とcredentials.json（暗号化パスワード）の分離
+- プロバイダー切り替え時の再暗号化対応
+- CredentialEntry/CredentialCollection構造
+
+**工数**: 2日
+
+---
+
+### 1.5a.6 セキュリティ設定永続化実装
+
+**ファイル**: [1.5a.6_security_config_persistence.md](./1.5a.6_security_config_persistence.md)
+
+**概要**: セキュリティプロバイダー設定の永続化
+
+**主要機能**:
+- security-config.json保存
+- プロバイダー固有設定の管理
+- アプリ起動時のプロバイダー復元
+
+**工数**: 1日
+
+---
+
+### 1.5a.7 プロバイダー切り替え機能実装
+
+**ファイル**: [1.5a.7_provider_switch.md](./1.5a.7_provider_switch.md)
+
+**概要**: セキュリティプロバイダー間の安全な切り替え機能
+
+**主要機能**:
+- 全クレデンシャルの再暗号化
+- アトミックな切り替え処理
+- ロールバック機能
+- 進捗通知
+
+**工数**: 2日
+
+---
+
+### 1.5a.8 プロバイダー選択UI実装
+
+**ファイル**: [1.5a.8_provider_selection_ui.md](./1.5a.8_provider_selection_ui.md)
+
+**概要**: セキュリティプロバイダーを選択・設定するUI
+
+**主要コンポーネント**:
+- SecuritySettings.vue - 設定画面
+- SecurityProviderCard.vue - プロバイダー選択カード
+- SecurityLevelIndicator.vue - セキュリティレベル表示
+
+**工数**: 2日
+
+---
+
+### 1.5a.9 マスターパスワード設定ダイアログ実装
+
+**ファイル**: [1.5a.9_master_password_setup_dialog.md](./1.5a.9_master_password_setup_dialog.md)
+
+**概要**: マスターパスワードの新規設定・変更ダイアログ
+
+**主要コンポーネント**:
+- MasterPasswordSetupDialog.vue
+- PasswordStrengthMeter.vue
+- PasswordRequirements.vue
+
+**主要機能**:
+- パスワード強度チェック
+- 確認入力
+- セキュリティガイドライン表示
+
+**工数**: 1日
+
+---
+
+### 1.5a.10 起動時パスワード入力ダイアログ実装
+
+**ファイル**: [1.5a.10_unlock_dialog.md](./1.5a.10_unlock_dialog.md)
+
+**概要**: アプリ起動時のマスターパスワード入力ダイアログ
+
+**主要コンポーネント**:
+- UnlockDialog.vue
+
+**主要機能**:
+- パスワード入力
+- ロックアウト機能（5回失敗で30秒ロック）
+- パスワードリセット確認
+
+**工数**: 1日
+
+---
+
+### 1.5a.11 既存データマイグレーション実装
+
+**ファイル**: [1.5a.11_migration.md](./1.5a.11_migration.md)
+
+**概要**: 既存キーチェーン方式からの安全なデータ移行
+
+**主要機能**:
+- V1（キーチェーン方式）→V2（プロバイダー方式）移行
+- 旧データのバックアップ
+- 部分的エラー時の継続処理
+- マイグレーション状態管理
+
+**工数**: 2日
+
+---
+
+### 1.5a.12 セキュリティ機能統合テスト
+
+**ファイル**: [1.5a.12_integration_test.md](./1.5a.12_integration_test.md)
+
+**概要**: セキュリティ機能全体の統合テスト
+
+**テスト対象**:
+- SimpleProvider/MasterPasswordProvider/KeychainProvider
+- プロバイダー切り替え
+- マイグレーション
+- E2Eテスト
+- パフォーマンステスト
+- セキュリティテスト
+
+**工数**: 2日
+
+---
+
 ## 📋 WBS 1.6: 基本クエリビルダー実装 設計書一覧
 
 ### 1.6.1 クエリビルダー画面レイアウト作成
@@ -618,6 +827,18 @@ docs/design/
 | 1.5.3 | ウィンドウ間独立性確保 | ✅ | 完了 |
 | 1.5.4 | ウィンドウタイトル・環境色設定 | ✅ | 完了 |
 | 1.5.5 | ウィンドウ状態復元機能 | ✅ | 完了 |
+| 1.5a.1 | SecurityProviderトレイト設計 | ✅ | 完了 |
+| 1.5a.2 | Simpleプロバイダー実装 | ✅ | 完了 |
+| 1.5a.3 | MasterPasswordプロバイダー実装 | ✅ | 完了 |
+| 1.5a.4 | Keychainプロバイダー実装 | ✅ | 完了 |
+| 1.5a.5 | クレデンシャル分離ストレージ実装 | ✅ | 完了 |
+| 1.5a.6 | セキュリティ設定永続化実装 | ✅ | 完了 |
+| 1.5a.7 | プロバイダー切り替え機能実装 | ✅ | 完了 |
+| 1.5a.8 | プロバイダー選択UI実装 | ✅ | 完了 |
+| 1.5a.9 | マスターパスワード設定ダイアログ実装 | ✅ | 完了 |
+| 1.5a.10 | 起動時パスワード入力ダイアログ実装 | ✅ | 完了 |
+| 1.5a.11 | 既存データマイグレーション実装 | ✅ | 完了 |
+| 1.5a.12 | セキュリティ機能統合テスト | ✅ | 完了 |
 | 1.6.1 | クエリビルダー画面レイアウト作成 | ✅ | 完了 |
 | 1.6.2 | データベース構造取得API実装 | ✅ | 完了 |
 | 1.6.3 | 左パネル（DB構造ツリー）実装 | ✅ | 完了 |
@@ -627,7 +848,7 @@ docs/design/
 | 1.6.7 | クエリオブジェクトモデル定義 | ✅ | 完了 |
 | 1.6.8 | SQL生成エンジン（SELECT/WHERE）実装 | ✅ | 完了 |
 
-**フェーズ1 合計工数**: 41.5日 (1.2系: 5.5日 + 1.3系: 13日 + 1.4系: 5日 + 1.5系: 7日 + 1.6系: 14日)
+**フェーズ1 合計工数**: 62.5日 (1.2系: 5.5日 + 1.3系: 13日 + 1.4系: 5日 + 1.5系: 7日 + 1.5a系: 21日 + 1.6系: 14日)
 
 ---
 
@@ -674,6 +895,20 @@ docs/design/
    - 1.5.3 ウィンドウ間独立性確保
    - 1.5.4 ウィンドウタイトル・環境色設定
    - 1.5.5 ウィンドウ状態復元機能
+
+#### ステップ7.5: セキュリティ情報格納方式変更 (1.5a系)
+   - 1.5a.1 SecurityProviderトレイト設計
+   - 1.5a.2 Simpleプロバイダー実装
+   - 1.5a.3 MasterPasswordプロバイダー実装
+   - 1.5a.4 Keychainプロバイダー実装
+   - 1.5a.5 クレデンシャル分離ストレージ実装
+   - 1.5a.6 セキュリティ設定永続化実装
+   - 1.5a.7 プロバイダー切り替え機能実装
+   - 1.5a.8 プロバイダー選択UI実装
+   - 1.5a.9 マスターパスワード設定ダイアログ実装
+   - 1.5a.10 起動時パスワード入力ダイアログ実装
+   - 1.5a.11 既存データマイグレーション実装
+   - 1.5a.12 セキュリティ機能統合テスト
 
 #### ステップ8: 基本クエリビルダー実装 (1.6系)
    - 1.6.1 クエリビルダー画面レイアウト作成
@@ -742,5 +977,5 @@ docs/design/
 
 ---
 
-**最終更新日**: 2025-11-23
+**最終更新日**: 2025-11-24
 **作成者**: Claude Code
