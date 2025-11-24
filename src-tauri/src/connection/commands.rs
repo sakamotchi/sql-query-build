@@ -1,5 +1,11 @@
 use tauri::State;
-use crate::connection::{ConnectionInfo, FrontendConnection, service::ConnectionService};
+use crate::connection::{
+    ConnectionConfig,
+    ConnectionInfo,
+    ConnectionTestService,
+    FrontendConnection,
+    service::ConnectionService,
+};
 
 /// すべての接続情報を取得
 #[tauri::command]
@@ -87,20 +93,46 @@ pub async fn mark_connection_used(
 /// 接続をテスト（実際にDBに接続してみる）
 #[tauri::command]
 pub async fn test_connection(
-    id: String,
+    connection: Option<FrontendConnection>,
+    id: Option<String>,
+    timeout: Option<u64>,
     service: State<'_, ConnectionService>,
 ) -> Result<crate::connection::TestConnectionResult, String> {
-    use crate::connection::ConnectionTestService;
+    let timeout_secs = timeout.unwrap_or(30);
 
-    // 接続情報を取得（パスワード復号化あり）
-    let connection = service
-        .get_by_id(&id, true)
-        .await
-        .map_err(|e| format!("Failed to get connection: {}", e))?
-        .ok_or_else(|| "Connection not found".to_string())?;
+    // 1. フロントから送られた接続情報を優先
+    let connection = if let Some(frontend_conn) = connection {
+        let provided_password = frontend_conn.password.clone();
+        let mut conn_info: ConnectionInfo = frontend_conn
+            .try_into()
+            .map_err(|e: String| format!("Failed to convert connection: {}", e))?;
+
+        // save_passwordがfalseでも、テスト用途では入力されたパスワードを利用する
+        if let ConnectionConfig::Network(ref mut network) = conn_info.connection {
+            if network.encrypted_password.is_none() && !provided_password.is_empty() {
+                network.encrypted_password = Some(provided_password);
+            }
+        }
+
+        conn_info
+    } else if let Some(id) = id {
+        // 2. ID指定がある場合はストレージから取得（パスワード復号化あり）
+        service
+            .get_by_id(&id, true)
+            .await
+            .map_err(|e| format!("Failed to get connection: {}", e))?
+            .ok_or_else(|| "Connection not found".to_string())?
+    } else {
+        return Err("Connection data is required for testing".to_string());
+    };
+
+    // バリデーション
+    connection
+        .validate()
+        .map_err(|e| format!("Validation error: {}", e))?;
 
     // 接続テストを実行（デフォルトタイムアウト30秒）
-    ConnectionTestService::test_connection(&connection, 30)
+    ConnectionTestService::test_connection(&connection, timeout_secs)
         .await
         .map_err(|e| format!("Connection test failed: {}", e))
 }

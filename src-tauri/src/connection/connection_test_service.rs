@@ -4,6 +4,7 @@ use tokio::time::timeout;
 use crate::connection::{ConnectionInfo, DatabaseType, ConnectionConfig};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TestConnectionResult {
     pub success: bool,
     pub message: String,
@@ -14,11 +15,34 @@ pub struct TestConnectionResult {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServerInfo {
     pub version: String,
     pub database_name: String,
     pub current_user: String,
     pub encoding: Option<String>,
+}
+
+fn connection_target_description(connection: &ConnectionInfo) -> String {
+    match &connection.connection {
+        ConnectionConfig::Network(net) => {
+            let scheme = match connection.database_type {
+                DatabaseType::PostgreSQL => "postgresql",
+                DatabaseType::MySQL => "mysql",
+                DatabaseType::SQLite => "sqlite",
+            };
+            format!("{}://{}:{}/{}", scheme, net.host, net.port, net.database)
+        }
+        ConnectionConfig::File(file) => format!("sqlite:{}", file.file_path),
+    }
+}
+
+fn error_chain_to_string(error: &anyhow::Error) -> String {
+    error
+        .chain()
+        .map(|e| e.to_string())
+        .collect::<Vec<_>>()
+        .join("\nCaused by: ")
 }
 
 pub struct ConnectionTestService;
@@ -28,6 +52,7 @@ impl ConnectionTestService {
     pub async fn test_connection(connection: &ConnectionInfo, timeout_secs: u64) -> Result<TestConnectionResult> {
         let start = Instant::now();
         let timeout_duration = Duration::from_secs(timeout_secs);
+        let target = connection_target_description(connection);
 
         // タイムアウト付きで接続テストを実行
         let result = timeout(
@@ -48,11 +73,15 @@ impl ConnectionTestService {
             }),
             Ok(Err(e)) => Ok(TestConnectionResult {
                 success: false,
-                message: "接続に失敗しました".to_string(),
+                message: format!("接続に失敗しました ({})", target),
                 duration: Some(duration),
                 server_version: None,
                 server_info: None,
-                error_details: Some(e.to_string()),
+                error_details: Some(format!(
+                    "ターゲット: {}\n原因: {}",
+                    target,
+                    error_chain_to_string(&e)
+                )),
             }),
             Err(_) => Ok(TestConnectionResult {
                 success: false,
@@ -60,7 +89,7 @@ impl ConnectionTestService {
                 duration: Some(duration),
                 server_version: None,
                 server_info: None,
-                error_details: Some("Connection timeout".to_string()),
+                error_details: Some(format!("ターゲット: {}\n原因: Connection timeout", target)),
             }),
         }
     }
