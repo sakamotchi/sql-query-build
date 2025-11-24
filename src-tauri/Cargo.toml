@@ -40,6 +40,8 @@ sha2 = "0.10"
 rand = "0.8"
 zeroize = { version = "1.6", features = ["derive"] }
 base64 = "0.21"
+hostname = "0.3"
+whoami = "1.5"
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 
 # ストレージモジュール用

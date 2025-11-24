@@ -11,6 +11,7 @@ use super::types::{
     InitializeParams, ProviderState, SecurityProviderConfig, SecurityProviderInfo,
     SecurityProviderType, UnlockParams,
 };
+use crate::storage::FileStorage;
 
 /// セキュリティプロバイダー設定の永続化ストレージ
 #[derive(Debug)]
@@ -76,26 +77,36 @@ pub struct SecurityProviderManager {
 
     /// 設定ストレージ
     config_storage: Arc<SecurityConfigStorage>,
+
+    /// プロバイダーで使用する共通ストレージ
+    storage: Arc<FileStorage>,
 }
 
 impl SecurityProviderManager {
     /// 新しいマネージャーを作成
-    pub async fn new(config_storage: Arc<SecurityConfigStorage>) -> SecurityProviderResult<Self> {
+    pub async fn new(
+        config_storage: Arc<SecurityConfigStorage>,
+        storage: Arc<FileStorage>,
+    ) -> SecurityProviderResult<Self> {
         let config = config_storage.load().await?;
-        let provider = Self::create_provider(config.provider_type)?;
+        let provider = Self::create_provider(config.provider_type, Arc::clone(&storage))?;
 
         Ok(Self {
             provider: Arc::new(RwLock::new(provider)),
             config_storage,
+            storage,
         })
     }
 
     /// プロバイダーを作成
     fn create_provider(
         provider_type: SecurityProviderType,
+        storage: Arc<FileStorage>,
     ) -> SecurityProviderResult<Box<dyn SecurityProvider>> {
         match provider_type {
-            SecurityProviderType::Simple => Ok(Box::new(SimpleProvider::new())),
+            SecurityProviderType::Simple => {
+                Ok(Box::new(SimpleProvider::new().with_storage(storage)))
+            }
             SecurityProviderType::MasterPassword => Ok(Box::new(MasterPasswordProvider::new())),
             SecurityProviderType::Keychain => Ok(Box::new(KeychainProvider::new())),
         }
@@ -149,7 +160,7 @@ impl SecurityProviderManager {
         // 認証情報を再暗号化
         // 設定を保存
 
-        let new_provider = Self::create_provider(new_type)?;
+        let new_provider = Self::create_provider(new_type, Arc::clone(&self.storage))?;
 
         let mut provider = self.provider.write().await;
         *provider = new_provider;
