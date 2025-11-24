@@ -301,7 +301,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [connection: Connection];
   cancel: [];
-  'test-connection': [connection: Partial<Connection>];
+  'test-connection': [connection: Connection];
 }>();
 
 // フォーム状態
@@ -410,6 +410,15 @@ const initializeForm = () => {
   }
 };
 
+const buildConnectionData = (): Connection => {
+  return {
+    id: props.connection?.id || crypto.randomUUID(),
+    ...formData,
+    createdAt: props.connection?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+};
+
 // 保存処理
 const handleSave = async () => {
   // Vuetify 3のvalidateは{ valid: boolean }を返す
@@ -423,12 +432,7 @@ const handleSave = async () => {
 
   savingConnection.value = true;
 
-  const connectionData: Connection = {
-    id: props.connection?.id || crypto.randomUUID(),
-    ...formData,
-    createdAt: props.connection?.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  const connectionData = buildConnectionData();
 
   console.log('保存するデータ:', connectionData);
   emit('save', connectionData);
@@ -453,7 +457,7 @@ const handleTestConnection = async () => {
   }
 
   testingConnection.value = true;
-  emit('test-connection', formData);
+  emit('test-connection', buildConnectionData());
 };
 
 // 接続テスト結果を親から受け取る

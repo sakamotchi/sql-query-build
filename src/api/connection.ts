@@ -82,18 +82,14 @@ export class ConnectionAPI {
   /**
    * 接続をテスト
    */
-  static async testConnection(id: string): Promise<TestConnectionResult> {
+  static async testConnection(connection: Connection): Promise<TestConnectionResult> {
     try {
-      const message = await invoke<string>('test_connection', { id });
-      return {
-        success: true,
-        message,
-      };
+      return await invoke<TestConnectionResult>('test_connection', {
+        connection,
+        timeout: connection.timeout,
+      });
     } catch (error) {
-      return {
-        success: false,
-        message: `接続テストに失敗しました: ${error}`,
-      };
+      throw new Error(`接続テストに失敗しました: ${error}`);
     }
   }
 }
@@ -103,4 +99,11 @@ export interface TestConnectionResult {
   message: string;
   duration?: number; // ミリ秒
   serverVersion?: string;
+  serverInfo?: {
+    version: string;
+    databaseName: string;
+    currentUser: string;
+    encoding?: string;
+  };
+  errorDetails?: string;
 }

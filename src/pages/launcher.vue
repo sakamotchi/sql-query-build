@@ -85,6 +85,80 @@
       {{ testResult.message }}
     </v-snackbar>
 
+    <!-- 接続テスト結果ダイアログ -->
+    <v-dialog v-model="showTestResultDialog" max-width="640px">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon
+            class="mr-2"
+            :color="testResult.success ? 'success' : 'error'"
+          >
+            {{ testResult.success ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+          </v-icon>
+          <span>接続テスト結果</span>
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="showTestResultDialog = false"></v-btn>
+        </v-card-title>
+
+        <v-divider></v-divider>
+
+        <v-card-text>
+          <div class="text-subtitle-1 mb-1">
+            {{ testResult.message }}
+          </div>
+          <div v-if="testResult.duration" class="text-body-2 text-grey-darken-1">
+            所要時間: {{ testResult.duration }} ms
+          </div>
+
+          <div v-if="testResult.success && testResult.serverInfo" class="mt-4">
+            <div class="text-subtitle-2 mb-2">サーバー情報</div>
+            <v-list density="compact" lines="two">
+              <v-list-item title="バージョン" :subtitle="testResult.serverInfo.version" />
+              <v-list-item title="データベース" :subtitle="testResult.serverInfo.databaseName" />
+              <v-list-item title="ユーザー" :subtitle="testResult.serverInfo.currentUser" />
+              <v-list-item
+                v-if="testResult.serverInfo.encoding"
+                title="エンコーディング"
+                :subtitle="testResult.serverInfo.encoding"
+              />
+            </v-list>
+          </div>
+
+          <div v-else-if="!testResult.success" class="mt-4">
+            <div class="text-subtitle-2 mb-2">詳細</div>
+            <v-btn
+              v-if="testResult.errorDetails"
+              size="small"
+              variant="text"
+              color="primary"
+              @click="showErrorDetails = !showErrorDetails"
+            >
+              {{ showErrorDetails ? '詳細を隠す' : '詳細を表示' }}
+            </v-btn>
+            <v-expand-transition>
+              <v-card
+                v-if="showErrorDetails && testResult.errorDetails"
+                variant="tonal"
+                color="error"
+                class="mt-2 pa-3"
+              >
+                <div class="text-body-2" style="white-space: pre-wrap;">
+                  {{ testResult.errorDetails }}
+                </div>
+              </v-card>
+            </v-expand-transition>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="flat" @click="showTestResultDialog = false">
+            閉じる
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 編集中のローディングオーバーレイ -->
     <v-overlay
       v-model="loadingEdit"
@@ -104,11 +178,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { Connection } from '@/types/connection'
-import { useConnectionStore } from '@/stores/connection'
 import { storeToRefs } from 'pinia'
 import { ask } from '@tauri-apps/plugin-dialog'
 import { useTheme } from '@/composables/useTheme'
 import { windowApi } from '@/api/window'
+import { ConnectionAPI, type TestConnectionResult } from '@/api/connection'
+import { useConnectionStore } from '@/stores/connection'
+import { getUserFriendlyErrorMessage } from '@/utils/errorHandler'
 import LauncherAppBar from '@/components/connection/LauncherAppBar.vue'
 import LauncherToolbar from '@/components/connection/LauncherToolbar.vue'
 import ActiveFilters from '@/components/connection/ActiveFilters.vue'
@@ -135,7 +211,12 @@ const loadingEdit = ref(false)
 
 // 接続テスト結果
 const showTestResult = ref(false)
-const testResult = ref({ success: false, message: '' })
+const showTestResultDialog = ref(false)
+const showErrorDetails = ref(false)
+const testResult = ref<TestConnectionResult>({
+  success: false,
+  message: '',
+})
 
 // アクティブフィルターがあるかチェック
 const hasActiveFilters = computed(() => {
@@ -298,23 +379,42 @@ const handleCancelForm = () => {
   editingConnection.value = undefined
 }
 
-const handleTestConnection = async (connection: Partial<Connection>) => {
+const handleTestConnection = async (connection: Connection) => {
   console.log('接続テスト:', connection)
 
-  // TODO: Tauri経由でバックエンドの接続テスト処理を呼び出し
-  // 仮の処理
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    if (!isTauriEnvironment) {
+      testResult.value = {
+        success: false,
+        message: '接続テストはTauri環境でのみ実行できます',
+      }
+      showErrorDetails.value = false
+      showTestResultDialog.value = true
+      showTestResult.value = true
+      return
+    }
 
-  // ランダムで成功/失敗をシミュレート
-  const success = Math.random() > 0.3
-
-  testResult.value = {
-    success,
-    message: success
-      ? '接続に成功しました'
-      : '接続に失敗しました。設定を確認してください'
+    const result = await ConnectionAPI.testConnection(connection)
+    testResult.value = {
+      success: result.success,
+      message: result.message,
+      duration: result.duration,
+      serverInfo: result.serverInfo,
+      errorDetails: result.errorDetails,
+    }
+  } catch (error) {
+    console.error('接続テストでエラーが発生しました:', error)
+    testResult.value = {
+      success: false,
+      message: getUserFriendlyErrorMessage(error),
+      errorDetails: error instanceof Error ? error.message : String(error),
+    }
+  } finally {
+    showErrorDetails.value = false
+    showTestResult.value = true
+    showTestResultDialog.value = true
+    connectionFormRef.value?.finishTestConnection()
   }
-  showTestResult.value = true
 }
 
 // 接続情報の読み込み
