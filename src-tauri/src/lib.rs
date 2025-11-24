@@ -129,6 +129,10 @@ pub fn run() {
         .expect("Failed to initialize FileStorage");
     let file_storage_2 = FileStorage::new(path_manager.data_dir())
         .expect("Failed to initialize FileStorage");
+    let security_storage = Arc::new(
+        FileStorage::new(path_manager.settings_dir())
+            .expect("Failed to initialize security FileStorage"),
+    );
 
     // MasterKeyManagerを初期化
     let master_key_manager_1 = MasterKeyManager::new();
@@ -148,6 +152,7 @@ pub fn run() {
     let security_provider_manager = Arc::new(
         tauri::async_runtime::block_on(SecurityProviderManager::new(
             Arc::clone(&security_config_storage),
+            Arc::clone(&security_storage),
         ))
         .expect("Failed to initialize SecurityProviderManager"),
     );

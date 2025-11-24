@@ -2,6 +2,7 @@ pub mod error;
 pub mod keychain;
 pub mod manager;
 pub mod master_password;
+mod simple_key;
 pub mod simple;
 pub mod traits;
 pub mod types;
