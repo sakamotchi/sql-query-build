@@ -1,26 +1,35 @@
 use crate::connection::storage::ConnectionStorage;
 use crate::connection::{ConnectionConfig, ConnectionError, ConnectionInfo};
-use crate::crypto::{AesGcmEncryptor, Encryptor, MasterKeyManager};
+use crate::crypto::{decrypt_string, CredentialStorage, MasterKeyManager};
 use std::sync::Arc;
 
 /// 接続情報のビジネスロジックを管理するサービス
 pub struct ConnectionService {
     storage: Arc<ConnectionStorage>,
+    credential_storage: Arc<CredentialStorage>,
     master_key_manager: Arc<MasterKeyManager>,
 }
 
 impl ConnectionService {
     /// 新しいConnectionServiceインスタンスを作成
-    pub fn new(storage: Arc<ConnectionStorage>, master_key_manager: Arc<MasterKeyManager>) -> Self {
+    pub fn new(
+        storage: Arc<ConnectionStorage>,
+        credential_storage: Arc<CredentialStorage>,
+        master_key_manager: Arc<MasterKeyManager>,
+    ) -> Self {
         Self {
             storage,
+            credential_storage,
             master_key_manager,
         }
     }
 
-    /// すべての接続情報を取得（パスワードは暗号化されたまま）
+    /// すべての接続情報を取得（パスワードは含めない）
     pub fn get_all(&self) -> Result<Vec<ConnectionInfo>, ConnectionError> {
-        let connections = self.storage.get_all()?;
+        let mut connections = self.storage.get_all()?;
+        connections
+            .iter_mut()
+            .for_each(Self::strip_password_field);
         Ok(connections)
     }
 
@@ -31,17 +40,40 @@ impl ConnectionService {
         id: &str,
         include_password_decrypted: bool,
     ) -> Result<Option<ConnectionInfo>, ConnectionError> {
-        let connection = self.storage.get_by_id(id)?;
+        let mut connection = match self.storage.get_by_id(id)? {
+            Some(conn) => conn,
+            None => return Ok(None),
+        };
 
-        if let Some(mut conn) = connection {
-            if include_password_decrypted {
-                // パスワードを復号化
-                conn = self.decrypt_password(conn).await?;
+        let legacy_password = Self::take_password_field(&mut connection);
+        let mut password: Option<String> = None;
+
+        if include_password_decrypted {
+            password = self
+                .credential_storage
+                .get_password(&connection.id)
+                .await
+                .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+
+            if password.is_none() {
+                if let Some(encrypted) = legacy_password {
+                    if let Ok(decrypted) = self.decrypt_legacy_password(&encrypted).await {
+                        // 取得できた場合は新ストレージに保存を試みる（失敗しても致命的ではない）
+                        let _ = self
+                            .credential_storage
+                            .save(&connection.id, Some(&decrypted), None, None)
+                            .await;
+                        password = Some(decrypted);
+                    }
+                }
             }
-            Ok(Some(conn))
-        } else {
-            Ok(None)
         }
+
+        if let Some(pwd) = password {
+            Self::apply_password(&mut connection, &pwd);
+        }
+
+        Ok(Some(connection))
     }
 
     /// 接続情報を作成
@@ -49,14 +81,20 @@ impl ConnectionService {
         &self,
         connection: ConnectionInfo,
     ) -> Result<ConnectionInfo, ConnectionError> {
-        // バリデーション
+        let mut connection = connection;
         connection.validate()?;
 
-        // パスワードを暗号化
-        let encrypted_connection = self.encrypt_password(connection).await?;
+        let password = Self::take_password_field(&mut connection);
+        let saved = self.storage.create(connection)?;
 
-        // ストレージに保存
-        self.storage.create(encrypted_connection)
+        if let Some(pwd) = password {
+            self.credential_storage
+                .save(&saved.id, Some(&pwd), None, None)
+                .await
+                .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+        }
+
+        Ok(saved)
     }
 
     /// 接続情報を更新
@@ -64,18 +102,25 @@ impl ConnectionService {
         &self,
         connection: ConnectionInfo,
     ) -> Result<ConnectionInfo, ConnectionError> {
-        // バリデーション
+        let mut connection = connection;
         connection.validate()?;
 
-        // パスワードを暗号化
-        let encrypted_connection = self.encrypt_password(connection).await?;
+        let password = Self::take_password_field(&mut connection);
+        let updated = self.storage.update(connection)?;
 
-        // ストレージに保存
-        self.storage.update(encrypted_connection)
+        if let Some(pwd) = password {
+            self.credential_storage
+                .save(&updated.id, Some(&pwd), None, None)
+                .await
+                .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+        }
+
+        Ok(updated)
     }
 
     /// 接続情報を削除
-    pub fn delete(&self, id: &str) -> Result<(), ConnectionError> {
+    pub async fn delete(&self, id: &str) -> Result<(), ConnectionError> {
+        let _ = self.credential_storage.delete(id).await;
         self.storage.delete(id)
     }
 
@@ -84,93 +129,45 @@ impl ConnectionService {
         self.storage.update_last_used(id)
     }
 
-    /// パスワードを暗号化
-    async fn encrypt_password(
-        &self,
-        mut connection: ConnectionInfo,
-    ) -> Result<ConnectionInfo, ConnectionError> {
-        // ネットワーク接続の場合のみパスワードを暗号化
+    /// 接続情報からパスワードを取り除き、取り出した値を返す
+    fn take_password_field(connection: &mut ConnectionInfo) -> Option<String> {
         if let ConnectionConfig::Network(ref mut network_config) = connection.connection {
-            if let Some(ref password) = network_config.encrypted_password {
-                // マスターキーが初期化されているか確認
-                if !self.master_key_manager.is_initialized() {
-                    self.master_key_manager
-                        .initialize()
-                        .await
-                        .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-                }
-
-                // マスターキーを取得
-                let master_key = self
-                    .master_key_manager
-                    .get_master_key()
-                    .await
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-
-                // 暗号化サービスを作成
-                let encryptor = AesGcmEncryptor::new();
-
-                // パスワードを暗号化
-                let encrypted = encryptor
-                    .encrypt(password.as_bytes(), &master_key)
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-
-                // Base64エンコードして保存
-                let encrypted_base64 = encrypted
-                    .to_base64()
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-
-                network_config.encrypted_password = Some(encrypted_base64);
-            }
+            let value = network_config.encrypted_password.take();
+            return value.and_then(|p| if p.is_empty() { None } else { Some(p) });
         }
-
-        Ok(connection)
+        None
     }
 
-    /// パスワードを復号化
-    async fn decrypt_password(
-        &self,
-        mut connection: ConnectionInfo,
-    ) -> Result<ConnectionInfo, ConnectionError> {
-        // ネットワーク接続の場合のみパスワードを復号化
+    /// 接続情報へ平文パスワードを適用
+    fn apply_password(connection: &mut ConnectionInfo, password: &str) {
         if let ConnectionConfig::Network(ref mut network_config) = connection.connection {
-            if let Some(ref encrypted_password) = network_config.encrypted_password {
-                // マスターキーが初期化されているか確認
-                if !self.master_key_manager.is_initialized() {
-                    return Err(ConnectionError::EncryptionError(
-                        "Master key is not initialized".to_string(),
-                    ));
-                }
+            network_config.encrypted_password = Some(password.to_string());
+        }
+    }
 
-                // マスターキーを取得
-                let master_key = self
-                    .master_key_manager
-                    .get_master_key()
-                    .await
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
+    /// 接続情報からパスワードを除去
+    fn strip_password_field(connection: &mut ConnectionInfo) {
+        if let ConnectionConfig::Network(ref mut network_config) = connection.connection {
+            network_config.encrypted_password = None;
+        }
+    }
 
-                // 暗号化サービスを作成
-                let encryptor = AesGcmEncryptor::new();
-
-                // Base64デコードしてEncryptedDataにデシリアライズ
-                let encrypted_data =
-                    crate::crypto::types::EncryptedData::from_base64(encrypted_password)
-                        .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-
-                // 復号化
-                let decrypted = encryptor
-                    .decrypt(&encrypted_data, &master_key)
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-
-                // 文字列に変換
-                let password = String::from_utf8(decrypted)
-                    .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
-
-                network_config.encrypted_password = Some(password);
-            }
+    /// 旧形式の暗号化パスワードを復号化（MasterKeyManager利用）
+    async fn decrypt_legacy_password(&self, encrypted_password: &str) -> Result<String, ConnectionError> {
+        if !self.master_key_manager.is_initialized() {
+            return Err(ConnectionError::EncryptionError(
+                "Master key is not initialized".to_string(),
+            ));
         }
 
-        Ok(connection)
+        let master_key = self
+            .master_key_manager
+            .get_master_key()
+            .await
+            .map_err(|e| ConnectionError::EncryptionError(e.to_string()))?;
+
+        decrypt_string(encrypted_password, &master_key)
+            .map_err(|e| ConnectionError::EncryptionError(e.to_string()))
     }
 }
 
@@ -178,15 +175,31 @@ impl ConnectionService {
 mod tests {
     use super::*;
     use crate::connection::{ConnectionConfig, DatabaseType, NetworkConfig};
+    use crate::crypto::{CredentialStorage, SecurityConfigStorage, SecurityProviderManager};
     use crate::storage::FileStorage;
+    use std::sync::Arc;
     use tempfile::TempDir;
 
-    fn create_test_service() -> (ConnectionService, TempDir) {
+    async fn create_test_service() -> (ConnectionService, TempDir) {
         let temp_dir = TempDir::new().unwrap();
-        let file_storage = Arc::new(FileStorage::new(temp_dir.path().to_path_buf()).unwrap());
-        let storage = Arc::new(ConnectionStorage::new(file_storage));
+        let data_dir = temp_dir.path().join("data");
+        let settings_dir = temp_dir.path().join("settings");
+
+        let data_storage = Arc::new(FileStorage::new(data_dir).unwrap());
+        let provider_storage = Arc::new(FileStorage::new(settings_dir.clone()).unwrap());
+        let config_storage = Arc::new(SecurityConfigStorage::new(settings_dir));
+        let provider_manager = Arc::new(
+            SecurityProviderManager::new(config_storage, Arc::clone(&provider_storage))
+                .await
+                .unwrap(),
+        );
+
+        let credential_storage =
+            Arc::new(CredentialStorage::new(Arc::clone(&data_storage), provider_manager));
+        let storage = Arc::new(ConnectionStorage::new(Arc::clone(&data_storage)));
         let master_key_manager = Arc::new(MasterKeyManager::new());
-        let service = ConnectionService::new(storage, master_key_manager);
+        let service =
+            ConnectionService::new(storage, credential_storage, master_key_manager);
         (service, temp_dir)
     }
 
@@ -206,7 +219,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_connection() {
-        let (service, _temp) = create_test_service();
+        let (service, _temp) = create_test_service().await;
 
         let connection = create_test_connection("Test DB");
         let result = service.create(connection.clone()).await.unwrap();
@@ -217,7 +230,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_all_connections() {
-        let (service, _temp) = create_test_service();
+        let (service, _temp) = create_test_service().await;
 
         // 初期状態では空
         let connections = service.get_all().unwrap();
@@ -236,7 +249,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_by_id() {
-        let (service, _temp) = create_test_service();
+        let (service, _temp) = create_test_service().await;
 
         let connection = create_test_connection("Test DB");
         let created = service.create(connection).await.unwrap();
@@ -253,7 +266,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_connection() {
-        let (service, _temp) = create_test_service();
+        let (service, _temp) = create_test_service().await;
 
         let mut connection = create_test_connection("Test DB");
         let created = service.create(connection.clone()).await.unwrap();
@@ -276,13 +289,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_connection() {
-        let (service, _temp) = create_test_service();
+        let (service, _temp) = create_test_service().await;
 
         let connection = create_test_connection("Test DB");
         let created = service.create(connection).await.unwrap();
 
         // 削除
-        service.delete(&created.id).unwrap();
+        service.delete(&created.id).await.unwrap();
 
         // 取得できないことを確認
         let found = service.get_by_id(&created.id, false).await.unwrap();
@@ -291,7 +304,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mark_as_used() {
-        let (service, _temp) = create_test_service();
+        let (service, _temp) = create_test_service().await;
 
         let connection = create_test_connection("Test DB");
         let created = service.create(connection).await.unwrap();

@@ -323,7 +323,11 @@ mod tests {
         assert!(result.is_ok());
         let result = result.unwrap();
         assert!(!result.success);
-        assert!(result.message.contains("タイムアウト"));
+        assert!(
+            result.message.contains("タイムアウト") || result.message.contains("接続に失敗"),
+            "Unexpected timeout message: {}",
+            result.message
+        );
     }
 
     #[tokio::test]

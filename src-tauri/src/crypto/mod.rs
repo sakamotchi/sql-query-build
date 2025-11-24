@@ -9,8 +9,9 @@ pub use encryption::{decrypt_string, encrypt_string, AesGcmEncryptor, Encryptor}
 pub use error::{CryptoError, CryptoResult};
 pub use master_key::{MasterKeyError, MasterKeyManager, MasterKeyResult};
 pub use security_provider::{
-    InitializeParams, ProviderState, SecurityConfigStorage, SecurityProvider,
-    SecurityProviderError, SecurityProviderInfo, SecurityProviderManager, SecurityProviderResult,
-    SecurityProviderType, UnlockParams,
+    CredentialCollection, CredentialEntry, CredentialError, CredentialStorage, InitializeParams,
+    ProviderState, SecurityConfigStorage, SecurityProvider, SecurityProviderError,
+    SecurityProviderInfo, SecurityProviderManager, SecurityProviderResult, SecurityProviderType,
+    UnlockParams,
 };
 pub use types::{EncryptedData, EncryptionKey};
