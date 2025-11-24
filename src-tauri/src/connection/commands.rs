@@ -78,6 +78,7 @@ pub async fn delete_connection(
 ) -> Result<(), String> {
     service
         .delete(&id)
+        .await
         .map_err(|e| format!("Failed to delete connection: {}", e))
 }
 

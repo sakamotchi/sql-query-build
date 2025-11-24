@@ -3,6 +3,7 @@ pub mod keychain;
 pub mod manager;
 pub mod master_password;
 pub mod password_validator;
+pub mod credential_storage;
 pub mod simple;
 mod simple_key;
 pub mod traits;
@@ -15,6 +16,7 @@ pub use master_password::MasterPasswordProvider;
 pub use password_validator::{
     PasswordRequirements, PasswordStrength, PasswordValidationResult, PasswordValidator,
 };
+pub use credential_storage::{CredentialCollection, CredentialEntry, CredentialError, CredentialStorage};
 pub use simple::SimpleProvider;
 pub use traits::SecurityProvider;
 pub use types::{

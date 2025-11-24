@@ -6,7 +6,7 @@ pub mod services;
 pub mod storage;
 
 use connection::{ConnectionService, ConnectionStorage};
-use crypto::{MasterKeyManager, SecurityConfigStorage, SecurityProviderManager};
+use crypto::{CredentialStorage, MasterKeyManager, SecurityConfigStorage, SecurityProviderManager};
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -92,26 +92,14 @@ pub fn run() {
         .expect("Failed to initialize directories");
 
     // FileStorageを初期化（接続情報用のストレージ）
-    let file_storage_1 =
-        FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage");
-    let file_storage_2 =
+    let data_storage = Arc::new(
+        FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage"),
+    );
+    let file_storage_for_commands =
         FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage");
     let security_storage = Arc::new(
         FileStorage::new(path_manager.settings_dir())
             .expect("Failed to initialize security FileStorage"),
-    );
-
-    // MasterKeyManagerを初期化
-    let master_key_manager_1 = MasterKeyManager::new();
-    let master_key_manager_2 = MasterKeyManager::new();
-
-    // ConnectionStorageを初期化
-    let connection_storage = Arc::new(ConnectionStorage::new(Arc::new(file_storage_1)));
-
-    // ConnectionServiceを初期化
-    let connection_service = ConnectionService::new(
-        Arc::clone(&connection_storage),
-        Arc::new(master_key_manager_1),
     );
 
     // セキュリティプロバイダー設定ストレージとマネージャーを初期化
@@ -124,12 +112,32 @@ pub fn run() {
         .expect("Failed to initialize SecurityProviderManager"),
     );
 
+    // CredentialStorageを初期化
+    let credential_storage = Arc::new(CredentialStorage::new(
+        Arc::clone(&data_storage),
+        Arc::clone(&security_provider_manager),
+    ));
+
+    // MasterKeyManagerを初期化
+    let master_key_manager_service = Arc::new(MasterKeyManager::new());
+    let master_key_manager_commands = MasterKeyManager::new();
+
+    // ConnectionStorageを初期化
+    let connection_storage = Arc::new(ConnectionStorage::new(Arc::clone(&data_storage)));
+
+    // ConnectionServiceを初期化
+    let connection_service = ConnectionService::new(
+        Arc::clone(&connection_storage),
+        Arc::clone(&credential_storage),
+        Arc::clone(&master_key_manager_service),
+    );
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(WindowManager::new())
-        .manage(file_storage_2)
-        .manage(master_key_manager_2)
+        .manage(file_storage_for_commands)
+        .manage(master_key_manager_commands)
         .manage(connection_service)
         .manage(security_provider_manager)
         .invoke_handler(tauri::generate_handler![

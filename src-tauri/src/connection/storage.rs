@@ -1,4 +1,5 @@
-use crate::connection::{ConnectionCollection, ConnectionError, ConnectionInfo};
+use crate::connection::{ConnectionCollection, ConnectionConfig, ConnectionError, ConnectionInfo};
+use crate::crypto::CredentialStorage;
 use crate::storage::FileStorage;
 use std::sync::{Arc, RwLock};
 
@@ -155,6 +156,41 @@ impl ConnectionStorage {
         })?;
         *cache = None;
         Ok(())
+    }
+
+    /// パスワード付きで接続情報を保存（CredentialStorageへ分離保存）
+    pub async fn create_with_password(
+        &self,
+        mut connection: ConnectionInfo,
+        password: Option<&str>,
+        credential_storage: &CredentialStorage,
+    ) -> Result<ConnectionInfo, ConnectionError> {
+        if let ConnectionConfig::Network(ref mut network) = connection.connection {
+            network.encrypted_password = None;
+        }
+
+        let saved = self.create(connection)?;
+
+        if let Some(pwd) = password {
+            if !pwd.is_empty() {
+                credential_storage
+                    .save(&saved.id, Some(pwd), None, None)
+                    .await
+                    .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+            }
+        }
+
+        Ok(saved)
+    }
+
+    /// 接続情報と紐付く認証情報を削除
+    pub async fn delete_with_credentials(
+        &self,
+        id: &str,
+        credential_storage: &CredentialStorage,
+    ) -> Result<(), ConnectionError> {
+        let _ = credential_storage.delete(id).await;
+        self.delete(id)
     }
 }
 
