@@ -5,7 +5,7 @@ pub mod commands;
 pub mod models;
 pub mod services;
 
-use crypto::MasterKeyManager;
+use crypto::{MasterKeyManager, SecurityConfigStorage, SecurityProviderManager};
 use storage::{FileStorage, PathManager};
 use connection::{ConnectionStorage, ConnectionService};
 use services::WindowManager;
@@ -143,6 +143,15 @@ pub fn run() {
         Arc::new(master_key_manager_1)
     );
 
+    // セキュリティプロバイダー設定ストレージとマネージャーを初期化
+    let security_config_storage = Arc::new(SecurityConfigStorage::new(path_manager.settings_dir()));
+    let security_provider_manager = Arc::new(
+        tauri::async_runtime::block_on(SecurityProviderManager::new(
+            Arc::clone(&security_config_storage),
+        ))
+        .expect("Failed to initialize SecurityProviderManager"),
+    );
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -150,6 +159,7 @@ pub fn run() {
         .manage(file_storage_2)
         .manage(master_key_manager_2)
         .manage(connection_service)
+        .manage(security_provider_manager)
         .invoke_handler(tauri::generate_handler![
             greet,
             storage_write,
@@ -168,6 +178,8 @@ pub fn run() {
             connection::commands::delete_connection,
             connection::commands::mark_connection_used,
             connection::commands::test_connection,
+            commands::security::get_security_provider_info,
+            commands::security::get_available_providers,
             commands::window::get_window_environment,
             commands::window::open_query_builder_window,
             commands::window::open_settings_window,
