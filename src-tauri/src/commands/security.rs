@@ -3,7 +3,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::crypto::security_provider::{
-    SecurityProviderInfo, SecurityProviderManager, SecurityProviderType,
+    InitializeParams, PasswordRequirements, PasswordValidationResult, PasswordValidator,
+    SecurityProviderInfo, SecurityProviderManager, SecurityProviderType, UnlockParams,
 };
 
 /// 現在のセキュリティプロバイダー情報を取得
@@ -50,4 +51,39 @@ pub async fn get_available_providers() -> Vec<SecurityProviderInfo> {
             security_level: SecurityProviderType::Keychain.security_level(),
         },
     ]
+}
+
+/// マスターパスワードを初期化
+#[tauri::command]
+pub async fn initialize_master_password(
+    manager: State<'_, Arc<SecurityProviderManager>>,
+    password: String,
+    password_confirm: String,
+) -> Result<(), String> {
+    manager
+        .initialize(InitializeParams::MasterPassword {
+            password,
+            password_confirm,
+        })
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// マスターパスワードでアンロック
+#[tauri::command]
+pub async fn unlock_with_master_password(
+    manager: State<'_, Arc<SecurityProviderManager>>,
+    password: String,
+) -> Result<(), String> {
+    manager
+        .unlock(UnlockParams::MasterPassword { password })
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// パスワード強度をチェック
+#[tauri::command]
+pub async fn check_password_strength(password: String) -> PasswordValidationResult {
+    let validator = PasswordValidator::new(PasswordRequirements::default());
+    validator.validate(&password)
 }

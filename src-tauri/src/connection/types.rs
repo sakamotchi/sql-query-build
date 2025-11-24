@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 use super::error::ConnectionError;
 
@@ -41,14 +41,15 @@ impl ConnectionInfo {
     }
 
     /// 接続文字列を生成
-    pub fn build_connection_string(&self, password: Option<&str>) -> Result<String, ConnectionError> {
+    pub fn build_connection_string(
+        &self,
+        password: Option<&str>,
+    ) -> Result<String, ConnectionError> {
         match &self.connection {
             ConnectionConfig::Network(config) => {
                 config.to_connection_string(&self.database_type, password)
             }
-            ConnectionConfig::File(config) => {
-                config.to_connection_string()
-            }
+            ConnectionConfig::File(config) => config.to_connection_string(),
         }
     }
 

@@ -59,7 +59,9 @@ impl WindowManager {
             WindowType::Launcher => WebviewUrl::App("index.html".into()),
             WindowType::QueryBuilder => {
                 let path = match (&options.connection_id, environment.as_deref()) {
-                    (Some(id), Some(env)) => format!("query-builder?connectionId={}&environment={}", id, env),
+                    (Some(id), Some(env)) => {
+                        format!("query-builder?connectionId={}&environment={}", id, env)
+                    }
                     (Some(id), None) => format!("query-builder?connectionId={}", id),
                     (None, Some(env)) => format!("query-builder?environment={}", env),
                     (None, None) => "query-builder".to_string(),
@@ -103,7 +105,8 @@ impl WindowManager {
         });
 
         // ウィンドウ状態を記録
-        let mut window_state = WindowState::new(options.window_type.clone(), options.connection_id.clone());
+        let mut window_state =
+            WindowState::new(options.window_type.clone(), options.connection_id.clone());
         window_state.id = label.clone();
         self.windows
             .lock()
@@ -130,7 +133,9 @@ impl WindowManager {
 
         // ウィンドウを閉じる
         if let Some(window) = app_handle.get_webview_window(label) {
-            window.close().map_err(|e| format!("Failed to close window: {}", e))?;
+            window
+                .close()
+                .map_err(|e| format!("Failed to close window: {}", e))?;
         }
 
         // 記録から削除
@@ -145,14 +150,16 @@ impl WindowManager {
         windows
             .iter()
             .filter_map(|(label, state)| {
-                app_handle.get_webview_window(label).map(|window| WindowInfo {
-                    label: label.clone(),
-                    title: window.title().unwrap_or_default(),
-                    window_type: state.window_type.clone(),
-                    connection_id: state.connection_id.clone(),
-                    focused: window.is_focused().unwrap_or(false),
-                    visible: window.is_visible().unwrap_or(false),
-                })
+                app_handle
+                    .get_webview_window(label)
+                    .map(|window| WindowInfo {
+                        label: label.clone(),
+                        title: window.title().unwrap_or_default(),
+                        window_type: state.window_type.clone(),
+                        connection_id: state.connection_id.clone(),
+                        focused: window.is_focused().unwrap_or(false),
+                        visible: window.is_visible().unwrap_or(false),
+                    })
             })
             .collect()
     }
@@ -166,14 +173,16 @@ impl WindowManager {
         let windows = self.windows.lock().unwrap();
         windows.iter().find_map(|(label, state)| {
             if state.connection_id.as_deref() == Some(connection_id) {
-                app_handle.get_webview_window(label).map(|window| WindowInfo {
-                    label: label.clone(),
-                    title: window.title().unwrap_or_default(),
-                    window_type: state.window_type.clone(),
-                    connection_id: state.connection_id.clone(),
-                    focused: window.is_focused().unwrap_or(false),
-                    visible: window.is_visible().unwrap_or(false),
-                })
+                app_handle
+                    .get_webview_window(label)
+                    .map(|window| WindowInfo {
+                        label: label.clone(),
+                        title: window.title().unwrap_or_default(),
+                        window_type: state.window_type.clone(),
+                        connection_id: state.connection_id.clone(),
+                        focused: window.is_focused().unwrap_or(false),
+                        visible: window.is_visible().unwrap_or(false),
+                    })
             } else {
                 None
             }
@@ -183,7 +192,9 @@ impl WindowManager {
     /// ウィンドウにフォーカス
     pub fn focus_window(&self, app_handle: &AppHandle, label: &str) -> Result<(), String> {
         if let Some(window) = app_handle.get_webview_window(label) {
-            window.set_focus().map_err(|e| format!("Failed to focus window: {}", e))?;
+            window
+                .set_focus()
+                .map_err(|e| format!("Failed to focus window: {}", e))?;
             window.unminimize().ok();
         }
         Ok(())
@@ -237,15 +248,17 @@ impl WindowManager {
     }
 
     /// ウィンドウラベルを生成
-    fn generate_window_label(&self, window_type: &WindowType, connection_id: &Option<String>) -> String {
+    fn generate_window_label(
+        &self,
+        window_type: &WindowType,
+        connection_id: &Option<String>,
+    ) -> String {
         match window_type {
             WindowType::Launcher => "launcher".to_string(),
-            WindowType::QueryBuilder => {
-                match connection_id {
-                    Some(id) => format!("query-builder-{}", id),
-                    None => format!("query-builder-{}", uuid::Uuid::new_v4()),
-                }
-            }
+            WindowType::QueryBuilder => match connection_id {
+                Some(id) => format!("query-builder-{}", id),
+                None => format!("query-builder-{}", uuid::Uuid::new_v4()),
+            },
             WindowType::Settings => "settings".to_string(),
         }
     }

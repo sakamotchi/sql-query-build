@@ -52,16 +52,14 @@ impl WindowStateStorage {
         let content = fs::read_to_string(&self.storage_path)
             .map_err(|e| format!("Failed to read window states: {}", e))?;
 
-        serde_json::from_str(&content)
-            .map_err(|e| format!("Failed to parse window states: {}", e))
+        serde_json::from_str(&content).map_err(|e| format!("Failed to parse window states: {}", e))
     }
 
     /// すべてのウィンドウ状態を保存
     fn save_all_states(&self, states: &[WindowState]) -> Result<(), String> {
         // ディレクトリが存在しない場合は作成
         if let Some(parent) = self.storage_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
 
         let content = serde_json::to_string_pretty(states)

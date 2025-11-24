@@ -1,9 +1,9 @@
-use sql_query_build_lib::storage::FileStorage;
-use sql_query_build_lib::crypto::encryption::{AesGcmEncryptor, Encryptor};
-use sql_query_build_lib::crypto::master_key::{MasterKeyManager, keychain::tests::MockKeychain};
 use sql_query_build_lib::connection::{
-    ConnectionInfo, ConnectionConfig, NetworkConfig, DatabaseType, ConnectionCollection,
+    ConnectionCollection, ConnectionConfig, ConnectionInfo, DatabaseType, NetworkConfig,
 };
+use sql_query_build_lib::crypto::encryption::{AesGcmEncryptor, Encryptor};
+use sql_query_build_lib::crypto::master_key::{keychain::tests::MockKeychain, MasterKeyManager};
+use sql_query_build_lib::storage::FileStorage;
 use std::sync::Arc;
 use tempfile::TempDir;
 
@@ -37,9 +37,7 @@ async fn test_full_connection_save_load_cycle() {
 
     // パスワードを暗号化
     let password = "my_secret_password";
-    let encrypted_password = encryptor
-        .encrypt(password.as_bytes(), &master_key)
-        .unwrap();
+    let encrypted_password = encryptor.encrypt(password.as_bytes(), &master_key).unwrap();
     let encrypted_password_base64 = encrypted_password.to_base64().unwrap();
 
     let mut connection_with_password = connection.clone();
@@ -48,7 +46,9 @@ async fn test_full_connection_save_load_cycle() {
     }
 
     // 保存
-    storage.write("test_connection", &connection_with_password).unwrap();
+    storage
+        .write("test_connection", &connection_with_password)
+        .unwrap();
 
     // 読み込み
     let loaded: ConnectionInfo = storage.read("test_connection").unwrap();
@@ -61,10 +61,8 @@ async fn test_full_connection_save_load_cycle() {
     if let ConnectionConfig::Network(ref config) = loaded.connection {
         use sql_query_build_lib::crypto::types::EncryptedData;
 
-        let encrypted_data = EncryptedData::from_base64(
-            config.encrypted_password.as_ref().unwrap(),
-        )
-        .unwrap();
+        let encrypted_data =
+            EncryptedData::from_base64(config.encrypted_password.as_ref().unwrap()).unwrap();
 
         let decrypted = encryptor.decrypt(&encrypted_data, &master_key).unwrap();
         let decrypted_password = String::from_utf8(decrypted).unwrap();
@@ -104,7 +102,7 @@ async fn test_connection_collection_persistence() {
                     .encrypt(b"pg_password", &master_key)
                     .unwrap()
                     .to_base64()
-                    .unwrap()
+                    .unwrap(),
             ),
             ssl_config: None,
             options: None,
@@ -125,7 +123,7 @@ async fn test_connection_collection_persistence() {
                     .encrypt(b"mysql_password", &master_key)
                     .unwrap()
                     .to_base64()
-                    .unwrap()
+                    .unwrap(),
             ),
             ssl_config: None,
             options: None,
@@ -206,7 +204,9 @@ async fn test_concurrent_storage_and_crypto_operations() {
 
     let temp_dir = TempDir::new().unwrap();
     let storage = Arc::new(FileStorage::new(temp_dir.path().to_path_buf()).unwrap());
-    let key_manager = Arc::new(MasterKeyManager::with_keychain(Arc::new(MockKeychain::new())));
+    let key_manager = Arc::new(MasterKeyManager::with_keychain(Arc::new(
+        MockKeychain::new(),
+    )));
     let encryptor = Arc::new(AesGcmEncryptor::new());
 
     // マスターキー初期化
@@ -236,7 +236,7 @@ async fn test_concurrent_storage_and_crypto_operations() {
                             .encrypt(format!("password{}", i).as_bytes(), &master_key)
                             .unwrap()
                             .to_base64()
-                            .unwrap()
+                            .unwrap(),
                     ),
                     ssl_config: None,
                     options: None,

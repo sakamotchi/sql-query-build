@@ -2,8 +2,9 @@ pub mod error;
 pub mod keychain;
 pub mod manager;
 pub mod master_password;
-mod simple_key;
+pub mod password_validator;
 pub mod simple;
+mod simple_key;
 pub mod traits;
 pub mod types;
 
@@ -11,6 +12,9 @@ pub use error::{SecurityProviderError, SecurityProviderResult};
 pub use keychain::KeychainProvider;
 pub use manager::{SecurityConfigStorage, SecurityProviderManager};
 pub use master_password::MasterPasswordProvider;
+pub use password_validator::{
+    PasswordRequirements, PasswordStrength, PasswordValidationResult, PasswordValidator,
+};
 pub use simple::SimpleProvider;
 pub use traits::SecurityProvider;
 pub use types::{
@@ -85,7 +89,9 @@ mod tests {
         }
 
         async fn get_encryption_key(&self) -> SecurityProviderResult<Vec<u8>> {
-            self.key.clone().ok_or(SecurityProviderError::NotInitialized)
+            self.key
+                .clone()
+                .ok_or(SecurityProviderError::NotInitialized)
         }
 
         async fn reset(&mut self) -> SecurityProviderResult<()> {
@@ -141,10 +147,7 @@ mod tests {
         assert!(!provider.needs_unlock());
 
         // 初期化
-        provider
-            .initialize(InitializeParams::Simple)
-            .await
-            .unwrap();
+        provider.initialize(InitializeParams::Simple).await.unwrap();
         assert!(!provider.needs_initialization());
         assert!(provider.state().is_ready());
 

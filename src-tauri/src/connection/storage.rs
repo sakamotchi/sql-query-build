@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
-use crate::connection::{ConnectionCollection, ConnectionInfo, ConnectionError};
+use crate::connection::{ConnectionCollection, ConnectionError, ConnectionInfo};
 use crate::storage::FileStorage;
+use std::sync::{Arc, RwLock};
 
 /// 接続情報のストレージ管理
 pub struct ConnectionStorage {
@@ -97,8 +97,9 @@ impl ConnectionStorage {
     fn load_collection(&self) -> Result<ConnectionCollection, ConnectionError> {
         // キャッシュをチェック
         {
-            let cache = self.cache.read()
-                .map_err(|_| ConnectionError::StorageError("Failed to acquire read lock".to_string()))?;
+            let cache = self.cache.read().map_err(|_| {
+                ConnectionError::StorageError("Failed to acquire read lock".to_string())
+            })?;
 
             if let Some(collection) = cache.as_ref() {
                 return Ok(collection.clone());
@@ -106,7 +107,10 @@ impl ConnectionStorage {
         }
 
         // キャッシュにない場合はファイルから読み込み
-        let collection = match self.file_storage.read::<ConnectionCollection>(&self.storage_key) {
+        let collection = match self
+            .file_storage
+            .read::<ConnectionCollection>(&self.storage_key)
+        {
             Ok(collection) => collection,
             Err(crate::storage::StorageError::NotFound(_)) => {
                 // ファイルが存在しない場合は新規作成
@@ -119,8 +123,9 @@ impl ConnectionStorage {
 
         // キャッシュに保存
         {
-            let mut cache = self.cache.write()
-                .map_err(|_| ConnectionError::StorageError("Failed to acquire write lock".to_string()))?;
+            let mut cache = self.cache.write().map_err(|_| {
+                ConnectionError::StorageError("Failed to acquire write lock".to_string())
+            })?;
             *cache = Some(collection.clone());
         }
 
@@ -135,8 +140,9 @@ impl ConnectionStorage {
             .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
 
         // キャッシュを更新
-        let mut cache = self.cache.write()
-            .map_err(|_| ConnectionError::StorageError("Failed to acquire write lock".to_string()))?;
+        let mut cache = self.cache.write().map_err(|_| {
+            ConnectionError::StorageError("Failed to acquire write lock".to_string())
+        })?;
         *cache = Some(collection.clone());
 
         Ok(())
@@ -144,8 +150,9 @@ impl ConnectionStorage {
 
     /// キャッシュをクリア
     pub fn clear_cache(&self) -> Result<(), ConnectionError> {
-        let mut cache = self.cache.write()
-            .map_err(|_| ConnectionError::StorageError("Failed to acquire write lock".to_string()))?;
+        let mut cache = self.cache.write().map_err(|_| {
+            ConnectionError::StorageError("Failed to acquire write lock".to_string())
+        })?;
         *cache = None;
         Ok(())
     }
@@ -154,8 +161,8 @@ impl ConnectionStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::connection::{ConnectionConfig, DatabaseType, NetworkConfig};
     use tempfile::TempDir;
-    use crate::connection::{DatabaseType, ConnectionConfig, NetworkConfig};
 
     fn create_test_storage() -> (ConnectionStorage, TempDir) {
         let temp_dir = TempDir::new().unwrap();
@@ -175,11 +182,7 @@ mod tests {
             options: None,
         });
 
-        ConnectionInfo::new(
-            name.to_string(),
-            DatabaseType::PostgreSQL,
-            config,
-        )
+        ConnectionInfo::new(name.to_string(), DatabaseType::PostgreSQL, config)
     }
 
     #[test]

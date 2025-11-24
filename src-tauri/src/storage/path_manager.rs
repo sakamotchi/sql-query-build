@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use directories::ProjectDirs;
+use std::path::PathBuf;
 
 pub struct PathManager {
     project_dirs: ProjectDirs,

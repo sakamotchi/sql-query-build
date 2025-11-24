@@ -64,7 +64,10 @@ fn test_connection_info_builder_postgresql() {
     let info = result.unwrap();
     assert_eq!(info.name, "Test DB");
     assert_eq!(info.database_type, DatabaseType::PostgreSQL);
-    assert_eq!(info.environment.environment_type, EnvironmentType::Development);
+    assert_eq!(
+        info.environment.environment_type,
+        EnvironmentType::Development
+    );
     assert_eq!(info.environment.theme_color, Some("teal".to_string()));
 }
 
@@ -82,11 +85,13 @@ fn test_connection_info_builder_sqlite() {
 
 #[test]
 fn test_connection_info_builder_without_config() {
-    let result = ConnectionInfoBuilder::new("Invalid DB", DatabaseType::PostgreSQL)
-        .build();
+    let result = ConnectionInfoBuilder::new("Invalid DB", DatabaseType::PostgreSQL).build();
 
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), ConnectionError::InvalidConfig(_)));
+    assert!(matches!(
+        result.unwrap_err(),
+        ConnectionError::InvalidConfig(_)
+    ));
 }
 
 #[test]
@@ -119,7 +124,10 @@ fn test_connection_info_validation_invalid_network_config() {
     });
 
     let info = ConnectionInfo::new("Test".to_string(), DatabaseType::PostgreSQL, config);
-    assert!(matches!(info.validate().unwrap_err(), ConnectionError::InvalidHost));
+    assert!(matches!(
+        info.validate().unwrap_err(),
+        ConnectionError::InvalidHost
+    ));
 
     // Zero port
     let config = ConnectionConfig::Network(NetworkConfig {
@@ -133,7 +141,10 @@ fn test_connection_info_validation_invalid_network_config() {
     });
 
     let info = ConnectionInfo::new("Test".to_string(), DatabaseType::PostgreSQL, config);
-    assert!(matches!(info.validate().unwrap_err(), ConnectionError::InvalidPort));
+    assert!(matches!(
+        info.validate().unwrap_err(),
+        ConnectionError::InvalidPort
+    ));
 }
 
 #[test]
@@ -150,7 +161,10 @@ fn test_connection_string_postgresql() {
 
     let info = ConnectionInfo::new("Test".to_string(), DatabaseType::PostgreSQL, config);
     let conn_str = info.build_connection_string(Some("password123")).unwrap();
-    assert_eq!(conn_str, "postgresql://testuser:password123@localhost:5432/testdb");
+    assert_eq!(
+        conn_str,
+        "postgresql://testuser:password123@localhost:5432/testdb"
+    );
 }
 
 #[test]
@@ -222,7 +236,10 @@ fn test_connection_collection_duplicate_name() {
         .unwrap();
 
     assert!(collection.add(info1).is_ok());
-    assert!(matches!(collection.add(info2).unwrap_err(), ConnectionError::DuplicateName));
+    assert!(matches!(
+        collection.add(info2).unwrap_err(),
+        ConnectionError::DuplicateName
+    ));
 }
 
 #[test]
@@ -274,7 +291,10 @@ fn test_connection_collection_remove() {
     assert!(removed.is_ok());
     assert_eq!(collection.connections.len(), 0);
 
-    assert!(matches!(collection.remove(&id).unwrap_err(), ConnectionError::NotFound));
+    assert!(matches!(
+        collection.remove(&id).unwrap_err(),
+        ConnectionError::NotFound
+    ));
 }
 
 #[test]
@@ -385,7 +405,10 @@ fn test_json_serialization() {
 
     assert_eq!(info.name, deserialized.name);
     assert_eq!(info.database_type, deserialized.database_type);
-    assert_eq!(info.environment.environment_type, deserialized.environment.environment_type);
+    assert_eq!(
+        info.environment.environment_type,
+        deserialized.environment.environment_type
+    );
 }
 
 #[test]

@@ -1,5 +1,5 @@
+use super::{ConnectionConfig, ConnectionInfo, DatabaseType, EnvironmentType, NetworkConfig};
 use serde::{Deserialize, Serialize};
-use super::{ConnectionInfo, DatabaseType, ConnectionConfig, NetworkConfig, EnvironmentType};
 
 /// フロントエンド互換の接続情報（フラットな構造）
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,7 +42,11 @@ impl From<ConnectionInfo> for FrontendConnection {
                 network.database.clone(),
                 network.username.clone(),
                 network.encrypted_password.clone().unwrap_or_default(),
-                network.ssl_config.as_ref().map(|s| s.enabled).unwrap_or(false),
+                network
+                    .ssl_config
+                    .as_ref()
+                    .map(|s| s.enabled)
+                    .unwrap_or(false),
             ),
             ConnectionConfig::File(ref file) => (
                 String::new(),
@@ -59,13 +63,15 @@ impl From<ConnectionInfo> for FrontendConnection {
             EnvironmentType::Testing => "test",
             EnvironmentType::Staging => "staging",
             EnvironmentType::Production => "production",
-        }.to_string();
+        }
+        .to_string();
 
         let db_type = match conn.database_type {
             DatabaseType::PostgreSQL => "postgresql",
             DatabaseType::MySQL => "mysql",
             DatabaseType::SQLite => "sqlite",
-        }.to_string();
+        }
+        .to_string();
 
         Self {
             id: conn.id,
@@ -150,10 +156,9 @@ impl TryFrom<FrontendConnection> for ConnectionInfo {
             .map_err(|e| format!("Invalid updated_at: {}", e))?
             .with_timezone(&chrono::Utc);
 
-        let last_connected_at = frontend.last_used_at
-            .map(|s| DateTime::parse_from_rfc3339(&s)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-            )
+        let last_connected_at = frontend
+            .last_used_at
+            .map(|s| DateTime::parse_from_rfc3339(&s).map(|dt| dt.with_timezone(&chrono::Utc)))
             .transpose()
             .map_err(|e| format!("Invalid last_used_at: {}", e))?;
 

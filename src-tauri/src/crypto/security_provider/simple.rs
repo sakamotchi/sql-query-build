@@ -253,7 +253,10 @@ mod tests {
 
         // 新しいプロバイダーインスタンスでも同じキーが得られる
         let mut provider2 = SimpleProvider::new().with_storage(storage);
-        provider2.initialize(InitializeParams::Simple).await.unwrap();
+        provider2
+            .initialize(InitializeParams::Simple)
+            .await
+            .unwrap();
         let key2 = provider2.get_encryption_key().await.unwrap();
 
         assert_eq!(key1, key2);

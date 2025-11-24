@@ -1,11 +1,8 @@
-use tauri::State;
 use crate::connection::{
-    ConnectionConfig,
-    ConnectionInfo,
-    ConnectionTestService,
+    service::ConnectionService, ConnectionConfig, ConnectionInfo, ConnectionTestService,
     FrontendConnection,
-    service::ConnectionService,
 };
+use tauri::State;
 
 /// すべての接続情報を取得
 #[tauri::command]
@@ -16,7 +13,10 @@ pub async fn get_connections(
         .get_all()
         .map_err(|e| format!("Failed to get connections: {}", e))?;
 
-    Ok(connections.into_iter().map(FrontendConnection::from).collect())
+    Ok(connections
+        .into_iter()
+        .map(FrontendConnection::from)
+        .collect())
 }
 
 /// IDで接続情報を取得
@@ -40,7 +40,8 @@ pub async fn create_connection(
     connection: FrontendConnection,
     service: State<'_, ConnectionService>,
 ) -> Result<FrontendConnection, String> {
-    let conn_info: ConnectionInfo = connection.try_into()
+    let conn_info: ConnectionInfo = connection
+        .try_into()
         .map_err(|e: String| format!("Failed to convert connection: {}", e))?;
 
     let created = service
@@ -57,7 +58,8 @@ pub async fn update_connection(
     connection: FrontendConnection,
     service: State<'_, ConnectionService>,
 ) -> Result<FrontendConnection, String> {
-    let conn_info: ConnectionInfo = connection.try_into()
+    let conn_info: ConnectionInfo = connection
+        .try_into()
         .map_err(|e: String| format!("Failed to convert connection: {}", e))?;
 
     let updated = service
