@@ -4,8 +4,38 @@ use tauri::State;
 
 use crate::crypto::security_provider::{
     InitializeParams, PasswordRequirements, PasswordValidationResult, PasswordValidator,
-    SecurityProviderInfo, SecurityProviderManager, SecurityProviderType, UnlockParams,
+    SecurityConfig, SecurityConfigStorage, SecurityProviderInfo, SecurityProviderManager,
+    SecurityProviderType, UnlockParams,
 };
+
+/// セキュリティ設定を取得
+#[tauri::command]
+pub async fn get_security_config(
+    storage: State<'_, Arc<SecurityConfigStorage>>,
+) -> Result<SecurityConfig, String> {
+    storage
+        .load()
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// プロバイダーを変更
+#[tauri::command]
+pub async fn change_security_provider(
+    storage: State<'_, Arc<SecurityConfigStorage>>,
+    manager: State<'_, Arc<SecurityProviderManager>>,
+    provider_type: SecurityProviderType,
+) -> Result<(), String> {
+    manager
+        .change_provider(provider_type)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    storage
+        .change_provider(provider_type)
+        .await
+        .map_err(|e| e.to_string())
+}
 
 /// 現在のセキュリティプロバイダー情報を取得
 #[tauri::command]

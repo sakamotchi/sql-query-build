@@ -1,4 +1,5 @@
 pub mod error;
+pub mod config;
 pub mod keychain;
 pub mod manager;
 pub mod master_password;
@@ -10,8 +11,9 @@ pub mod traits;
 pub mod types;
 
 pub use error::{SecurityProviderError, SecurityProviderResult};
+pub use config::{ProviderSpecificConfig, SecurityConfig, SecurityConfigError, SecurityConfigStorage};
 pub use keychain::KeychainProvider;
-pub use manager::{SecurityConfigStorage, SecurityProviderManager};
+pub use manager::SecurityProviderManager;
 pub use master_password::MasterPasswordProvider;
 pub use password_validator::{
     PasswordRequirements, PasswordStrength, PasswordValidationResult, PasswordValidator,

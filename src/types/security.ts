@@ -40,3 +40,22 @@ export type UnlockParams =
   | { type: 'simple' }
   | { type: 'master_password'; password: string }
   | { type: 'keychain' };
+
+/**
+ * プロバイダー固有設定
+ */
+export type ProviderSpecificConfig =
+  | { provider_config_type: 'Simple' }
+  | { provider_config_type: 'MasterPassword'; is_configured: boolean }
+  | { provider_config_type: 'Keychain'; is_initialized: boolean };
+
+/**
+ * セキュリティ設定
+ */
+export interface SecurityConfig {
+  version: number;
+  provider_type: SecurityProviderType;
+  provider_config: ProviderSpecificConfig;
+  created_at: string;
+  updated_at: string;
+}
