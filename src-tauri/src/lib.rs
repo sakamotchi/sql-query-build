@@ -103,7 +103,8 @@ pub fn run() {
     );
 
     // セキュリティプロバイダー設定ストレージとマネージャーを初期化
-    let security_config_storage = Arc::new(SecurityConfigStorage::new(path_manager.settings_dir()));
+    let security_config_storage =
+        Arc::new(SecurityConfigStorage::new(Arc::clone(&security_storage)));
     let security_provider_manager = Arc::new(
         tauri::async_runtime::block_on(SecurityProviderManager::new(
             Arc::clone(&security_config_storage),
@@ -139,6 +140,7 @@ pub fn run() {
         .manage(file_storage_for_commands)
         .manage(master_key_manager_commands)
         .manage(connection_service)
+        .manage(Arc::clone(&security_config_storage))
         .manage(security_provider_manager)
         .invoke_handler(tauri::generate_handler![
             greet,
@@ -160,6 +162,8 @@ pub fn run() {
             connection::commands::test_connection,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,
+            commands::security::get_security_config,
+            commands::security::change_security_provider,
             commands::security::initialize_master_password,
             commands::security::unlock_with_master_password,
             commands::security::check_password_strength,

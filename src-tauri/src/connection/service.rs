@@ -186,10 +186,13 @@ mod tests {
         let settings_dir = temp_dir.path().join("settings");
 
         let data_storage = Arc::new(FileStorage::new(data_dir).unwrap());
-        let provider_storage = Arc::new(FileStorage::new(settings_dir.clone()).unwrap());
-        let config_storage = Arc::new(SecurityConfigStorage::new(settings_dir));
+        let security_storage = Arc::new(FileStorage::new(settings_dir).unwrap());
+        let config_storage = Arc::new(SecurityConfigStorage::new(Arc::clone(&security_storage)));
         let provider_manager = Arc::new(
-            SecurityProviderManager::new(config_storage, Arc::clone(&provider_storage))
+            SecurityProviderManager::new(
+                Arc::clone(&config_storage),
+                Arc::clone(&security_storage),
+            )
                 .await
                 .unwrap(),
         );

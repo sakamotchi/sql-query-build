@@ -118,20 +118,6 @@ pub enum UnlockParams {
     Keychain,
 }
 
-/// プロバイダー設定（永続化用）
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SecurityProviderConfig {
-    pub provider_type: SecurityProviderType,
-}
-
-impl Default for SecurityProviderConfig {
-    fn default() -> Self {
-        Self {
-            provider_type: SecurityProviderType::default(),
-        }
-    }
-}
-
 /// フロントエンド向けのプロバイダー情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
