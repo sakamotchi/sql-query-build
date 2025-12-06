@@ -9,6 +9,7 @@ import { useTheme } from '@/composables/useTheme';
 import { windowApi } from '@/api/window';
 import LauncherPage from './pages/launcher.vue';
 import QueryBuilderPage from './pages/query-builder.vue';
+import SettingsPage from './pages/settings.vue';
 import RestoreWindowsDialog from '@/components/dialogs/RestoreWindowsDialog.vue';
 
 const themeStore = useThemeStore();
@@ -29,6 +30,11 @@ const isTauriEnvironment = () =>
 const isQueryBuilder = computed(() => {
   const pathname = window.location.pathname.replace(/^\/+/, '');
   return pathname.startsWith('query-builder');
+});
+
+const isSettings = computed(() => {
+  const pathname = window.location.pathname.replace(/^\/+/, '');
+  return pathname.startsWith('settings');
 });
 
 /**
@@ -142,7 +148,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <QueryBuilderPage v-if="isQueryBuilder" />
+  <SettingsPage v-if="isSettings" />
+  <QueryBuilderPage v-else-if="isQueryBuilder" />
   <LauncherPage v-else />
 
   <RestoreWindowsDialog
