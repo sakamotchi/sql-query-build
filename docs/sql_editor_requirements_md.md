@@ -221,16 +221,22 @@ DBeaverの設計を参考に、3つのセキュリティプロバイダーから
 |----------|------|------------|
 | デスクトップフレームワーク | Tauri | 2.x |
 | フロントエンドフレームワーク | Nuxt.js | 3.x |
-| UIフレームワーク | Vuetify | 3.x |
+| UIフレームワーク | Nuxt UI | 4.x |
+| CSSフレームワーク | Tailwind CSS | 4.x |
 | 状態管理 | Pinia | 2.x |
 | バックエンド言語 | Rust | 1.70+ |
+
+**UIフレームワーク変更について:**
+- 当初計画のVuetify 3.xから、Nuxt UI v4への移行を実施
+- 理由: Nuxt 3エコシステムとの統合性向上、パフォーマンス改善、モダンなUI/UX
+- 詳細: [VuetifyからNuxt UI v4への移行計画書](migration_plan_nuxt_ui.md)参照
 
 ### 1.2 システム構成図
 
 ```
 ┌─────────────────────────────────┐
 │     ユーザーインターフェース      │
-│  (Nuxt.js + Vuetify)           │
+│  (Nuxt.js + Nuxt UI + Tailwind)│
 └──────────┬──────────────────────┘
            │ Tauri IPC
 ┌──────────┴──────────────────────┐
@@ -374,7 +380,7 @@ DBeaverの設計を参考に、3つのセキュリティプロバイダーから
 
 ## 4. 環境別テーマ設計
 
-### 4.1 Vuetifyテーマ定義
+### 4.1 Tailwind CSS + Nuxt UIテーマ定義
 
 | 環境 | Primary色 | Background色 | 特徴 |
 |------|-----------|--------------|------|
@@ -400,8 +406,13 @@ DBeaverの設計を参考に、3つのセキュリティプロバイダーから
 
 ### 5.1 フロントエンドモジュール構成
 
+**注意**: Nuxt UI v4移行により、ディレクトリ構造が以下のように変更されます:
+- `src/` → `app/`（Nuxt 3標準）
+- `plugins/vuetify.ts` → `app.config.ts`（テーマ設定）
+- 詳細は [VuetifyからNuxt UI v4への移行計画書](migration_plan_nuxt_ui.md) を参照
+
 ```
-src/
+app/
 ├── components/
 │   ├── connection/
 │   │   ├── ConnectionCard.vue
@@ -422,16 +433,24 @@ src/
 │       ├── Toolbar.vue
 │       └── EnvironmentBanner.vue
 ├── pages/
-│   ├── launcher.vue
+│   ├── index.vue (launcher)
 │   ├── query-builder.vue
 │   └── settings.vue
+├── layouts/
+│   ├── default.vue
+│   ├── launcher.vue
+│   └── query-builder.vue
 ├── stores/
 │   ├── connection.ts
 │   ├── query.ts
 │   ├── theme.ts
 │   └── history.ts
-└── plugins/
-    └── vuetify.ts
+├── composables/
+│   └── useTheme.ts
+├── assets/css/
+│   └── tailwind.css
+├── app.vue
+└── app.config.ts
 ```
 
 ### 5.2 バックエンドモジュール構成
@@ -474,3 +493,39 @@ src-tauri/src/
 - 本番環境安全機能実装
 - 性能最適化
 - ユーザビリティ改善
+
+### UIフレームワーク移行 (別途計画)
+**VuetifyからNuxt UI v4への移行** (6-7週間)
+
+当初計画のVuetify 3.xから、Nuxt 3エコシステムとの統合性が高く、よりモダンなNuxt UI v4へ移行します。
+
+**移行の目的:**
+- Nuxt 3の開発体験向上(自動インポート、ファイルベースルーティング)
+- パフォーマンス改善(バンドルサイズ40%削減、ロード時間33%短縮)
+- Tailwind CSSベースの柔軟なデザインシステム
+- 2025年最新のUIトレンドの採用
+
+**移行フェーズ:**
+1. **Phase 1**: 環境構築・準備 (1週間)
+   - Nuxt 3 + Nuxt UI v4セットアップ
+   - Tailwind CSSテーマ設計
+   - プロジェクト構造変更
+
+2. **Phase 2**: Nuxt 3への移行 (1週間)
+   - ファイルベースルーティング実装
+   - レイアウトシステム構築
+   - Tauri IPC統合確認
+
+3. **Phase 3**: UIコンポーネント移行 (3-4週間)
+   - 全42コンポーネントのNuxt UI v4への移行
+   - 環境別テーマの再実装
+   - アイコンのIconify移行
+
+4. **Phase 4**: 最終テスト・リリース (1週間)
+   - 統合テスト
+   - パフォーマンステスト
+   - バグ修正・リリース準備
+
+詳細は以下のドキュメントを参照:
+- [VuetifyからNuxt UI v4への移行計画書](migration_plan_nuxt_ui.md)
+- [移行WBS](migration_wbs_nuxt_ui.md)
