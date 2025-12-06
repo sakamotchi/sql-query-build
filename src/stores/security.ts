@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { securityApi } from '@/api/security';
 import type {
   ProviderChangeParams,
+  ProviderState,
   SecurityConfig,
   SecurityProviderInfo,
   SecurityProviderType,
@@ -13,6 +14,7 @@ export const useSecurityStore = defineStore('security', () => {
   const availableProviders = ref<SecurityProviderInfo[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+  const providerState = ref<ProviderState>('uninitialized');
 
   const currentProvider = computed<SecurityProviderType>(
     () => config.value?.providerType ?? 'simple'
@@ -26,6 +28,11 @@ export const useSecurityStore = defineStore('security', () => {
 
   const currentSecurityLevel = computed(
     () => currentProviderInfo.value?.securityLevel ?? 1
+  );
+
+  const needsUnlock = computed(
+    () =>
+      config.value?.providerType === 'master_password' && providerState.value === 'locked'
   );
 
   const loadConfig = async () => {
@@ -59,15 +66,59 @@ export const useSecurityStore = defineStore('security', () => {
     }
   };
 
+  const initialize = async () => {
+    await loadConfig();
+    try {
+      const info = await securityApi.getProviderInfo();
+      providerState.value = info.state;
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+    }
+  };
+
+  const unlock = async (password: string) => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      await securityApi.unlockWithMasterPassword(password);
+      providerState.value = 'ready';
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+      throw e;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const reset = async () => {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      await securityApi.resetProvider();
+      await loadConfig();
+      providerState.value = 'ready';
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Unknown error';
+      throw e;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     config,
     availableProviders,
     isLoading,
     error,
+    providerState,
     currentProvider,
     currentProviderInfo,
     currentSecurityLevel,
+    needsUnlock,
     loadConfig,
     changeProvider,
+    initialize,
+    unlock,
+    reset,
   };
 });

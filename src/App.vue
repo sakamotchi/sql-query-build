@@ -5,20 +5,26 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useThemeStore } from '@/stores/theme';
 import { useWindowStore } from '@/stores/window';
 import { useSettingsStore } from '@/stores/settings';
+import { useSecurityStore } from '@/stores/security';
 import { useTheme } from '@/composables/useTheme';
 import { windowApi } from '@/api/window';
 import LauncherPage from './pages/launcher.vue';
 import QueryBuilderPage from './pages/query-builder.vue';
 import SettingsPage from './pages/settings.vue';
 import RestoreWindowsDialog from '@/components/dialogs/RestoreWindowsDialog.vue';
+import UnlockDialog from '@/components/security/UnlockDialog.vue';
 
 const themeStore = useThemeStore();
 const windowStore = useWindowStore();
 const settingsStore = useSettingsStore();
+const securityStore = useSecurityStore();
 const { syncVuetifyTheme } = useTheme();
 
 const showRestoreDialog = ref(false);
 const savedWindowCount = ref(0);
+const isInitializing = ref(true);
+const isUnlocked = ref(false);
+const showUnlockDialog = ref(false);
 
 let unlistenCloseRequested: (() => void) | null = null;
 let unlistenBeforeExit: (() => void) | null = null;
@@ -41,19 +47,36 @@ const isSettings = computed(() => {
  * アプリケーション初期化
  */
 const initializeApp = async () => {
-  await settingsStore.loadSettings();
+  isInitializing.value = true;
+  try {
+    await settingsStore.loadSettings();
 
-  themeStore.initialize();
-  syncVuetifyTheme(themeStore.currentTheme);
+    themeStore.initialize();
+    syncVuetifyTheme(themeStore.currentTheme);
 
-  await windowStore.initialize();
+    await securityStore.initialize();
 
-  if (windowStore.isLauncher && settingsStore.shouldRestoreWindows && isTauriEnvironment()) {
-    await checkAndRestoreWindows();
-  }
+    if (securityStore.needsUnlock) {
+      showUnlockDialog.value = true;
+    } else {
+      isUnlocked.value = true;
+    }
 
-  if (isTauriEnvironment()) {
-    await setupEventListeners();
+    await windowStore.initialize();
+
+    if (windowStore.isLauncher && settingsStore.shouldRestoreWindows && isTauriEnvironment()) {
+      await checkAndRestoreWindows();
+    }
+
+    if (isTauriEnvironment()) {
+      await setupEventListeners();
+    }
+  } catch (error) {
+    console.error('Failed to initialize app:', error);
+    isUnlocked.value = true;
+    showUnlockDialog.value = false;
+  } finally {
+    isInitializing.value = false;
   }
 };
 
@@ -93,6 +116,16 @@ const restoreWindows = async () => {
  */
 const skipRestore = () => {
   showRestoreDialog.value = false;
+};
+
+const handleUnlocked = () => {
+  isUnlocked.value = true;
+  showUnlockDialog.value = false;
+};
+
+const handleReset = () => {
+  isUnlocked.value = true;
+  showUnlockDialog.value = false;
 };
 
 /**
@@ -148,14 +181,27 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <SettingsPage v-if="isSettings" />
-  <QueryBuilderPage v-else-if="isQueryBuilder" />
-  <LauncherPage v-else />
+  <div v-if="isInitializing" class="d-flex align-center justify-center h-100">
+    <v-progress-circular indeterminate color="primary" />
+  </div>
+  <template v-else>
+    <template v-if="isUnlocked">
+      <SettingsPage v-if="isSettings" />
+      <QueryBuilderPage v-else-if="isQueryBuilder" />
+      <LauncherPage v-else />
+    </template>
+  </template>
 
   <RestoreWindowsDialog
     v-model="showRestoreDialog"
     :window-count="savedWindowCount"
     @restore="restoreWindows"
     @skip="skipRestore"
+  />
+
+  <UnlockDialog
+    v-model="showUnlockDialog"
+    @unlocked="handleUnlocked"
+    @reset="handleReset"
   />
 </template>
