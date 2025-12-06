@@ -4,6 +4,31 @@
 export type SecurityProviderType = 'simple' | 'master_password' | 'keychain';
 
 /**
+ * パスワード強度
+ */
+export type PasswordStrength = 'very_weak' | 'weak' | 'fair' | 'strong' | 'very_strong';
+
+/**
+ * パスワード検証結果（レスポンス）
+ */
+export interface PasswordValidationResultResponse {
+  is_valid: boolean;
+  strength: PasswordStrength;
+  errors: string[];
+  suggestions: string[];
+}
+
+/**
+ * パスワード検証結果（フロント用）
+ */
+export interface PasswordValidationResult {
+  isValid: boolean;
+  strength: PasswordStrength;
+  errors: string[];
+  suggestions: string[];
+}
+
+/**
  * プロバイダーの状態
  */
 export type ProviderState =
