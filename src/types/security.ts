@@ -35,6 +35,7 @@ export type ProviderState =
   | 'uninitialized'
   | 'locked'
   | 'ready'
+  | 'available'
   | 'error';
 
 /**
@@ -55,13 +56,18 @@ export interface SecurityProviderInfo {
  * バックエンドからのプロバイダー情報レスポンス（snake_case）
  */
 export interface SecurityProviderInfoResponse {
-  provider_type: SecurityProviderType;
-  state: ProviderState;
-  needs_initialization: boolean;
-  needs_unlock: boolean;
-  display_name: string;
+  provider_type?: SecurityProviderType;
+  providerType?: SecurityProviderType;
+  state: string;
+  needs_initialization?: boolean;
+  needsInitialization?: boolean;
+  needs_unlock?: boolean;
+  needsUnlock?: boolean;
+  display_name?: string;
+  displayName?: string;
   description: string;
-  security_level: number;
+  security_level?: number;
+  securityLevel?: number;
 }
 
 /**

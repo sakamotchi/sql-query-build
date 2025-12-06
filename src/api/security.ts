@@ -8,6 +8,7 @@ import type {
   ProviderSwitchResult,
   SecurityConfig,
   SecurityConfigResponse,
+  ProviderState,
   SecurityProviderInfo,
   SecurityProviderInfoResponse,
   SecurityProviderType,
@@ -59,16 +60,26 @@ const normalizeSecurityConfig = (config: SecurityConfigResponse): SecurityConfig
   };
 };
 
+const normalizeProviderState = (state: string): ProviderState => {
+  const normalized = state.toLowerCase();
+  if (normalized.includes('locked')) return 'locked';
+  if (normalized.includes('uninitialized')) return 'uninitialized';
+  if (normalized.includes('ready')) return 'ready';
+  if (normalized.includes('available')) return 'available';
+  if (normalized.includes('error')) return 'error';
+  return 'error';
+};
+
 const normalizeProviderInfo = (
   provider: SecurityProviderInfoResponse
 ): SecurityProviderInfo => ({
-  type: provider.provider_type,
-  state: provider.state,
-  needsInitialization: provider.needs_initialization,
-  needsUnlock: provider.needs_unlock,
-  displayName: provider.display_name,
+  type: provider.provider_type ?? provider.providerType ?? 'simple',
+  state: normalizeProviderState(provider.state),
+  needsInitialization: provider.needs_initialization ?? provider.needsInitialization ?? false,
+  needsUnlock: provider.needs_unlock ?? provider.needsUnlock ?? false,
+  displayName: provider.display_name ?? provider.displayName ?? '',
   description: provider.description,
-  securityLevel: provider.security_level,
+  securityLevel: provider.security_level ?? provider.securityLevel ?? 1,
 });
 
 const normalizePasswordValidationResult = (
@@ -98,6 +109,14 @@ export const securityApi = {
   },
 
   /**
+   * 現在のセキュリティプロバイダー情報を取得
+   */
+  async getProviderInfo(): Promise<SecurityProviderInfo> {
+    const response = await invoke<SecurityProviderInfoResponse>('get_security_provider_info');
+    return normalizeProviderInfo(response);
+  },
+
+  /**
    * プロバイダーを変更
    */
   async changeProvider(providerType: SecurityProviderType): Promise<void> {
@@ -124,6 +143,20 @@ export const securityApi = {
       password,
       password_confirm: passwordConfirm,
     });
+  },
+
+  /**
+   * マスターパスワードでアンロック
+   */
+  async unlockWithMasterPassword(password: string): Promise<void> {
+    return invoke('unlock_with_master_password', { password });
+  },
+
+  /**
+   * セキュリティ設定をリセット
+   */
+  async resetProvider(): Promise<void> {
+    return invoke('reset_security_provider');
   },
 
   /**
