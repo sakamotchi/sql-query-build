@@ -5,6 +5,7 @@ pub mod manager;
 pub mod master_password;
 pub mod password_validator;
 pub mod credential_storage;
+pub mod provider_switcher;
 pub mod simple;
 mod simple_key;
 pub mod traits;
@@ -19,6 +20,7 @@ pub use password_validator::{
     PasswordRequirements, PasswordStrength, PasswordValidationResult, PasswordValidator,
 };
 pub use credential_storage::{CredentialCollection, CredentialEntry, CredentialError, CredentialStorage};
+pub use provider_switcher::{ProviderSwitcher, SwitchError, SwitchParams, SwitchResult};
 pub use simple::SimpleProvider;
 pub use traits::SecurityProvider;
 pub use types::{

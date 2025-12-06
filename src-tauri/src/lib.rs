@@ -6,7 +6,10 @@ pub mod services;
 pub mod storage;
 
 use connection::{ConnectionService, ConnectionStorage};
-use crypto::{CredentialStorage, MasterKeyManager, SecurityConfigStorage, SecurityProviderManager};
+use crypto::{
+    CredentialStorage, MasterKeyManager, ProviderSwitcher, SecurityConfigStorage,
+    SecurityProviderManager,
+};
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -119,6 +122,13 @@ pub fn run() {
         Arc::clone(&security_provider_manager),
     ));
 
+    // ProviderSwitcherを初期化
+    let provider_switcher = Arc::new(ProviderSwitcher::new(
+        Arc::clone(&security_provider_manager),
+        Arc::clone(&credential_storage),
+        Arc::clone(&security_config_storage),
+    ));
+
     // MasterKeyManagerを初期化
     let master_key_manager_service = Arc::new(MasterKeyManager::new());
     let master_key_manager_commands = MasterKeyManager::new();
@@ -142,6 +152,7 @@ pub fn run() {
         .manage(connection_service)
         .manage(Arc::clone(&security_config_storage))
         .manage(security_provider_manager)
+        .manage(Arc::clone(&provider_switcher))
         .invoke_handler(tauri::generate_handler![
             greet,
             storage_write,
@@ -167,6 +178,7 @@ pub fn run() {
             commands::security::initialize_master_password,
             commands::security::unlock_with_master_password,
             commands::security::check_password_strength,
+            commands::security::switch_security_provider,
             commands::window::get_window_environment,
             commands::window::open_query_builder_window,
             commands::window::open_settings_window,

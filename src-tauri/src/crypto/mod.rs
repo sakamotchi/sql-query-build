@@ -10,8 +10,9 @@ pub use error::{CryptoError, CryptoResult};
 pub use master_key::{MasterKeyError, MasterKeyManager, MasterKeyResult};
 pub use security_provider::{
     CredentialCollection, CredentialEntry, CredentialError, CredentialStorage, InitializeParams,
-    ProviderSpecificConfig, ProviderState, SecurityConfig, SecurityConfigError,
+    ProviderSpecificConfig, ProviderState, ProviderSwitcher, SecurityConfig, SecurityConfigError,
     SecurityConfigStorage, SecurityProvider, SecurityProviderError, SecurityProviderInfo,
-    SecurityProviderManager, SecurityProviderResult, SecurityProviderType, UnlockParams,
+    SecurityProviderManager, SecurityProviderResult, SecurityProviderType, SwitchError,
+    SwitchParams, SwitchResult, UnlockParams,
 };
 pub use types::{EncryptedData, EncryptionKey};

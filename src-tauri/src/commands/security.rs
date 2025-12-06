@@ -4,8 +4,8 @@ use tauri::State;
 
 use crate::crypto::security_provider::{
     InitializeParams, PasswordRequirements, PasswordValidationResult, PasswordValidator,
-    SecurityConfig, SecurityConfigStorage, SecurityProviderInfo, SecurityProviderManager,
-    SecurityProviderType, UnlockParams,
+    ProviderSwitcher, SecurityConfig, SecurityConfigStorage, SecurityProviderInfo,
+    SecurityProviderManager, SecurityProviderType, SwitchParams, SwitchResult, UnlockParams,
 };
 
 /// セキュリティ設定を取得
@@ -116,4 +116,42 @@ pub async fn unlock_with_master_password(
 pub async fn check_password_strength(password: String) -> PasswordValidationResult {
     let validator = PasswordValidator::new(PasswordRequirements::default());
     validator.validate(&password)
+}
+
+/// プロバイダーを切り替え（再暗号化込み）
+#[tauri::command]
+pub async fn switch_security_provider(
+    switcher: State<'_, Arc<ProviderSwitcher>>,
+    target_provider: SecurityProviderType,
+    current_password: Option<String>,
+    new_password: Option<String>,
+    new_password_confirm: Option<String>,
+) -> Result<SwitchResult, String> {
+    let current_provider = switcher.current_provider_type().await;
+
+    let current_auth = match current_provider {
+        SecurityProviderType::Simple => UnlockParams::Simple,
+        SecurityProviderType::MasterPassword => UnlockParams::MasterPassword {
+            password: current_password.unwrap_or_default(),
+        },
+        SecurityProviderType::Keychain => UnlockParams::Keychain,
+    };
+
+    let new_init = match target_provider {
+        SecurityProviderType::Simple => InitializeParams::Simple,
+        SecurityProviderType::MasterPassword => InitializeParams::MasterPassword {
+            password: new_password.unwrap_or_default(),
+            password_confirm: new_password_confirm.unwrap_or_default(),
+        },
+        SecurityProviderType::Keychain => InitializeParams::Keychain,
+    };
+
+    switcher
+        .switch(SwitchParams {
+            target_provider,
+            current_auth,
+            new_init,
+        })
+        .await
+        .map_err(|e| e.to_string())
 }
