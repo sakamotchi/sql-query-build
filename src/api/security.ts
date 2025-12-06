@@ -1,5 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
+  PasswordValidationResult,
+  PasswordValidationResultResponse,
   ProviderChangeParams,
   ProviderSpecificConfig,
   ProviderSpecificConfigResponse,
@@ -69,6 +71,15 @@ const normalizeProviderInfo = (
   securityLevel: provider.security_level,
 });
 
+const normalizePasswordValidationResult = (
+  result: PasswordValidationResultResponse
+): PasswordValidationResult => ({
+  isValid: result.is_valid,
+  strength: result.strength,
+  errors: result.errors,
+  suggestions: result.suggestions,
+});
+
 export const securityApi = {
   /**
    * セキュリティ設定を取得
@@ -103,5 +114,25 @@ export const securityApi = {
       new_password: params.newPassword,
       new_password_confirm: params.newPasswordConfirm,
     });
+  },
+
+  /**
+   * マスターパスワードを初期化
+   */
+  async initializeMasterPassword(password: string, passwordConfirm: string): Promise<void> {
+    return invoke('initialize_master_password', {
+      password,
+      password_confirm: passwordConfirm,
+    });
+  },
+
+  /**
+   * パスワード強度をチェック
+   */
+  async checkPasswordStrength(password: string): Promise<PasswordValidationResult> {
+    const result = await invoke<PasswordValidationResultResponse>('check_password_strength', {
+      password,
+    });
+    return normalizePasswordValidationResult(result);
   },
 };
