@@ -59,3 +59,12 @@ export interface SecurityConfig {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * プロバイダー切り替え結果
+ */
+export interface ProviderSwitchResult {
+  success: boolean;
+  reEncryptedCount: number;
+  error?: string | null;
+}

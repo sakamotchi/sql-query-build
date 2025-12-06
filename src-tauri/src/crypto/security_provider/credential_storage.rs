@@ -218,6 +218,12 @@ impl CredentialStorage {
         Ok(())
     }
 
+    /// 保持している認証情報の件数を取得
+    pub async fn credential_count(&self) -> Result<usize, CredentialError> {
+        let collection = self.load_collection().await?;
+        Ok(collection.credentials.len())
+    }
+
     /// 全ての認証情報を新しいキーで再暗号化
     pub async fn re_encrypt_all(
         &self,

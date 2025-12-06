@@ -1,5 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { SecurityConfig, SecurityProviderType } from '@/types/security';
+import type {
+  ProviderSwitchResult,
+  SecurityConfig,
+  SecurityProviderType,
+} from '@/types/security';
 
 export const securityApi = {
   /**
@@ -14,5 +18,17 @@ export const securityApi = {
    */
   async changeProvider(providerType: SecurityProviderType): Promise<void> {
     return invoke('change_security_provider', { providerType });
+  },
+
+  /**
+   * プロバイダーを切り替え（認証情報を再暗号化）
+   */
+  async switchProvider(params: {
+    targetProvider: SecurityProviderType;
+    currentPassword?: string;
+    newPassword?: string;
+    newPasswordConfirm?: string;
+  }): Promise<ProviderSwitchResult> {
+    return invoke('switch_security_provider', params);
   },
 };
