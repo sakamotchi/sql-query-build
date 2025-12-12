@@ -1,10 +1,10 @@
-# Nuxt + Nuxt UI v4 完全移行計画 (フレッシュスタート方式)
+# Nuxt 4 + Nuxt UI v4 完全移行計画 (フレッシュスタート方式)
 
 **プロジェクト**: SQL Query Build
-**作成日**: 2025-12-07
-**バージョン**: 2.0
+**作成日**: 2025-12-11
+**バージョン**: 3.0
 **ステータス**: 計画中
-**アプローチ**: フレッシュスタート - 既存フロントエンドを削除して一から構築
+**アプローチ**: フレッシュスタート - 既存フロントエンドを削除してNuxt 4で一から構築
 
 ---
 
@@ -15,8 +15,10 @@
 3. [移行戦略](#3-移行戦略)
 4. [技術スタック](#4-技術スタック)
 5. [フェーズ詳細](#5-フェーズ詳細)
-6. [リスク管理](#6-リスク管理)
-7. [成功基準](#7-成功基準)
+6. [Nuxt 4の新機能と利点](#6-nuxt-4の新機能と利点)
+7. [リスク管理](#7-リスク管理)
+8. [成功基準](#8-成功基準)
+9. [タイムライン](#9-タイムライン)
 
 ---
 
@@ -24,7 +26,14 @@
 
 ### 1.1 概要
 
-既存のVue 3 + Vite + Vuetifyフロントエンドを**完全に削除**し、Nuxt 3 + Nuxt UI v4で一から構築し直します。
+既存のVue 3 + Vite + Vuetifyフロントエンドを**完全に削除**し、**Nuxt 4** + Nuxt UI v4で一から構築し直します。
+
+**Nuxt 4の新機能を活用**:
+- ✨ ディレクトリ構造の改善（`app/` が標準）
+- ✨ パフォーマンスの向上
+- ✨ TypeScript統合の強化
+- ✨ より良いビルドプロセス
+- ✨ 改善されたHMR（ホットモジュールリプレースメント）
 
 **既存の移行計画の問題点**:
 - 段階的移行による複雑性の増大
@@ -130,12 +139,12 @@ Phase 4: テスト・最適化
 
 | レイヤー | 技術 | バージョン | 用途 |
 |---------|------|----------|------|
-| **フレームワーク** | Nuxt | ^3.14.0 | アプリケーション基盤 |
+| **フレームワーク** | Nuxt | ^4.0.0 | アプリケーション基盤 |
 | **UIライブラリ** | Nuxt UI | ^4.0.0 | UIコンポーネント |
 | **CSSフレームワーク** | Tailwind CSS | ^4.0.0 | スタイリング |
 | **アイコン** | Iconify | - | 200,000+アイコン |
 | **状態管理** | Pinia | ^3.0.3 | グローバル状態 |
-| **型システム** | TypeScript | ~5.6.2 | 型安全性 |
+| **型システム** | TypeScript | ~5.7.2 | 型安全性 |
 
 ### 4.2 依存関係
 
@@ -144,21 +153,23 @@ Phase 4: テスト・最適化
 ```json
 {
   "dependencies": {
-    "nuxt": "^3.14.0",
+    "nuxt": "^4.0.0",
     "@nuxt/ui": "^4.0.0",
-    "@nuxt/icon": "^1.0.0",
+    "@nuxt/icon": "^1.8.0",
     "@nuxtjs/tailwindcss": "^7.0.0",
     "@nuxtjs/color-mode": "^3.5.0",
-    "@pinia/nuxt": "^0.7.0",
-    "@tauri-apps/api": "^2.0.0",
+    "@pinia/nuxt": "^0.8.0",
+    "@tauri-apps/api": "^2.2.0",
     "pinia": "^3.0.3",
     "vue": "^3.5.13"
   },
   "devDependencies": {
+    "@nuxt/test-utils": "^3.15.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "~5.6.2",
+    "typescript": "~5.7.2",
     "vitest": "^3.2.4",
-    "@vue/test-utils": "^2.4.6"
+    "@vue/test-utils": "^2.4.6",
+    "playwright-core": "^1.49.0"
   }
 }
 ```
@@ -270,16 +281,22 @@ rm vite.config.ts
 #### 5.1.3 Nuxt + Nuxt UIのインストール
 
 ```bash
-# Nuxtインストール
-npm install nuxt@^3.14.0
+# Nuxt 4インストール
+npm install nuxt@^4.0.0
 
 # Nuxt UI + 必須モジュール
-npm install @nuxt/ui@^4.0.0 @nuxt/icon@^1.0.0
+npm install @nuxt/ui@^4.0.0 @nuxt/icon@^1.8.0
 npm install @nuxtjs/tailwindcss@^7.0.0 @nuxtjs/color-mode@^3.5.0
-npm install @pinia/nuxt@^0.7.0
+npm install @pinia/nuxt@^0.8.0
+
+# Tauri API最新版
+npm install @tauri-apps/api@^2.2.0
 
 # Tailwind CSS v4
 npm install -D tailwindcss@^4.0.0
+
+# 開発・テスト用
+npm install -D @nuxt/test-utils@^3.15.0 vitest@^3.2.4 @vue/test-utils@^2.4.6 playwright-core@^1.49.0
 ```
 
 **成果物**: 依存関係インストール完了
@@ -293,10 +310,15 @@ npm install -D tailwindcss@^4.0.0
 ```typescript
 // nuxt.config.ts
 export default defineNuxtConfig({
+  // Nuxt 4の新しい設定を有効化
+  future: {
+    compatibilityVersion: 4
+  },
+
   // SSR無効（Tauri制約）
   ssr: false,
 
-  // Appディレクトリ
+  // Appディレクトリ（Nuxt 4ではデフォルト）
   srcDir: 'app/',
 
   // 開発サーバー設定（Tauri用）
@@ -319,6 +341,10 @@ export default defineNuxtConfig({
       watch: {
         ignored: ['**/src-tauri/**']
       }
+    },
+    // Nuxt 4でのパフォーマンス最適化
+    optimizeDeps: {
+      include: ['@tauri-apps/api']
     }
   },
 
@@ -328,13 +354,21 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxt/test-utils/module'
   ],
 
-  // TypeScript
+  // TypeScript（Nuxt 4での強化された型チェック）
   typescript: {
     strict: true,
-    typeCheck: true
+    typeCheck: true,
+    // Nuxt 4の型生成オプション
+    tsConfig: {
+      compilerOptions: {
+        moduleResolution: 'bundler',
+        types: ['@tauri-apps/api']
+      }
+    }
   },
 
   // Tailwind
@@ -347,6 +381,12 @@ export default defineNuxtConfig({
     preference: 'light',
     fallback: 'light',
     classSuffix: ''
+  },
+
+  // Nuxt 4のビルド最適化
+  experimental: {
+    payloadExtraction: false, // Tauri使用時は不要
+    renderJsonPayloads: false
   }
 })
 ```
@@ -595,9 +635,13 @@ const colorMode = useColorMode()
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "typecheck": "nuxt typecheck"
   }
 }
 ```
@@ -683,6 +727,33 @@ export const useTauri = () => {
     isAvailable,
     invokeCommand
   }
+}
+```
+
+**Nuxt 4向けの追加Composable `app/composables/useAsyncTauri.ts`**:
+
+```typescript
+import { invoke } from '@tauri-apps/api/core'
+
+/**
+ * Nuxt 4のuseAsyncDataと統合されたTauri Composable
+ */
+export const useAsyncTauri = <T>(
+  key: string,
+  command: string,
+  args?: Record<string, unknown>
+) => {
+  const { isAvailable } = useTauri()
+
+  return useAsyncData<T>(
+    key,
+    async () => {
+      if (!isAvailable.value) {
+        throw new Error('Tauri is not available')
+      }
+      return invoke<T>(command, args)
+    }
+  )
 }
 ```
 
@@ -1175,58 +1246,244 @@ const setup = () => {
 
 #### 5.4.1 テスト実装
 
+**Vitest設定 `vitest.config.ts`**:
+
+```typescript
+import { defineVitestConfig } from '@nuxt/test-utils/config'
+
+export default defineVitestConfig({
+  test: {
+    environment: 'nuxt',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src-tauri/',
+        '.nuxt/',
+        'coverage/',
+        '*.config.*'
+      ]
+    }
+  }
+})
+```
+
+**コンポーネントテスト例 `tests/components/EnvironmentHeader.test.ts`**:
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
+import EnvironmentHeader from '~/components/common/EnvironmentHeader.vue'
+
+describe('EnvironmentHeader', () => {
+  it('renders development environment correctly', async () => {
+    const component = await mountSuspended(EnvironmentHeader, {
+      props: { environment: 'development' }
+    })
+
+    expect(component.text()).toContain('開発環境')
+  })
+
+  it('renders production environment with correct styling', async () => {
+    const component = await mountSuspended(EnvironmentHeader, {
+      props: { environment: 'production' }
+    })
+
+    expect(component.text()).toContain('本番環境')
+    expect(component.html()).toContain('env-production')
+  })
+})
+```
+
 ```bash
-# Vitestでコンポーネントテスト
+# Vitestでコンポーネントテスト実行
 npm run test
+
+# UIモードで対話的にテスト
+npm run test:ui
+
+# カバレッジ付きテスト
+npm run test -- --coverage
 ```
 
 #### 5.4.2 パフォーマンス最適化
 
-- Lazy loading
-- Code splitting
-- バンドルサイズ最適化
+**Nuxt 4でのパフォーマンス最適化機能**:
+
+1. **自動コード分割（Nuxt 4の改善点）**
+   - コンポーネントの自動遅延読み込み
+   - ルートベースのコード分割
+
+2. **Lazy Componentsの活用**:
+```vue
+<template>
+  <!-- 重いコンポーネントを遅延ロード -->
+  <LazyQueryBuilderToolbar />
+  <LazyTableRelationArea />
+</template>
+```
+
+3. **バンドルサイズ分析**:
+```bash
+# ビルド時のバンドル分析
+npx nuxi analyze
+
+# または
+npm run build -- --analyze
+```
+
+4. **画像最適化（Nuxt 4のNuxt Imageモジュール）**:
+```bash
+npm install @nuxt/image
+```
+
+5. **Nuxt 4の新しいビルド最適化**:
+   - 改善されたTree shaking
+   - より小さいバンドルサイズ
+   - 高速なHMR
 
 #### 5.4.3 最終確認
 
+**開発環境でのチェック**:
+```bash
+# 型チェック
+npm run typecheck
+
+# 開発サーバー起動
+npm run dev
+
+# Tauriアプリ起動
+npm run tauri:dev
+```
+
+**本番ビルドテスト**:
+```bash
+# Nuxtビルド
+npm run build
+
+# Tauriアプリビルド
+npm run tauri:build
+```
+
+**完了条件**:
 - ✅ 全機能動作確認
 - ✅ Tauri統合テスト
-- ✅ ビルドテスト
+- ✅ 型チェックエラーなし
+- ✅ テストカバレッジ > 70%
+- ✅ 本番ビルド成功
+- ✅ パフォーマンス基準達成
 
 ---
 
-## 6. リスク管理
+## 6. Nuxt 4の新機能と利点
 
-### 6.1 主要リスク
+### 6.1 Nuxt 4で追加される主要機能
+
+| 機能 | 説明 | メリット |
+|------|------|---------|
+| **改善されたディレクトリ構造** | `app/` ディレクトリがデフォルト | よりクリーンな構造 |
+| **強化された型安全性** | 自動型生成の改善 | 開発時エラー削減 |
+| **高速なHMR** | ホットリロードの最適化 | 開発体験向上 |
+| **ビルド最適化** | より小さいバンドル、Tree shaking改善 | パフォーマンス向上 |
+| **新しいComposables** | `useAsyncData`等の改善 | データフェッチング最適化 |
+| **Vite 6統合** | 最新のViteバージョン | ビルド速度向上 |
+
+### 6.2 Nuxt 3からNuxt 4への主な変更点
+
+#### 6.2.1 ディレクトリ構造
+```diff
+- pages/          → app/pages/
+- components/     → app/components/
+- composables/    → app/composables/
+- layouts/        → app/layouts/
+```
+
+#### 6.2.2 設定ファイル
+```typescript
+// nuxt.config.ts
+export default defineNuxtConfig({
++  future: {
++    compatibilityVersion: 4  // Nuxt 4の新機能を有効化
++  }
+})
+```
+
+#### 6.2.3 TypeScript設定の改善
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler",  // Nuxt 4推奨
+    "types": ["@tauri-apps/api"]
+  }
+}
+```
+
+### 6.3 Nuxt 4でのベストプラクティス
+
+1. **`useAsyncData` の積極的活用**
+   ```typescript
+   // データフェッチングの最適化
+   const { data, error, pending } = await useAsyncData(
+     'connections',
+     () => $fetch('/api/connections')
+   )
+   ```
+
+2. **Auto-imports の活用**
+   - Nuxt 4では自動インポートがさらに強化
+   - `ref`, `computed`, `useRouter` などが自動的に利用可能
+
+3. **Server Directoryの活用（必要に応じて）**
+   - `server/` ディレクトリでAPI実装可能
+   - Tauriがない場合のフォールバック
+
+---
+
+## 7. リスク管理
+
+### 7.1 主要リスク
 
 | リスク | 影響度 | 対策 |
 |--------|--------|------|
 | Tauri IPC互換性問題 | 高 | Phase 1で早期検証 |
+| Nuxt 4移行期の不安定性 | 中 | 公式ドキュメント参照、コミュニティ確認 |
 | 機能実装漏れ | 中 | チェックリスト作成 |
-| パフォーマンス劣化 | 中 | 継続的モニタリング |
+| パフォーマンス劣化 | 低 | Nuxt 4は高速化されている |
 
 ---
 
-## 7. 成功基準
+## 8. 成功基準
 
-### 7.1 機能完全性
+### 8.1 機能完全性
 
 - ✅ 既存の全機能が動作する
 - ✅ Tauri IPCが正常動作する
 - ✅ マルチウィンドウ対応
 
-### 7.2 パフォーマンス
+### 8.2 パフォーマンス
 
-- ✅ 初期ロード < 2秒
-- ✅ バンドルサイズ < 300KB
+- ✅ 初期ロード < 2秒（Nuxt 4の最適化で改善見込み）
+- ✅ バンドルサイズ < 300KB（Tree shakingで削減）
+- ✅ HMR < 500ms（Nuxt 4の高速HMR）
 
-### 7.3 コード品質
+### 8.3 コード品質
 
-- ✅ TypeScript型安全性
+- ✅ TypeScript型安全性（Nuxt 4の型生成活用）
 - ✅ テストカバレッジ > 70%
+- ✅ ESLintエラーなし
+- ✅ 型チェックエラーなし
+
+### 8.4 Nuxt 4固有の確認項目
+
+- ✅ `future.compatibilityVersion: 4` が正しく設定
+- ✅ すべてのファイルが `app/` ディレクトリ配下
+- ✅ Auto-importsが正常動作
+- ✅ Nuxt DevToolsでのデバッグ可能
 
 ---
 
-## 8. タイムライン
+## 9. タイムライン
 
 ```
 Week 1: Phase 1 (環境構築)
@@ -1240,6 +1497,7 @@ Week 3: Phase 3 (詳細機能) + Phase 4 (テスト)
 
 | バージョン | 日付 | 変更内容 | 作成者 |
 |----------|------|---------|--------|
+| 3.0 | 2025-12-11 | Nuxt 4対応版に更新 | Claude |
 | 2.0 | 2025-12-07 | フレッシュスタート方式で再作成 | Claude |
 
 ---
@@ -1254,5 +1512,63 @@ Week 3: Phase 3 (詳細機能) + Phase 4 (テスト)
 **次のアクション**
 
 1. 本計画書のレビュー・承認
-2. `feature/nuxt-fresh-start`ブランチ作成
+2. `feature/nuxt4-fresh-start`ブランチ作成
 3. Phase 1開始
+
+---
+
+## 参考資料
+
+### 公式ドキュメント
+
+- [Nuxt 4 リリースノート](https://nuxt.com/blog/v4)
+- [Nuxt 4 マイグレーションガイド](https://nuxt.com/docs/getting-started/upgrade#nuxt-4)
+- [Nuxt UI v4 ドキュメント](https://ui.nuxt.com)
+- [Tailwind CSS v4 ドキュメント](https://tailwindcss.com/docs)
+- [Tauri v2 ドキュメント](https://v2.tauri.app)
+
+### Nuxt 4の主な改善点
+
+1. **パフォーマンス**
+   - ビルド時間の短縮
+   - バンドルサイズの削減
+   - HMRの高速化
+
+2. **開発体験**
+   - 改善された型生成
+   - より良いエラーメッセージ
+   - 強化されたDevTools
+
+3. **ディレクトリ構造**
+   - `app/` ディレクトリがデフォルト
+   - よりクリーンなプロジェクト構造
+   - 一貫性のある命名規則
+
+### トラブルシューティング
+
+**Tauri IPCが動作しない場合**:
+```typescript
+// app/plugins/tauri.client.ts
+export default defineNuxtPlugin(() => {
+  if (typeof window !== 'undefined' && '__TAURI__' in window) {
+    console.log('Tauri is available')
+  } else {
+    console.warn('Tauri is not available - running in browser mode')
+  }
+})
+```
+
+**型エラーが発生する場合**:
+```bash
+# 型を再生成
+npm run postinstall
+# または
+npx nuxi prepare
+```
+
+**ビルドエラーが発生する場合**:
+```bash
+# キャッシュをクリア
+rm -rf .nuxt node_modules/.cache
+npm install
+```
