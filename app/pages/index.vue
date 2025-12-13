@@ -1,108 +1,141 @@
 <script setup lang="ts">
-const colorMode = useColorMode()
+import { storeToRefs } from 'pinia'
+import type { Connection, Environment } from '~/types'
+import { useConnectionStore } from '~/stores/connection'
 
-const environments = [
-  { name: '開発環境', key: 'development', class: 'env-development' },
-  { name: 'テスト環境', key: 'test', class: 'env-test' },
-  { name: 'ステージング環境', key: 'staging', class: 'env-staging' },
-  { name: '本番環境', key: 'production', class: 'env-production' }
-]
+const { currentEnvironment } = useEnvironment()
 
-const toggleColorMode = () => {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+const connectionStore = useConnectionStore()
+const { connections, loading } = storeToRefs(connectionStore)
+
+const searchQuery = ref('')
+const environmentFilter = ref<'all' | Environment>('all')
+const viewMode = ref<'grid' | 'list'>('grid')
+
+const router = useRouter()
+
+const filteredConnections = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+
+  return connections.value.filter((connection) => {
+    const matchesEnv = environmentFilter.value === 'all' || connection.environment === environmentFilter.value
+    const matchesQuery =
+      query === '' ||
+      connection.name.toLowerCase().includes(query) ||
+      connection.host.toLowerCase().includes(query) ||
+      connection.database.toLowerCase().includes(query)
+
+    return matchesEnv && matchesQuery
+  })
+})
+
+const statsText = computed(() => {
+  const counts = connections.value.reduce<Record<Environment, number>>((acc, connection) => {
+    acc[connection.environment] = (acc[connection.environment] || 0) + 1
+    return acc
+  }, {
+    development: 0,
+    test: 0,
+    staging: 0,
+    production: 0
+  })
+
+  return `全${connections.value.length}件 • 開発: ${counts.development}件 • テスト: ${counts.test}件 • ステージング: ${counts.staging}件 • 本番: ${counts.production}件`
+})
+
+const isEmptyState = computed(() => !loading.value && filteredConnections.value.length === 0)
+
+const navigateToConnectionForm = (connectionId?: string) => {
+  router.push({
+    path: '/connection-form',
+    query: connectionId ? { id: connectionId } : undefined
+  })
 }
+
+const handleConnect = (connection: Connection) => {
+  // TODO: 実際の接続処理を実装
+  console.info('connect to', connection)
+}
+
+const handleEdit = (connection: Connection) => {
+  navigateToConnectionForm(connection.id)
+}
+
+const handleDelete = async (connection: Connection) => {
+  await connectionStore.deleteConnection(connection.id)
+}
+
+const handleNewConnection = () => navigateToConnectionForm()
+const handleRefresh = () => connectionStore.loadConnections()
+const handleToggleView = () => {
+  viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid'
+}
+
+onMounted(() => {
+  connectionStore.loadConnections()
+})
 </script>
 
 <template>
-  <div class="min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
-    <div class="max-w-4xl mx-auto">
-      <div class="mb-8">
-        <h1 class="text-4xl font-bold mb-2 text-gray-900 dark:text-white">
-          SQL Query Build
-        </h1>
-        <p class="text-xl text-gray-600 dark:text-gray-300">
-          Nuxt + Nuxt UI 動作確認ページ
-        </p>
-      </div>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <EnvironmentHeader
+      :environment="currentEnvironment"
+      :show-toggle="true"
+    />
 
-      <UCard class="mb-8">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold">カラーモード</h2>
-            <UButton
-              :icon="colorMode.value === 'dark' ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'"
-              @click="toggleColorMode"
-            >
-              {{ colorMode.value === 'dark' ? 'ライト' : 'ダーク' }}モードに切り替え
-            </UButton>
-          </div>
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <LauncherToolbar
+        @new-connection="handleNewConnection"
+        @refresh="handleRefresh"
+        @toggle-view="handleToggleView"
+      >
+        <template #stats>
+          {{ statsText }}
         </template>
-        <p class="text-gray-600 dark:text-gray-300">
-          現在のモード: <strong class="text-gray-900 dark:text-white">{{ colorMode.value }}</strong>
-        </p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-          ユーザー設定: {{ colorMode.preference }}
-        </p>
-      </UCard>
+      </LauncherToolbar>
 
-      <UCard>
-        <template #header>
-          <h2 class="text-xl font-semibold">環境別カラーテスト</h2>
-        </template>
+      <SearchFilter
+        v-model:search-query="searchQuery"
+        v-model:environment-filter="environmentFilter"
+      />
 
-        <div class="space-y-4">
-          <div
-            v-for="env in environments"
-            :key="env.key"
-            :class="[env.class, 'p-4 rounded-lg transition-colors']"
-          >
-            <p class="font-bold text-lg text-gray-900 dark:text-white">
-              {{ env.name }}
-            </p>
-            <p class="text-sm mt-2 text-gray-700 dark:text-gray-300">
-              クラス:
-              <code class="bg-white dark:bg-gray-800 px-2 py-1 rounded border border-gray-300 dark:border-gray-600">{{ env.class }}</code>
-            </p>
-            <p class="text-xs mt-1 text-gray-600 dark:text-gray-400">
-              カラーキー: {{ env.key }}
-            </p>
-          </div>
+      <section>
+        <div v-if="loading" class="py-12">
+          <ConnectionList :connections="[]" :loading="true" />
         </div>
 
-        <template #footer>
-          <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <p>✅ Nuxt開発サーバーが正常に動作しています</p>
-            <p>✅ Nuxt UIコンポーネントが利用可能です</p>
-            <p>✅ Tailwind CSSが適用されています</p>
-            <p>✅ 環境別カラーパレットが定義されています</p>
-          </div>
-        </template>
-      </UCard>
+        <div v-else-if="isEmptyState">
+          <EmptyState
+            title="接続がありません"
+            description="新しい接続を追加するか、検索条件を変更してください。"
+            action-label="新規接続を追加"
+            @action="handleNewConnection"
+          />
+        </div>
 
-      <UCard class="mt-8">
-        <template #header>
-          <h2 class="text-xl font-semibold">システム情報</h2>
-        </template>
+        <div v-else>
+          <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <ConnectionCard
+              v-for="connection in filteredConnections"
+              :key="connection.id"
+              :connection="connection"
+              @connect="handleConnect"
+              @edit="handleEdit"
+              @delete="handleDelete"
+            />
+          </div>
 
-        <div class="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p class="font-semibold text-gray-700 dark:text-gray-300">フレームワーク</p>
-            <p class="text-gray-600 dark:text-gray-400">Nuxt 4.2.2</p>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-700 dark:text-gray-300">UIライブラリ</p>
-            <p class="text-gray-600 dark:text-gray-400">Nuxt UI v4.2.1</p>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-700 dark:text-gray-300">CSSフレームワーク</p>
-            <p class="text-gray-600 dark:text-gray-400">Tailwind CSS v3.4</p>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-700 dark:text-gray-300">ランタイム</p>
-            <p class="text-gray-600 dark:text-gray-400">Tauri v2</p>
+          <div v-else>
+            <ConnectionList
+              :connections="filteredConnections"
+              :loading="loading"
+              @connect="handleConnect"
+              @edit="handleEdit"
+              @delete="handleDelete"
+            />
           </div>
         </div>
-      </UCard>
-    </div>
+      </section>
+    </main>
   </div>
 </template>
