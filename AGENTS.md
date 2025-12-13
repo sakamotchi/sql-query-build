@@ -28,3 +28,6 @@
 ## 補足
 - Tauri API を使う開発実行は `npm run tauri dev` が前提。`npm run dev` だけでは API が呼べない。
 - UI テストで Vuetify の依存を避けるため、必要に応じてコンポーネントをモックする（例: `src/App.test.ts`）。
+
+## 追加設定
+- 個人設定は `.claude/slack-config.local.md` を参照（Slack通知の設定とルール、git管理外）。

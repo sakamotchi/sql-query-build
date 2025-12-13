@@ -45,3 +45,9 @@
 - TauriはWebフロントエンドとネイティブOS APIの橋渡しを担当
 
 このプロジェクトは、Vue 3 Composition APIとTypeScriptを全体で使用する標準的なTauriパターンに従っています。
+
+## 追加設定
+
+個人設定については以下のファイルを参照してください：
+
+- `.claude/slack-config.local.md` - Slack通知の設定とルール（git管理外）
