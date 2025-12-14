@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { useSettingsStore } from '~/stores/settings'
+import { useTheme } from '~/composables/useTheme'
 import type { AppSettings } from '~/types'
 
 const settingsStore = useSettingsStore()
@@ -57,7 +59,7 @@ const saveSettings = async () => {
     </template>
 
     <div class="space-y-6">
-      <UFormGroup label="テーマ" hint="アプリ全体のカラーモード">
+      <UFormField label="テーマ" hint="アプリ全体のカラーモード">
         <USelect
           v-model="form.theme"
           :options="[
@@ -66,9 +68,9 @@ const saveSettings = async () => {
             { label: '自動', value: 'auto' }
           ]"
         />
-      </UFormGroup>
+      </UFormField>
 
-      <UFormGroup label="言語" hint="将来的にi18nで切り替え予定">
+      <UFormField label="言語" hint="将来的にi18nで切り替え予定">
         <USelect
           v-model="form.language"
           :options="[
@@ -76,25 +78,25 @@ const saveSettings = async () => {
             { label: 'English', value: 'en' }
           ]"
         />
-      </UFormGroup>
+      </UFormField>
 
-      <UFormGroup label="自動保存">
+      <UFormField label="自動保存">
         <div class="space-y-1">
-          <UToggle v-model="form.autoSave" />
+          <USwitch v-model="form.autoSave" />
           <p class="text-sm text-gray-600 dark:text-gray-400">
             クエリを一定間隔で自動保存します
           </p>
         </div>
-      </UFormGroup>
+      </UFormField>
 
-      <UFormGroup label="ウィンドウ復元">
+      <UFormField label="ウィンドウ復元">
         <div class="space-y-1">
-          <UToggle v-model="form.windowRestore" />
+          <USwitch v-model="form.windowRestore" />
           <p class="text-sm text-gray-600 dark:text-gray-400">
             再起動時に前回のウィンドウ位置とサイズを復元します
           </p>
         </div>
-      </UFormGroup>
+      </UFormField>
 
       <UAlert
         v-if="error || message"

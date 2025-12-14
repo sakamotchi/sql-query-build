@@ -12,10 +12,10 @@ const { currentEnvironment } = useEnvironment()
 const { loading: settingsLoading, error: settingsError } = storeToRefs(settingsStore)
 const { loading: securityLoading, error: securityError } = storeToRefs(securityStore)
 
-const tabs: { key: SettingsTab; label: string; icon: string }[] = [
-  { key: 'general', label: '一般設定', icon: 'i-heroicons-cog-6-tooth' },
-  { key: 'security', label: 'セキュリティ', icon: 'i-heroicons-lock-closed' },
-  { key: 'about', label: 'について', icon: 'i-heroicons-information-circle' }
+const tabs: { key: SettingsTab; value: SettingsTab; label: string; icon: string }[] = [
+  { key: 'general', value: 'general', label: '一般設定', icon: 'i-heroicons-cog-6-tooth' },
+  { key: 'security', value: 'security', label: 'セキュリティ', icon: 'i-heroicons-lock-closed' },
+  { key: 'about', value: 'about', label: 'について', icon: 'i-heroicons-information-circle' }
 ]
 
 const selectedTab = ref<SettingsTab>('general')
@@ -61,15 +61,15 @@ onMounted(async () => {
         :items="tabs"
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
       >
-        <template #item="{ item }">
+        <template #content="{ item }">
           <div class="py-6 px-2">
             <div v-if="isLoading" class="flex justify-center py-6">
               <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin text-gray-500" />
             </div>
 
-            <GeneralSettings v-else-if="item.key === 'general'" />
-            <SecuritySettings v-else-if="item.key === 'security'" />
-            <AboutSection v-else-if="item.key === 'about'" />
+            <GeneralSettings v-else-if="item.value === 'general'" />
+            <SecuritySettings v-else-if="item.value === 'security'" />
+            <AboutSection v-else-if="item.value === 'about'" />
           </div>
         </template>
       </UTabs>

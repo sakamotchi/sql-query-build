@@ -28,6 +28,7 @@
 ## 補足
 - Tauri API を使う開発実行は `npm run tauri dev` が前提。`npm run dev` だけでは API が呼べない。
 - UI テストで Vuetify の依存を避けるため、必要に応じてコンポーネントをモックする（例: `src/App.test.ts`）。
+- UI ライブラリは **Nuxt UI v4** を使用。旧バージョン（UFormGroup 等 v2/v3系）の情報を参照しないこと。コンポーネントは v4 の API を前提にする。
 
 ## 追加設定
 - 個人設定は `.claude/slack-config.local.md` を参照（Slack通知の設定とルール、git管理外）。
