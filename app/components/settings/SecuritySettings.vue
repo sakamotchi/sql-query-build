@@ -7,9 +7,23 @@ const securityStore = useSecurityStore()
 const { settings, loading, error } = storeToRefs(securityStore)
 
 const showMasterPasswordDialog = ref(false)
-const providerOptions: { label: string; value: SecurityProvider; description: string }[] = [
-  { label: 'OSキーチェーン', value: 'system', description: 'OSの安全なストレージに保存' },
-  { label: 'マスターパスワード', value: 'master-password', description: 'アプリ内で暗号化を管理' }
+const providerOptions: { label: string; value: SecurityProvider; description: string; recommended?: boolean }[] = [
+  {
+    label: 'Simple (推奨)',
+    value: 'simple',
+    description: '固定キーで暗号化。パスワード入力不要。',
+    recommended: true
+  },
+  {
+    label: 'マスターパスワード',
+    value: 'master-password',
+    description: 'ユーザー設定のパスワードで暗号化'
+  },
+  {
+    label: 'OSキーチェーン',
+    value: 'keychain',
+    description: 'OSのセキュアストレージに保存'
+  }
 ]
 
 const levelOptions: { label: string; value: SecurityLevel; hint: string }[] = [
@@ -66,20 +80,30 @@ const openMasterPasswordDialog = () => {
         <UFormField label="プロバイダー" hint="保存先と復号方式を選択します">
           <USelect
             :model-value="settings.provider"
-            :options="providerOptions"
-            option-attribute="label"
-            value-attribute="value"
+            :items="providerOptions"
             :disabled="saving || loading"
             @update:model-value="updateProvider"
           >
-            <template #option="{ option }">
+            <template #item="{ item }">
               <div class="flex flex-col">
-                <span class="font-medium">{{ option.label }}</span>
-                <span class="text-xs text-gray-500">{{ option.description }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="font-medium">{{ item.label }}</span>
+                  <UBadge v-if="item.recommended" color="primary" variant="soft" size="xs">推奨</UBadge>
+                </div>
+                <span class="text-xs text-gray-500">{{ item.description }}</span>
               </div>
             </template>
           </USelect>
         </UFormField>
+
+        <UAlert
+          v-if="settings.provider === 'simple'"
+          color="amber"
+          variant="soft"
+          icon="i-heroicons-exclamation-triangle"
+        >
+          Simpleプロバイダーは固定キーで暗号化します。本番環境や機密データにはマスターパスワードまたはOSキーチェーンを推奨します。
+        </UAlert>
 
         <UFormField label="セキュリティレベル" hint="暗号化強度を選択します">
           <URadioGroup
@@ -133,6 +157,6 @@ const openMasterPasswordDialog = () => {
       </div>
     </UCard>
 
-    <MasterPasswordSetupDialog v-model="showMasterPasswordDialog" />
+    <MasterPasswordSetupDialog v-model:open="showMasterPasswordDialog" />
   </div>
 </template>

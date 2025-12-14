@@ -6,10 +6,14 @@ import { invoke } from '@tauri-apps/api/core'
 export const useTauri = () => {
   // Tauriが利用可能かどうかを即座にチェック
   const isAvailable = computed(() => {
-    if (import.meta.client && typeof window !== 'undefined') {
-      return '__TAURI__' in window
-    }
-    return false
+    if (typeof window === 'undefined') return false
+
+    // Tauri v2では __TAURI_INTERNALS__ または import.meta.env.TAURI_PLATFORM で判定
+    return (
+      '__TAURI_INTERNALS__' in window ||
+      import.meta.env.TAURI_PLATFORM !== undefined ||
+      '__TAURI__' in window
+    )
   })
 
   /**

@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
 
-const isOpen = defineModel<boolean>()
+const isOpen = defineModel<boolean>('open')
 
 const securityStore = useSecurityStore()
 const { loading } = storeToRefs(securityStore)
@@ -75,18 +75,23 @@ watch(isOpen, (open) => {
 </script>
 
 <template>
-  <UModal v-model="isOpen" :prevent-close="true">
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-key" class="w-5 h-5 text-primary-500" />
-            <h3 class="text-xl font-semibold">マスターパスワード設定</h3>
-          </div>
-          <UBadge v-if="loading" color="primary" variant="soft">処理中</UBadge>
+  <UModal
+    v-model:open="isOpen"
+    title="マスターパスワード設定"
+    description="接続情報を保護するパスワードを設定します。忘れると復元できません。"
+    :prevent-close="true"
+  >
+    <template #header>
+      <div class="flex items-center justify-between gap-2 w-full">
+        <div class="flex items-center gap-2">
+          <UIcon name="i-heroicons-key" class="w-5 h-5 text-primary-500" />
+          <h3 class="text-xl font-semibold">マスターパスワード設定</h3>
         </div>
-      </template>
+        <UBadge v-if="loading" color="primary" variant="soft">処理中</UBadge>
+      </div>
+    </template>
 
+    <template #body>
       <div class="space-y-5">
         <p class="text-sm text-gray-600 dark:text-gray-300">
           接続情報を保護するパスワードを設定します。忘れると復元できません。
@@ -131,17 +136,17 @@ watch(isOpen, (open) => {
           {{ message }}
         </UAlert>
       </div>
+    </template>
 
-      <template #footer>
-        <div class="flex gap-2 justify-end">
-          <UButton variant="outline" color="gray" @click="isOpen = false">
-            キャンセル
-          </UButton>
-          <UButton color="primary" :loading="loading" :disabled="!canSubmit" @click="setupPassword">
-            設定
-          </UButton>
-        </div>
-      </template>
-    </UCard>
+    <template #footer>
+      <div class="flex gap-2 justify-end">
+        <UButton variant="outline" color="gray" @click="isOpen = false">
+          キャンセル
+        </UButton>
+        <UButton color="primary" :loading="loading" :disabled="!canSubmit" @click="setupPassword">
+          設定
+        </UButton>
+      </div>
+    </template>
   </UModal>
 </template>

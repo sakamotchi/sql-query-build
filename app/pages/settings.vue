@@ -41,7 +41,7 @@ onMounted(async () => {
           <h1 class="text-3xl font-bold text-gray-900 dark:text-white">設定</h1>
         </div>
 
-        <UButton to="/" variant="ghost" color="gray" size="sm">
+        <UButton to="/" variant="outline" color="neutral" size="sm">
           ホームに戻る
         </UButton>
       </div>

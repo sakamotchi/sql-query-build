@@ -3,7 +3,7 @@ import { useTauri } from '~/composables/useTauri'
 import type { SecurityLevel, SecurityProvider, SecuritySettings } from '~/types'
 
 const defaultSecuritySettings: SecuritySettings = {
-  provider: 'system',
+  provider: 'simple',
   level: 'medium',
   masterPasswordSet: false
 }

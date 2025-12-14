@@ -31,8 +31,8 @@ const handleOpenSettings = () => emit('openSettings')
     <div class="flex gap-2">
       <UButton
         icon="i-heroicons-cog-6-tooth"
-        variant="ghost"
-        color="gray"
+        variant="outline"
+        color="neutral"
         @click="handleOpenSettings"
       >
         設定
@@ -41,7 +41,7 @@ const handleOpenSettings = () => emit('openSettings')
       <UButton
         :icon="viewMode === 'grid' ? 'i-heroicons-list-bullet' : 'i-heroicons-squares-2x2'"
         variant="outline"
-        color="gray"
+        color="neutral"
         @click="handleToggleView"
       >
         {{ viewMode === 'grid' ? 'リスト' : 'グリッド' }}
@@ -50,7 +50,7 @@ const handleOpenSettings = () => emit('openSettings')
       <UButton
         icon="i-heroicons-arrow-path"
         variant="outline"
-        color="gray"
+        color="neutral"
         @click="handleRefresh"
       >
         更新

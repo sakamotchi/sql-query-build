@@ -11,7 +11,7 @@ export type DatabaseType = 'mysql' | 'postgresql' | 'sqlite' | 'sqlserver' | 'or
 /**
  * セキュリティプロバイダー
  */
-export type SecurityProvider = 'system' | 'master-password'
+export type SecurityProvider = 'simple' | 'master-password' | 'keychain'
 
 /**
  * セキュリティレベル
