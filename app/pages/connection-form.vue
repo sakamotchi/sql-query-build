@@ -181,40 +181,40 @@ watch(useCustomColor, (enabled) => {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup label="接続名" required :error="errors.name">
+              <UFormField label="接続名" required :error="errors.name">
                 <UInput v-model="form.name" placeholder="例: 開発用MySQL" />
-              </UFormGroup>
+              </UFormField>
 
-              <UFormGroup label="データベースタイプ" required :error="errors.type">
+              <UFormField label="データベースタイプ" required :error="errors.type">
                 <USelect v-model="form.type" :options="databaseOptions" value-attribute="value" />
-              </UFormGroup>
+              </UFormField>
             </div>
 
-            <UFormGroup label="環境" required :error="errors.environment">
+            <UFormField label="環境" required :error="errors.environment">
               <EnvironmentSelector v-model="form.environment" />
-            </UFormGroup>
+            </UFormField>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup label="ホスト" required :error="errors.host">
+              <UFormField label="ホスト" required :error="errors.host">
                 <UInput v-model="form.host" placeholder="localhost" />
-              </UFormGroup>
-              <UFormGroup label="ポート" required :error="errors.port">
+              </UFormField>
+              <UFormField label="ポート" required :error="errors.port">
                 <UInput v-model.number="form.port" type="number" min="1" max="65535" />
-              </UFormGroup>
+              </UFormField>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormGroup label="データベース名" required :error="errors.database">
+              <UFormField label="データベース名" required :error="errors.database">
                 <UInput v-model="form.database" placeholder="sample_db" />
-              </UFormGroup>
-              <UFormGroup label="ユーザー名" required :error="errors.username">
+              </UFormField>
+              <UFormField label="ユーザー名" required :error="errors.username">
                 <UInput v-model="form.username" placeholder="db_user" />
-              </UFormGroup>
+              </UFormField>
             </div>
 
-            <UFormGroup label="パスワード (任意)">
+            <UFormField label="パスワード (任意)">
               <UInput v-model="form.password" type="password" placeholder="必要に応じて入力" />
-            </UFormGroup>
+            </UFormField>
           </div>
 
           <div class="space-y-4">

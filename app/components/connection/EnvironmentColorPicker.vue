@@ -46,7 +46,7 @@ const resetToDefault = () => {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <UFormGroup label="プライマリカラー">
+      <UFormField label="プライマリカラー">
         <div class="flex gap-2">
           <input
             v-model="primaryColor"
@@ -59,9 +59,9 @@ const resetToDefault = () => {
             class="flex-1"
           />
         </div>
-      </UFormGroup>
+      </UFormField>
 
-      <UFormGroup label="背景カラー">
+      <UFormField label="背景カラー">
         <div class="flex gap-2">
           <input
             v-model="backgroundColor"
@@ -74,7 +74,7 @@ const resetToDefault = () => {
             class="flex-1"
           />
         </div>
-      </UFormGroup>
+      </UFormField>
     </div>
 
     <div>
