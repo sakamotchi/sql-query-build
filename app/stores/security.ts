@@ -2,13 +2,15 @@ import { defineStore } from 'pinia'
 import { useTauri } from '~/composables/useTauri'
 import type { SecurityLevel, SecurityProvider, SecuritySettings } from '~/types'
 
+const defaultSecuritySettings: SecuritySettings = {
+  provider: 'system',
+  level: 'medium',
+  masterPasswordSet: false
+}
+
 export const useSecurityStore = defineStore('security', {
   state: () => ({
-    settings: {
-      provider: 'system',
-      level: 'medium',
-      masterPasswordSet: false
-    } as SecuritySettings,
+    settings: { ...defaultSecuritySettings } as SecuritySettings,
     loading: false,
     error: null as string | null
   }),
@@ -26,7 +28,13 @@ export const useSecurityStore = defineStore('security', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          console.info('Tauri is not available; using default security settings in browser mode.')
+          return
+        }
+
         const settings = await invokeCommand<SecuritySettings>('get_security_settings')
         if (settings) {
           this.settings = settings
@@ -44,7 +52,13 @@ export const useSecurityStore = defineStore('security', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          this.settings.provider = provider
+          return
+        }
+
         await invokeCommand('set_security_provider', { provider })
         this.settings.provider = provider
       } catch (error) {
@@ -61,7 +75,13 @@ export const useSecurityStore = defineStore('security', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          this.settings.level = level
+          return
+        }
+
         await invokeCommand('set_security_level', { level })
         this.settings.level = level
       } catch (error) {
@@ -78,7 +98,14 @@ export const useSecurityStore = defineStore('security', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          // ブラウザモードではTauriに依存する処理をスキップ
+          this.settings.masterPasswordSet = true
+          return
+        }
+
         await invokeCommand('set_master_password', { password })
         this.settings.masterPasswordSet = true
       } catch (error) {
@@ -92,7 +119,12 @@ export const useSecurityStore = defineStore('security', {
 
     async verifyMasterPassword(password: string): Promise<boolean> {
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          return false
+        }
+
         return await invokeCommand<boolean>('verify_master_password', { password })
       } catch (error) {
         console.error('Failed to verify master password:', error)

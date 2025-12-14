@@ -2,14 +2,16 @@ import { defineStore } from 'pinia'
 import { useTauri } from '~/composables/useTauri'
 import type { AppSettings } from '~/types'
 
+const defaultSettings: AppSettings = {
+  theme: 'auto',
+  language: 'ja',
+  autoSave: true,
+  windowRestore: true
+}
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
-    settings: {
-      theme: 'auto',
-      language: 'ja',
-      autoSave: true,
-      windowRestore: true
-    } as AppSettings,
+    settings: { ...defaultSettings } as AppSettings,
     loading: false,
     error: null as string | null
   }),
@@ -27,7 +29,13 @@ export const useSettingsStore = defineStore('settings', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          console.info('Tauri is not available; using default settings in browser mode.')
+          return
+        }
+
         const settings = await invokeCommand<AppSettings>('get_settings')
         if (settings) {
           this.settings = settings
@@ -45,7 +53,14 @@ export const useSettingsStore = defineStore('settings', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          // ブラウザモードではローカル状態のみ更新して完了
+          this.settings = { ...this.settings, ...updates }
+          return this.settings
+        }
+
         const updated = await invokeCommand<AppSettings>('update_settings', { settings: updates })
         this.settings = updated
         return updated
@@ -63,7 +78,13 @@ export const useSettingsStore = defineStore('settings', {
       this.error = null
 
       try {
-        const { invokeCommand } = useTauri()
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          this.settings = { ...defaultSettings }
+          return this.settings
+        }
+
         const defaultSettings = await invokeCommand<AppSettings>('reset_settings')
         this.settings = defaultSettings
         return defaultSettings
