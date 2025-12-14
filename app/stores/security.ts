@@ -106,7 +106,12 @@ export const useSecurityStore = defineStore('security', {
           return
         }
 
-        await invokeCommand('set_master_password', { password })
+        // Rustバックエンドのinitialize_master_passwordコマンドを使用
+        // passwordConfirmパラメータも必要（キャメルケース）
+        await invokeCommand('initialize_master_password', {
+          password,
+          passwordConfirm: password
+        })
         this.settings.masterPasswordSet = true
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to set master password'
@@ -118,6 +123,9 @@ export const useSecurityStore = defineStore('security', {
     },
 
     async verifyMasterPassword(password: string): Promise<boolean> {
+      this.loading = true
+      this.error = null
+
       try {
         const { invokeCommand, isAvailable } = useTauri()
 
@@ -125,10 +133,14 @@ export const useSecurityStore = defineStore('security', {
           return false
         }
 
-        return await invokeCommand<boolean>('verify_master_password', { password })
+        await invokeCommand('unlock_with_master_password', { password })
+        return true
       } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to verify master password'
         console.error('Failed to verify master password:', error)
         return false
+      } finally {
+        this.loading = false
       }
     }
   }

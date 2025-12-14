@@ -62,6 +62,11 @@ const updateLevel = async (level: SecurityLevel) => {
 }
 
 const openMasterPasswordDialog = () => {
+  if (settings.value.masterPasswordSet) {
+    // TODO: パスワード変更ダイアログを実装
+    message.value = 'パスワード変更機能は現在開発中です。プロバイダーを一度Simpleに切り替えてから、再度マスターパスワードを選択してください。'
+    return
+  }
   showMasterPasswordDialog.value = true
 }
 </script>

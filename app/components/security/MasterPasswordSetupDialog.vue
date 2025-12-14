@@ -81,22 +81,8 @@ watch(isOpen, (open) => {
     description="接続情報を保護するパスワードを設定します。忘れると復元できません。"
     :prevent-close="true"
   >
-    <template #header>
-      <div class="flex items-center justify-between gap-2 w-full">
-        <div class="flex items-center gap-2">
-          <UIcon name="i-heroicons-key" class="w-5 h-5 text-primary-500" />
-          <h3 class="text-xl font-semibold">マスターパスワード設定</h3>
-        </div>
-        <UBadge v-if="loading" color="primary" variant="soft">処理中</UBadge>
-      </div>
-    </template>
-
     <template #body>
       <div class="space-y-5">
-        <p class="text-sm text-gray-600 dark:text-gray-300">
-          接続情報を保護するパスワードを設定します。忘れると復元できません。
-        </p>
-
         <UFormField label="パスワード" hint="8文字以上で入力してください" required>
           <UInput
             v-model="password"
