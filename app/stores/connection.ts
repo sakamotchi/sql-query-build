@@ -4,9 +4,19 @@ import type { Connection } from '~/types'
 
 // Tauriコマンドのヘルパー関数
 async function invokeTauri<T>(command: string, args?: Record<string, unknown>): Promise<T> {
-  if (typeof window === 'undefined' || !('__TAURI__' in window)) {
+  // クライアントサイドでのみ実行
+  if (typeof window === 'undefined') {
     throw new Error('Tauri is not available. Running in browser mode.')
   }
+
+  // Tauri v2では __TAURI_INTERNALS__ を使用して判定
+  // または import.meta.env.TAURI_PLATFORM で判定
+  const isTauri = '__TAURI_INTERNALS__' in window || import.meta.env.TAURI_PLATFORM !== undefined
+
+  if (!isTauri) {
+    throw new Error('Tauri is not available. Running in browser mode.')
+  }
+
   return invoke<T>(command, args)
 }
 
@@ -53,6 +63,20 @@ export const useConnectionStore = defineStore('connection', {
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to create connection'
         console.error('Failed to create connection:', error)
+
+        // ブラウザモード用のフォールバック: モックデータを作成
+        if (error instanceof Error && error.message.includes('Tauri is not available')) {
+          const mockConnection: Connection = {
+            ...connection,
+            id: `mock-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+          this.connections.push(mockConnection)
+          console.warn('Created mock connection in browser mode:', mockConnection)
+          return mockConnection
+        }
+
         throw error
       } finally {
         this.loading = false
@@ -75,6 +99,22 @@ export const useConnectionStore = defineStore('connection', {
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to update connection'
         console.error('Failed to update connection:', error)
+
+        // ブラウザモード用のフォールバック
+        if (error instanceof Error && error.message.includes('Tauri is not available')) {
+          const index = this.connections.findIndex((connection) => connection.id === id)
+          if (index !== -1) {
+            const updated = {
+              ...this.connections[index],
+              ...updates,
+              updatedAt: new Date().toISOString()
+            }
+            this.connections[index] = updated
+            console.warn('Updated mock connection in browser mode:', updated)
+            return updated
+          }
+        }
+
         throw error
       } finally {
         this.loading = false
@@ -95,6 +135,17 @@ export const useConnectionStore = defineStore('connection', {
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to delete connection'
         console.error('Failed to delete connection:', error)
+
+        // ブラウザモード用のフォールバック
+        if (error instanceof Error && error.message.includes('Tauri is not available')) {
+          this.connections = this.connections.filter((connection) => connection.id !== id)
+          if (this.activeConnection?.id === id) {
+            this.activeConnection = null
+          }
+          console.warn('Deleted mock connection in browser mode:', id)
+          return
+        }
+
         throw error
       } finally {
         this.loading = false
@@ -106,6 +157,16 @@ export const useConnectionStore = defineStore('connection', {
         return await invokeTauri('test_connection', { connection })
       } catch (error) {
         console.error('Connection test failed:', error)
+
+        // ブラウザモード用のフォールバック: モック成功レスポンス
+        if (error instanceof Error && error.message.includes('Tauri is not available')) {
+          console.warn('Returning mock success for connection test in browser mode')
+          return {
+            success: true,
+            message: 'モック接続テスト成功（ブラウザモード）'
+          }
+        }
+
         throw error
       }
     },
