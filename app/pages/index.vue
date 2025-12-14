@@ -70,6 +70,9 @@ const handleRefresh = () => connectionStore.loadConnections()
 const handleToggleView = () => {
   viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid'
 }
+const handleOpenSettings = () => {
+  router.push('/settings')
+}
 
 onMounted(() => {
   connectionStore.loadConnections()
@@ -88,6 +91,7 @@ onMounted(() => {
         @new-connection="handleNewConnection"
         @refresh="handleRefresh"
         @toggle-view="handleToggleView"
+        @open-settings="handleOpenSettings"
       >
         <template #stats>
           {{ statsText }}

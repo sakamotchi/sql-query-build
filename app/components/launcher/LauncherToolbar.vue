@@ -3,6 +3,7 @@ const emit = defineEmits<{
   newConnection: []
   refresh: []
   toggleView: []
+  openSettings: []
 }>()
 
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -13,6 +14,7 @@ const handleToggleView = () => {
   viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid'
   emit('toggleView')
 }
+const handleOpenSettings = () => emit('openSettings')
 </script>
 
 <template>
@@ -27,6 +29,15 @@ const handleToggleView = () => {
     </div>
 
     <div class="flex gap-2">
+      <UButton
+        icon="i-heroicons-cog-6-tooth"
+        variant="ghost"
+        color="gray"
+        @click="handleOpenSettings"
+      >
+        設定
+      </UButton>
+
       <UButton
         :icon="viewMode === 'grid' ? 'i-heroicons-list-bullet' : 'i-heroicons-squares-2x2'"
         variant="outline"
