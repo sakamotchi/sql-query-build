@@ -1,6 +1,5 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import "tailwindcss";
+@import "@nuxt/ui";
 
 /* 環境別カラークラス */
 .env-development {

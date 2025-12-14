@@ -20,14 +20,11 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
     '@nuxt/icon',
-    '@nuxtjs/tailwindcss',
     '@pinia/nuxt'
   ],
 
-  // Tailwind設定
-  tailwindcss: {
-    configPath: '~/tailwind.config.ts'
-  },
+  // CSS設定
+  css: ['~/assets/css/main.css'],
 
   // 開発サーバー設定（Tauri用）
   devServer: {

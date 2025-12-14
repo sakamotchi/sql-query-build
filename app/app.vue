@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import '~/assets/css/tailwind.css'
-
 useHead({
   title: 'SQL Query Build',
   meta: [
@@ -10,9 +8,9 @@ useHead({
 </script>
 
 <template>
-  <div id="app">
+  <UApp>
     <NuxtPage />
-  </div>
+  </UApp>
 </template>
 
 <style>
