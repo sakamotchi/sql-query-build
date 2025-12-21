@@ -4,8 +4,9 @@ use tauri::State;
 
 use crate::crypto::security_provider::{
     InitializeParams, PasswordRequirements, PasswordValidationResult, PasswordValidator,
-    ProviderSwitcher, SecurityConfig, SecurityConfigStorage, SecurityProviderInfo,
-    SecurityProviderManager, SecurityProviderType, SwitchParams, SwitchResult, UnlockParams,
+    ProviderSpecificConfig, ProviderSwitcher, SecurityConfig, SecurityConfigStorage,
+    SecurityProviderInfo, SecurityProviderManager, SecurityProviderType, SwitchParams,
+    SwitchResult, UnlockParams,
 };
 
 /// セキュリティ設定を取得
@@ -122,12 +123,15 @@ pub async fn check_password_strength(password: String) -> PasswordValidationResu
 #[tauri::command]
 pub async fn switch_security_provider(
     switcher: State<'_, Arc<ProviderSwitcher>>,
+    storage: State<'_, Arc<SecurityConfigStorage>>,
+    manager: State<'_, Arc<SecurityProviderManager>>,
     target_provider: SecurityProviderType,
     current_password: Option<String>,
     new_password: Option<String>,
     new_password_confirm: Option<String>,
 ) -> Result<SwitchResult, String> {
     let current_provider = switcher.current_provider_type().await;
+    println!("[switch_security_provider] Switching from {:?} to {:?}", current_provider, target_provider);
 
     let current_auth = match current_provider {
         SecurityProviderType::Simple => UnlockParams::Simple,
@@ -146,12 +150,181 @@ pub async fn switch_security_provider(
         SecurityProviderType::Keychain => InitializeParams::Keychain,
     };
 
-    switcher
+    let result = switcher
         .switch(SwitchParams {
             target_provider,
             current_auth,
             new_init,
         })
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    println!("[switch_security_provider] Switch completed successfully");
+
+    // NOTE: switcher.switch() が内部で config_storage.change_provider() を呼んでいるため、
+    // ここで再度呼ぶ必要はない。
+    // ただし、プロバイダー固有の設定(is_configured など)は別途更新が必要。
+
+    // プロバイダー切り替え完了後、必要に応じてマスターパスワード設定をクリア
+    if current_provider == SecurityProviderType::MasterPassword
+        && target_provider != SecurityProviderType::MasterPassword
+    {
+        println!("[switch_security_provider] Clearing master password config (switched FROM MasterPassword)");
+        let _ = manager.clear_master_password_config().await;
+    }
+
+    // プロバイダー固有の設定を更新（必要な場合のみ）
+    match target_provider {
+        SecurityProviderType::Simple => {
+            // Simpleプロバイダーは追加設定不要
+            println!("[switch_security_provider] Simple provider: no additional config needed");
+        }
+        SecurityProviderType::MasterPassword => {
+            // is_configuredをtrueに更新
+            println!("[switch_security_provider] Updating MasterPassword is_configured to true");
+            storage
+                .update_provider_config(ProviderSpecificConfig::MasterPassword {
+                    is_configured: true,
+                })
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+        SecurityProviderType::Keychain => {
+            // is_initializedをtrueに更新
+            println!("[switch_security_provider] Updating Keychain is_initialized to true");
+            storage
+                .update_provider_config(ProviderSpecificConfig::Keychain {
+                    is_initialized: true,
+                })
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+    }
+
+    Ok(result)
+}
+
+/// マスターパスワードを検証
+#[tauri::command]
+pub async fn verify_master_password(
+    manager: State<'_, Arc<SecurityProviderManager>>,
+    password: String,
+) -> Result<bool, String> {
+    match manager
+        .unlock(UnlockParams::MasterPassword { password })
+        .await
+    {
+        Ok(_) => Ok(true),
+        Err(_) => Ok(false),
+    }
+}
+
+/// マスターパスワードを変更（再暗号化込み）
+#[tauri::command]
+pub async fn change_master_password(
+    switcher: State<'_, Arc<ProviderSwitcher>>,
+    storage: State<'_, Arc<SecurityConfigStorage>>,
+    manager: State<'_, Arc<SecurityProviderManager>>,
+    current_password: String,
+    new_password: String,
+    new_password_confirm: String,
+) -> Result<SwitchResult, String> {
+    if switcher.current_provider_type().await != SecurityProviderType::MasterPassword {
+        return Err("現在のプロバイダーがマスターパスワードではありません".to_string());
+    }
+
+    // 一旦Simpleプロバイダーに切り替え
+    switcher
+        .switch(SwitchParams {
+            target_provider: SecurityProviderType::Simple,
+            current_auth: UnlockParams::MasterPassword {
+                password: current_password.clone(),
+            },
+            new_init: InitializeParams::Simple,
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // マスターパスワード設定をクリア
+    manager
+        .clear_master_password_config()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 新しいパスワードでマスターパスワードプロバイダーに戻す
+    let result = switcher
+        .switch(SwitchParams {
+            target_provider: SecurityProviderType::MasterPassword,
+            current_auth: UnlockParams::Simple,
+            new_init: InitializeParams::MasterPassword {
+                password: new_password.clone(),
+                password_confirm: new_password_confirm.clone(),
+            },
+        })
+        .await;
+
+    match result {
+        Ok(res) => {
+            // 切り替え成功時、is_configuredをtrueに更新
+            storage
+                .update_provider_config(ProviderSpecificConfig::MasterPassword {
+                    is_configured: true,
+                })
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(res)
+        }
+        Err(err) => {
+            // エラー時は元のパスワードで復元を試みる
+            let _ = switcher
+                .switch(SwitchParams {
+                    target_provider: SecurityProviderType::MasterPassword,
+                    current_auth: UnlockParams::Simple,
+                    new_init: InitializeParams::MasterPassword {
+                        password: current_password.clone(),
+                        password_confirm: current_password,
+                    },
+                })
+                .await;
+
+            // 復元成功時もis_configuredをtrueに戻す
+            let _ = storage
+                .update_provider_config(ProviderSpecificConfig::MasterPassword {
+                    is_configured: true,
+                })
+                .await;
+
+            Err(err.to_string())
+        }
+    }
+}
+
+/// セキュリティ設定を強制的にリセット（デバッグ用）
+/// WARNING: このコマンドは全ての接続情報を失います
+#[tauri::command]
+pub async fn reset_security_config(
+    storage: State<'_, Arc<SecurityConfigStorage>>,
+    manager: State<'_, Arc<SecurityProviderManager>>,
+) -> Result<(), String> {
+    // マスターパスワード設定をクリア（存在しない場合は無視）
+    let _ = manager.clear_master_password_config().await;
+
+    // Simpleプロバイダーに強制的に変更
+    manager
+        .change_provider(SecurityProviderType::Simple)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    storage
+        .change_provider(SecurityProviderType::Simple)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // SimpleProvider を初期化
+    manager
+        .initialize(InitializeParams::Simple)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }

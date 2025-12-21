@@ -52,7 +52,7 @@ impl MasterPasswordProvider {
     const DEFAULT_ITERATIONS: u32 = 600_000;
 
     /// 設定ファイル名
-    const CONFIG_KEY: &'static str = "master_password_config";
+    pub const CONFIG_KEY: &'static str = "master_password_config";
 
     pub fn new() -> Self {
         Self {

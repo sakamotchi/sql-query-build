@@ -23,13 +23,25 @@ pub async fn get_connections(
 #[tauri::command]
 pub async fn get_connection(
     id: String,
-    include_password_decrypted: bool,
+    include_password_decrypted: Option<bool>,
     service: State<'_, ConnectionService>,
 ) -> Result<Option<FrontendConnection>, String> {
+    let decrypt = include_password_decrypted.unwrap_or(false);
+    println!("[get_connection] id={}, decrypt={}", id, decrypt);
+
     let connection = service
-        .get_by_id(&id, include_password_decrypted)
+        .get_by_id(&id, decrypt)
         .await
         .map_err(|e| format!("Failed to get connection: {}", e))?;
+
+    if let Some(ref conn) = connection {
+        if let crate::connection::ConnectionConfig::Network(ref network) = conn.connection {
+            println!("[get_connection] Password present: {}", network.encrypted_password.is_some());
+            if let Some(ref pwd) = network.encrypted_password {
+                println!("[get_connection] Password length: {}", pwd.len());
+            }
+        }
+    }
 
     Ok(connection.map(FrontendConnection::from))
 }

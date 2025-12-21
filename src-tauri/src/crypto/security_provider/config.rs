@@ -137,7 +137,9 @@ impl SecurityConfigStorage {
         &self,
         provider_type: SecurityProviderType,
     ) -> Result<(), SecurityConfigError> {
+        println!("[SecurityConfigStorage::change_provider] Called with provider_type: {:?}", provider_type);
         let mut config = self.load().await?;
+        println!("[SecurityConfigStorage::change_provider] Loaded config: provider_type={:?}", config.provider_type);
 
         config.provider_type = provider_type;
         config.provider_config = match provider_type {
@@ -150,7 +152,10 @@ impl SecurityConfigStorage {
             },
         };
 
-        self.save(&config).await
+        println!("[SecurityConfigStorage::change_provider] Updated config: provider_type={:?}, config={:?}", config.provider_type, config.provider_config);
+        let result = self.save(&config).await;
+        println!("[SecurityConfigStorage::change_provider] Save result: {:?}", result);
+        result
     }
 
     /// プロバイダー固有の設定を更新
@@ -158,9 +163,14 @@ impl SecurityConfigStorage {
         &self,
         provider_config: ProviderSpecificConfig,
     ) -> Result<(), SecurityConfigError> {
+        println!("[SecurityConfigStorage::update_provider_config] Called with provider_config: {:?}", provider_config);
         let mut config = self.load().await?;
+        println!("[SecurityConfigStorage::update_provider_config] Loaded config: provider_type={:?}, old_config={:?}", config.provider_type, config.provider_config);
         config.provider_config = provider_config;
-        self.save(&config).await
+        println!("[SecurityConfigStorage::update_provider_config] Updated config: provider_type={:?}, new_config={:?}", config.provider_type, config.provider_config);
+        let result = self.save(&config).await;
+        println!("[SecurityConfigStorage::update_provider_config] Save result: {:?}", result);
+        result
     }
 
     /// 設定をリセット

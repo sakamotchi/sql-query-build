@@ -107,6 +107,13 @@ impl SecurityProviderManager {
         Ok(())
     }
 
+    /// マスターパスワード設定を削除（再初期化用）
+    pub async fn clear_master_password_config(&self) -> SecurityProviderResult<()> {
+        self.storage
+            .delete(MasterPasswordProvider::CONFIG_KEY)
+            .map_err(|e| SecurityProviderError::StorageError(e.to_string()))
+    }
+
     /// 現在のプロバイダー情報を取得
     pub async fn provider_info(&self) -> SecurityProviderInfo {
         let provider = self.provider.read().await;

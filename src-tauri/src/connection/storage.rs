@@ -33,8 +33,13 @@ impl ConnectionStorage {
     }
 
     /// 接続情報を作成
-    pub fn create(&self, connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
+    pub fn create(&self, mut connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
         let mut collection = self.load_collection()?;
+
+        // IDが空の場合は新しいUUIDを生成
+        if connection.id.is_empty() {
+            connection.id = uuid::Uuid::new_v4().to_string();
+        }
 
         // バリデーション
         connection.validate()?;
@@ -108,7 +113,7 @@ impl ConnectionStorage {
         }
 
         // キャッシュにない場合はファイルから読み込み
-        let collection = match self
+        let mut collection = match self
             .file_storage
             .read::<ConnectionCollection>(&self.storage_key)
         {
@@ -121,6 +126,22 @@ impl ConnectionStorage {
                 return Err(ConnectionError::StorageError(e.to_string()));
             }
         };
+
+        // マイグレーション: 空のIDを持つ接続に新しいUUIDを割り当てる
+        let mut needs_save = false;
+        for conn in &mut collection.connections {
+            if conn.id.is_empty() {
+                conn.id = uuid::Uuid::new_v4().to_string();
+                needs_save = true;
+            }
+        }
+
+        // マイグレーションが必要な場合は保存
+        if needs_save {
+            self.file_storage
+                .write(&self.storage_key, &collection)
+                .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+        }
 
         // キャッシュに保存
         {

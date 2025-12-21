@@ -15,6 +15,7 @@ pub struct FrontendConnection {
     pub username: String,
     pub password: String,
     pub save_password: bool,
+    #[serde(rename = "type")]
     pub db_type: String,
     pub ssl: bool,
     pub ssh_tunnel: bool,

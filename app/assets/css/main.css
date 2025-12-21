@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* 環境別カラークラス */
+.env-development {
+  background-color: #DCEDC8;
+  border: 2px solid #4CAF50;
+  border-radius: 0.5rem;
+}
+
+.dark .env-development {
+  background-color: #1B5E20;
+}
+
+.env-test {
+  background-color: #BBDEFB;
+  border: 2px solid #2196F3;
+  border-radius: 0.5rem;
+}
+
+.dark .env-test {
+  background-color: #0D47A1;
+}
+
+.env-staging {
+  background-color: #FFE0B2;
+  border: 2px solid #FF9800;
+  border-radius: 0.5rem;
+}
+
+.dark .env-staging {
+  background-color: #E65100;
+}
+
+.env-production {
+  background-color: #FFCDD2;
+  border: 2px solid #F44336;
+  border-radius: 0.5rem;
+}
+
+.dark .env-production {
+  background-color: #B71C1C;
+}
