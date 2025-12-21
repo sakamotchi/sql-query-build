@@ -34,11 +34,6 @@ const providerOptions: { label: string; value: SecurityProvider; description: st
     label: 'マスターパスワード',
     value: 'master-password',
     description: 'ユーザー設定のパスワードで暗号化'
-  },
-  {
-    label: 'OSキーチェーン',
-    value: 'keychain',
-    description: 'OSのセキュアストレージに保存'
   }
 ]
 
@@ -143,15 +138,6 @@ const resetSecurity = async () => {
             </template>
           </USelect>
         </UFormField>
-
-        <UAlert
-          v-if="settings.provider === 'simple'"
-          color="amber"
-          variant="soft"
-          icon="i-heroicons-exclamation-triangle"
-        >
-          Simpleプロバイダーは固定キーで暗号化します。本番環境や機密データにはマスターパスワードまたはOSキーチェーンを推奨します。
-        </UAlert>
 
         <UFormField label="セキュリティレベル" hint="暗号化強度を選択します">
           <URadioGroup

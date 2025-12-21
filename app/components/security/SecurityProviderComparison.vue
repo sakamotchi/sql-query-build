@@ -17,7 +17,7 @@ interface ProviderDetail {
   recommendedFor: string[]
 }
 
-const providers: Record<SecurityProvider, ProviderDetail> = {
+const providers: Record<Exclude<SecurityProvider, 'keychain'>, ProviderDetail> = {
   simple: {
     name: 'Simple',
     icon: 'i-heroicons-key',
@@ -47,21 +47,6 @@ const providers: Record<SecurityProvider, ProviderDetail> = {
     pros: ['ユーザーのみが復号可能', '高いセキュリティレベル', '他のPCでも同じパスワードで復元可能'],
     cons: ['起動時に毎回パスワード入力が必要', 'パスワードを忘れると復元不可', 'パスワード管理の責任がユーザーにある'],
     recommendedFor: ['チーム共有PC', '機密性の高いデータ', '本番環境への接続情報', 'セキュリティを重視する場合']
-  },
-  keychain: {
-    name: 'OSキーチェーン',
-    icon: 'i-heroicons-shield-check',
-    color: 'blue',
-    securityLevel: 3,
-    features: {
-      encryption: 'OSのセキュアストレージ',
-      keyManagement: 'OS管理（Keychain/Credential Manager/Secret Service）',
-      unlockRequired: false,
-      osIntegration: true
-    },
-    pros: ['OSレベルのセキュリティ', '生体認証に対応（Touch ID/Face ID/Windows Hello）', 'パスワード入力不要（OSが管理）'],
-    cons: ['OS認証プロンプトが表示される場合がある', '他のPCへの移行が困難', 'OS固有の制限を受ける'],
-    recommendedFor: ['企業環境', '最高レベルのセキュリティが必要な場合', '生体認証を活用したい場合', 'セキュリティポリシー準拠が必要な場合']
   }
 }
 </script>
