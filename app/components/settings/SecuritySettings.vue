@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
+import { useProviderChangeDialog } from '~/composables/useProviderChangeDialog'
 import type { SecurityLevel, SecurityProvider } from '~/types'
 
 const securityStore = useSecurityStore()
 const { settings, loading, error } = storeToRefs(securityStore)
+const {
+  isOpen: isChangeDialogOpen,
+  dialogComponent,
+  targetProviderTyped,
+  open: openChangeDialog,
+  close: closeChangeDialog
+} = useProviderChangeDialog()
 
 // デバッグ: 設定が変更されたらログ出力（immediate は外す）
 watch(() => settings.value.provider, (newProvider, oldProvider) => {
@@ -13,10 +21,8 @@ watch(() => settings.value.provider, (newProvider, oldProvider) => {
 
 const showMasterPasswordDialog = ref(false)
 const masterPasswordMode = ref<'setup' | 'change'>('setup')
-const showProviderChangeDialog = ref(false)
 const showComparison = ref(false)
 const showLevelDetails = ref(false)
-const providerChangeParams = ref<{ from: SecurityProvider; to: SecurityProvider } | null>(null)
 const providerOptions: { label: string; value: SecurityProvider; description: string; recommended?: boolean }[] = [
   {
     label: 'Simple (推奨)',
@@ -57,12 +63,8 @@ const updateProvider = (provider: SecurityProvider) => {
     return
   }
 
-  providerChangeParams.value = {
-    from: settings.value.provider,
-    to: provider
-  }
-  console.log('[SecuritySettings] Opening ProviderChangeDialog with params:', providerChangeParams.value)
-  showProviderChangeDialog.value = true
+  console.log('[SecuritySettings] Opening change dialog for:', provider)
+  openChangeDialog(provider)
 }
 
 const updateLevel = async (level: SecurityLevel) => {
@@ -99,12 +101,6 @@ const resetSecurity = async () => {
     saving.value = false
   }
 }
-
-watch(showProviderChangeDialog, async (open) => {
-  if (!open) {
-    await securityStore.loadSettings()
-  }
-})
 </script>
 
 <template>
@@ -265,10 +261,12 @@ watch(showProviderChangeDialog, async (open) => {
       v-model:open="showMasterPasswordDialog"
       :mode="masterPasswordMode"
     />
-    <ProviderChangeDialog
-      v-if="providerChangeParams"
-      v-model:open="showProviderChangeDialog"
-      :params="providerChangeParams"
+    <component
+      :is="dialogComponent"
+      v-if="dialogComponent && targetProviderTyped"
+      v-model:open="isChangeDialogOpen"
+      :target-provider="targetProviderTyped"
+      @update:open="!$event && closeChangeDialog()"
     />
   </div>
 </template>
