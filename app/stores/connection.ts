@@ -154,7 +154,35 @@ export const useConnectionStore = defineStore('connection', {
 
     async testConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>) {
       try {
-        return await invokeTauri('test_connection', { connection })
+        // フロントエンド型からRustのFrontendConnection型に変換
+        const baseConnection = 'id' in connection ? connection : {
+          ...connection,
+          id: '', // 新規接続用の空ID
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+
+        // Rustの FrontendConnection 型に合わせた形式に変換
+        const testPayload = {
+          id: baseConnection.id,
+          name: baseConnection.name,
+          environment: baseConnection.environment,
+          themeColor: baseConnection.customColor?.primary || '#4CAF50',
+          host: baseConnection.host,
+          port: baseConnection.port,
+          database: baseConnection.database,
+          username: baseConnection.username,
+          password: baseConnection.password || '',
+          savePassword: Boolean(baseConnection.password),
+          type: baseConnection.type, // フィールド名はtype（Rustでdb_typeにrename）
+          ssl: false, // デフォルト値
+          sshTunnel: false, // デフォルト値
+          timeout: 30, // デフォルト30秒
+          createdAt: baseConnection.createdAt,
+          updatedAt: baseConnection.updatedAt
+        }
+
+        return await invokeTauri('test_connection', { connection: testPayload })
       } catch (error) {
         console.error('Connection test failed:', error)
 
