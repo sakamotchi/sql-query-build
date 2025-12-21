@@ -34,10 +34,7 @@ const isEditMode = computed(() => Boolean(connectionId.value))
 
 const databaseOptions: { value: DatabaseType; label: string }[] = [
   { value: 'mysql', label: 'MySQL' },
-  { value: 'postgresql', label: 'PostgreSQL' },
-  { value: 'sqlite', label: 'SQLite' },
-  { value: 'sqlserver', label: 'SQL Server' },
-  { value: 'oracle', label: 'Oracle' }
+  { value: 'postgresql', label: 'PostgreSQL' }
 ]
 
 const previewCustomColor = computed(() => (useCustomColor.value ? form.customColor ?? { primary: '#4CAF50', background: '#F1F8E9' } : undefined))
@@ -151,6 +148,14 @@ watch(useCustomColor, (enabled) => {
       primary: '#4CAF50',
       background: '#F1F8E9'
     }
+  }
+})
+
+watch(() => form.type, (newType) => {
+  if (newType === 'mysql') {
+    form.port = 3306
+  } else if (newType === 'postgresql') {
+    form.port = 5432
   }
 })
 </script>
