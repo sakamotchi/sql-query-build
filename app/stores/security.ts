@@ -133,12 +133,62 @@ export const useSecurityStore = defineStore('security', {
           return false
         }
 
-        await invokeCommand('unlock_with_master_password', { password })
-        return true
+        const verified = await invokeCommand<boolean>('verify_master_password', { password })
+        return verified
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to verify master password'
         console.error('Failed to verify master password:', error)
         return false
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async changeMasterPassword(oldPassword: string, newPassword: string) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          throw new Error('Tauri is not available. Running in browser mode.')
+        }
+
+        await invokeCommand('change_master_password', {
+          current_password: oldPassword,
+          new_password: newPassword,
+          new_password_confirm: newPassword
+        })
+
+        this.settings.masterPasswordSet = true
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to change master password'
+        console.error('Failed to change master password:', error)
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async resetSecurityConfig() {
+      this.loading = true
+      this.error = null
+
+      try {
+        const { invokeCommand, isAvailable } = useTauri()
+
+        if (!isAvailable.value) {
+          this.settings = { ...defaultSecuritySettings }
+          return
+        }
+
+        await invokeCommand('reset_security_config')
+        await this.loadSettings()
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to reset security config'
+        console.error('Failed to reset security config:', error)
+        throw error
       } finally {
         this.loading = false
       }

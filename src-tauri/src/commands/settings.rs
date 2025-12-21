@@ -118,7 +118,9 @@ pub async fn reset_settings(storage: State<'_, FileStorage>) -> Result<AppSettin
 pub async fn get_security_settings(
     config_storage: State<'_, Arc<SecurityConfigStorage>>,
 ) -> Result<SecuritySettings, String> {
+    println!("[get_security_settings] Called");
     let config = config_storage.load().await.map_err(|e| e.to_string())?;
+    println!("[get_security_settings] Loaded config: provider_type={:?}, provider_config={:?}", config.provider_type, config.provider_config);
 
     // プロバイダー名を文字列に変換
     let provider = match config.provider_type {
@@ -133,11 +135,13 @@ pub async fn get_security_settings(
         ProviderSpecificConfig::MasterPassword { is_configured: true }
     );
 
-    Ok(SecuritySettings {
+    let result = SecuritySettings {
         provider: provider.to_string(),
         level: "medium".to_string(), // TODO: SecurityConfigにlevelフィールドを追加する必要がある
         master_password_set,
-    })
+    };
+    println!("[get_security_settings] Returning: provider={}, master_password_set={}", result.provider, result.master_password_set);
+    Ok(result)
 }
 
 /// セキュリティプロバイダーを変更する

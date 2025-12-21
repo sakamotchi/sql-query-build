@@ -2,11 +2,18 @@
 import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
 
+const props = defineProps<{
+  mode?: 'setup' | 'change'
+}>()
+
 const isOpen = defineModel<boolean>('open')
 
 const securityStore = useSecurityStore()
 const { loading } = storeToRefs(securityStore)
 
+const mode = computed(() => props.mode ?? 'setup')
+
+const currentPassword = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const strength = ref(0)
@@ -31,6 +38,11 @@ const canSubmit = computed(() => {
   const v = validation.value
   const meetsRequirements =
     v.minLength && v.hasLowercase && v.hasUppercase && v.hasNumber && v.passwordsMatch
+
+  if (mode.value === 'change') {
+    return meetsRequirements && strength.value >= 3 && !loading.value && !!currentPassword.value
+  }
+
   return meetsRequirements && strength.value >= 3 && !loading.value
 })
 
@@ -49,6 +61,7 @@ watch(password, (newPassword) => {
 })
 
 const reset = () => {
+  currentPassword.value = ''
   password.value = ''
   confirmPassword.value = ''
   strength.value = 0
@@ -59,11 +72,19 @@ const reset = () => {
 const setupPassword = async () => {
   message.value = null
   try {
-    await securityStore.setMasterPassword(password.value)
+    if (mode.value === 'change') {
+      await securityStore.changeMasterPassword(currentPassword.value, password.value)
+    } else {
+      await securityStore.setMasterPassword(password.value)
+    }
     isOpen.value = false
     reset()
   } catch (error) {
-    message.value = '設定に失敗しました。時間をおいて再度お試しください。'
+    if (mode.value === 'change') {
+      message.value = '現在のパスワードが正しくないか、変更に失敗しました。'
+    } else {
+      message.value = '設定に失敗しました。時間をおいて再度お試しください。'
+    }
   }
 }
 
@@ -77,13 +98,33 @@ watch(isOpen, (open) => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="マスターパスワード設定"
-    description="接続情報を保護するパスワードを設定します。忘れると復元できません。"
+    :title="mode === 'change' ? 'マスターパスワード変更' : 'マスターパスワード設定'"
+    :description="mode === 'change'
+      ? 'マスターパスワードを変更します。接続情報は自動的に再暗号化されます。'
+      : '接続情報を保護するパスワードを設定します。忘れると復元できません。'"
     :prevent-close="true"
   >
     <template #body>
       <div class="space-y-5">
-        <UFormField label="パスワード" hint="8文字以上で入力してください" required>
+        <UFormField
+          v-if="mode === 'change'"
+          label="現在のパスワード"
+          hint="現在設定されているマスターパスワード"
+          required
+        >
+          <UInput
+            v-model="currentPassword"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="現在のパスワード"
+            autocomplete="current-password"
+          />
+        </UFormField>
+
+        <UFormField
+          :label="mode === 'change' ? '新しいパスワード' : 'パスワード'"
+          hint="8文字以上で入力してください"
+          required
+        >
           <UInput
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
@@ -130,7 +171,7 @@ watch(isOpen, (open) => {
           キャンセル
         </UButton>
         <UButton color="primary" :loading="loading" :disabled="!canSubmit" @click="setupPassword">
-          設定
+          {{ mode === 'change' ? '変更' : '設定' }}
         </UButton>
       </div>
     </template>

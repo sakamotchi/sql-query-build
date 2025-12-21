@@ -6,7 +6,17 @@ import type { SecurityLevel, SecurityProvider } from '~/types'
 const securityStore = useSecurityStore()
 const { settings, loading, error } = storeToRefs(securityStore)
 
+// デバッグ: 設定が変更されたらログ出力（immediate は外す）
+watch(() => settings.value.provider, (newProvider, oldProvider) => {
+  console.log('[SecuritySettings] Provider changed:', { from: oldProvider, to: newProvider })
+})
+
 const showMasterPasswordDialog = ref(false)
+const masterPasswordMode = ref<'setup' | 'change'>('setup')
+const showProviderChangeDialog = ref(false)
+const showComparison = ref(false)
+const showLevelDetails = ref(false)
+const providerChangeParams = ref<{ from: SecurityProvider; to: SecurityProvider } | null>(null)
 const providerOptions: { label: string; value: SecurityProvider; description: string; recommended?: boolean }[] = [
   {
     label: 'Simple (推奨)',
@@ -35,17 +45,24 @@ const levelOptions: { label: string; value: SecurityLevel; hint: string }[] = [
 const saving = ref(false)
 const message = ref<string | null>(null)
 
-const updateProvider = async (provider: SecurityProvider) => {
-  saving.value = true
+const updateProvider = (provider: SecurityProvider) => {
+  console.log('[SecuritySettings] updateProvider called', {
+    selectedProvider: provider,
+    currentProvider: settings.value.provider,
+    willSkip: provider === settings.value.provider
+  })
   message.value = null
-  try {
-    await securityStore.setProvider(provider)
-    message.value = 'プロバイダーを更新しました'
-  } catch (e) {
-    message.value = 'プロバイダーの更新に失敗しました'
-  } finally {
-    saving.value = false
+  if (provider === settings.value.provider) {
+    console.log('[SecuritySettings] Skipping - same provider selected')
+    return
   }
+
+  providerChangeParams.value = {
+    from: settings.value.provider,
+    to: provider
+  }
+  console.log('[SecuritySettings] Opening ProviderChangeDialog with params:', providerChangeParams.value)
+  showProviderChangeDialog.value = true
 }
 
 const updateLevel = async (level: SecurityLevel) => {
@@ -62,13 +79,32 @@ const updateLevel = async (level: SecurityLevel) => {
 }
 
 const openMasterPasswordDialog = () => {
-  if (settings.value.masterPasswordSet) {
-    // TODO: パスワード変更ダイアログを実装
-    message.value = 'パスワード変更機能は現在開発中です。プロバイダーを一度Simpleに切り替えてから、再度マスターパスワードを選択してください。'
-    return
-  }
+  masterPasswordMode.value = settings.value.masterPasswordSet ? 'change' : 'setup'
   showMasterPasswordDialog.value = true
 }
+
+const resetSecurity = async () => {
+  if (!confirm('セキュリティ設定をリセットしますか？\n\n警告: この操作により、すべての接続情報が失われます。')) {
+    return
+  }
+
+  saving.value = true
+  message.value = null
+  try {
+    await securityStore.resetSecurityConfig()
+    message.value = 'セキュリティ設定をリセットしました'
+  } catch (e) {
+    message.value = 'リセットに失敗しました'
+  } finally {
+    saving.value = false
+  }
+}
+
+watch(showProviderChangeDialog, async (open) => {
+  if (!open) {
+    await securityStore.loadSettings()
+  }
+})
 </script>
 
 <template>
@@ -77,7 +113,18 @@ const openMasterPasswordDialog = () => {
       <template #header>
         <div class="flex items-center justify-between gap-3">
           <h3 class="text-xl font-semibold">セキュリティプロバイダー</h3>
-          <UBadge v-if="saving || loading" color="primary" variant="soft">処理中</UBadge>
+          <div class="flex items-center gap-2">
+            <UBadge v-if="saving || loading" color="primary" variant="soft">処理中</UBadge>
+            <UButton
+              variant="ghost"
+              color="red"
+              size="sm"
+              @click="resetSecurity"
+              :disabled="saving || loading"
+            >
+              リセット
+            </UButton>
+          </div>
         </div>
       </template>
 
@@ -146,22 +193,82 @@ const openMasterPasswordDialog = () => {
       <div class="space-y-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">接続情報を暗号化します</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              接続情報を暗号化するパスワードを管理します
+            </p>
             <p class="text-xs text-gray-500">
-              設定済み: {{ settings.masterPasswordSet ? 'はい' : 'いいえ' }}
+              状態: {{ settings.masterPasswordSet ? '設定済み' : '未設定' }}
             </p>
           </div>
           <UButton
             :variant="settings.masterPasswordSet ? 'outline' : 'solid'"
+            :color="settings.masterPasswordSet ? 'gray' : 'primary'"
             :disabled="loading"
             @click="openMasterPasswordDialog"
           >
-            {{ settings.masterPasswordSet ? '変更する' : '設定する' }}
+            {{ settings.masterPasswordSet ? 'パスワード変更' : '初期設定' }}
           </UButton>
         </div>
+
+        <UAlert
+          v-if="!settings.masterPasswordSet"
+          color="amber"
+          variant="soft"
+          icon="i-heroicons-exclamation-triangle"
+        >
+          マスターパスワードが未設定です。プロバイダー切り替え時に設定されます。
+        </UAlert>
       </div>
     </UCard>
 
-    <MasterPasswordSetupDialog v-model:open="showMasterPasswordDialog" />
+    <UCard>
+      <template #header>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between"
+          @click="showComparison = !showComparison"
+        >
+          <h3 class="text-xl font-semibold">プロバイダー比較</h3>
+          <UIcon
+            :name="showComparison ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+            class="w-5 h-5"
+          />
+        </button>
+      </template>
+
+      <div v-if="showComparison">
+        <SecurityProviderComparison />
+      </div>
+    </UCard>
+
+    <UCard>
+      <template #header>
+        <button
+          type="button"
+          class="w-full flex items-center justify-between"
+          @click="showLevelDetails = !showLevelDetails"
+        >
+          <h3 class="text-xl font-semibold">セキュリティレベル詳細</h3>
+          <UIcon
+            :name="showLevelDetails ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'"
+            class="w-5 h-5"
+          />
+        </button>
+      </template>
+
+      <div v-if="showLevelDetails">
+        <SecurityLevelDetails />
+      </div>
+    </UCard>
+
+    <MasterPasswordSetupDialog
+      v-model:open="showMasterPasswordDialog"
+      :mode="masterPasswordMode"
+    />
+    <ProviderChangeDialog
+      v-if="providerChangeParams"
+      v-model:open="showProviderChangeDialog"
+      :params="providerChangeParams"
+    />
   </div>
 </template>
