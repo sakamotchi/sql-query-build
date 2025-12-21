@@ -6,11 +6,13 @@ interface SwitchFromSimpleParams {
   targetProvider: 'master-password'
   newPassword: string
   newPasswordConfirm: string
+  skipReload?: boolean
 }
 
 interface SwitchFromMasterPasswordParams {
   targetProvider: 'simple'
   currentPassword: string
+  skipReload?: boolean
 }
 
 export function useProviderSwitch() {
@@ -53,8 +55,10 @@ export function useProviderSwitch() {
 
     await invokeCommand('switch_security_provider', backendParams)
 
-    // 設定を再読み込み
-    await securityStore.loadSettings()
+    // 設定を再読み込み (skipReloadが指定されていない場合のみ)
+    if (!params.skipReload) {
+      await securityStore.loadSettings()
+    }
   }
 
   /**
@@ -84,8 +88,10 @@ export function useProviderSwitch() {
 
     await invokeCommand('switch_security_provider', backendParams)
 
-    // 設定を再読み込み
-    await securityStore.loadSettings()
+    // 設定を再読み込み (skipReloadが指定されていない場合のみ)
+    if (!params.skipReload) {
+      await securityStore.loadSettings()
+    }
   }
 
   return {

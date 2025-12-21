@@ -125,7 +125,7 @@
           color="primary"
           :loading="loading"
           :disabled="!canProceed || loading"
-          @click="nextPhase"
+          @click.stop.prevent="nextPhase"
         >
           {{ actionButtonLabel }}
         </UButton>
@@ -138,6 +138,7 @@
 import { ref, computed, nextTick } from 'vue'
 import ProviderCard from './ProviderCard.vue'
 import { useProviderSwitch } from '~/composables/useProviderSwitch'
+import { useSecurityStore } from '~/stores/security'
 
 interface Props {
   // 初期実装では 'master-password' のみサポート
@@ -231,18 +232,22 @@ async function switchProvider() {
 
   try {
     const { switchFromSimple } = useProviderSwitch()
+    const securityStore = useSecurityStore()
 
     // 初期実装: Master Passwordへの切り替えのみ
     await switchFromSimple({
       targetProvider: 'master-password',
       newPassword: newPassword.value,
-      newPasswordConfirm: newPasswordConfirm.value
+      newPasswordConfirm: newPasswordConfirm.value,
+      skipReload: true
     })
 
     currentPhase.value = 'complete'
 
-    // 2秒後にダイアログを閉じる
-    setTimeout(() => {
+    // 2秒後に設定を再読み込みしてダイアログを閉じる
+    setTimeout(async () => {
+      // ダイアログを閉じる直前に設定を更新
+      await securityStore.loadSettings()
       isOpen.value = false
       reset()
     }, 2000)

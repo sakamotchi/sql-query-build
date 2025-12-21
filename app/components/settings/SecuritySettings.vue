@@ -2,16 +2,16 @@
 import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
 import { useProviderChangeDialog } from '~/composables/useProviderChangeDialog'
+import FromSimpleDialog from '~/components/security/provider-change/FromSimpleDialog.vue'
+import FromMasterPasswordDialog from '~/components/security/provider-change/FromMasterPasswordDialog.vue'
 import type { SecurityLevel, SecurityProvider } from '~/types'
 
 const securityStore = useSecurityStore()
 const { settings, loading, error } = storeToRefs(securityStore)
 const {
-  isOpen: isChangeDialogOpen,
-  dialogComponent,
-  targetProviderTyped,
-  open: openChangeDialog,
-  close: closeChangeDialog
+  isFromSimpleDialogOpen,
+  isFromMasterPasswordDialogOpen,
+  openChangeDialog
 } = useProviderChangeDialog()
 
 // デバッグ: 設定が変更されたらログ出力（immediate は外す）
@@ -261,12 +261,19 @@ const resetSecurity = async () => {
       v-model:open="showMasterPasswordDialog"
       :mode="masterPasswordMode"
     />
-    <component
-      :is="dialogComponent"
-      v-if="dialogComponent && targetProviderTyped"
-      v-model:open="isChangeDialogOpen"
-      :target-provider="targetProviderTyped"
-      @update:open="!$event && closeChangeDialog()"
+
+    <!-- Simple -> Master Password 変更ダイアログ -->
+    <FromSimpleDialog
+      v-if="isFromSimpleDialogOpen"
+      v-model:open="isFromSimpleDialogOpen"
+      target-provider="master-password"
+    />
+
+    <!-- Master Password -> Simple 変更ダイアログ -->
+    <FromMasterPasswordDialog
+      v-if="isFromMasterPasswordDialogOpen"
+      v-model:open="isFromMasterPasswordDialogOpen"
+      target-provider="simple"
     />
   </div>
 </template>

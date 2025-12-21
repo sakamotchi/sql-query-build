@@ -36,7 +36,7 @@
               :type="showPassword ? 'text' : 'password'"
               placeholder="パスワードを入力"
               autocomplete="current-password"
-              @keyup.enter="canProceed && nextPhase()"
+              @keyup.enter.stop.prevent="canProceed && nextPhase()"
             />
           </UFormField>
 
@@ -111,7 +111,7 @@
           color="primary"
           :loading="loading"
           :disabled="!canProceed || loading"
-          @click="nextPhase"
+          @click.stop.prevent="nextPhase"
         >
           {{ actionButtonLabel }}
         </UButton>
@@ -125,6 +125,7 @@ import { ref, computed, nextTick } from 'vue'
 import ProviderCard from './ProviderCard.vue'
 import { useProviderSwitch } from '~/composables/useProviderSwitch'
 import { useSecurityStore } from '~/stores/security'
+import { useTauri } from '~/composables/useTauri'
 
 interface Props {
   // 初期実装では 'simple' のみサポート
@@ -185,6 +186,7 @@ async function nextPhase() {
         break
 
       case 'authenticate':
+        // パスワード検証
         await verifyAndSwitch()
         break
     }
@@ -203,8 +205,12 @@ async function verifyAndSwitch() {
 
   try {
     // パスワード検証
-    const securityStore = useSecurityStore()
-    const success = await securityStore.verifyMasterPassword(currentPassword.value)
+    // ストアのアクションを使うとグローバルなloading状態が変わって親画面に影響するため、
+    // 直接コマンドを呼び出して検証する
+    const { invokeCommand } = useTauri()
+    const success = await invokeCommand<boolean>('verify_master_password', {
+      password: currentPassword.value
+    })
 
     if (!success) {
       errorMessage.value = 'パスワードが正しくありません'
@@ -233,17 +239,22 @@ async function switchProvider() {
 
   try {
     const { switchFromMasterPassword } = useProviderSwitch()
+    const securityStore = useSecurityStore()
 
     // 初期実装: Simpleへの切り替えのみ
     await switchFromMasterPassword({
       targetProvider: 'simple',
-      currentPassword: currentPassword.value
+      currentPassword: currentPassword.value,
+      skipReload: true
     })
 
     currentPhase.value = 'complete'
 
-    // 2秒後にダイアログを閉じる
-    setTimeout(() => {
+    // 2秒後に設定を再読み込みしてダイアログを閉じる
+    setTimeout(async () => {
+      // ダイアログを閉じる直前に設定を更新
+      // これにより、更新完了までダイアログが表示されたままになる
+      await securityStore.loadSettings()
       isOpen.value = false
       reset()
     }, 2000)
