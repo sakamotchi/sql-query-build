@@ -62,7 +62,7 @@ const saveSettings = async () => {
       <UFormField label="テーマ" hint="アプリ全体のカラーモード">
         <USelect
           v-model="form.theme"
-          :options="[
+          :items="[
             { label: 'ライト', value: 'light' },
             { label: 'ダーク', value: 'dark' },
             { label: '自動', value: 'auto' }
@@ -73,7 +73,7 @@ const saveSettings = async () => {
       <UFormField label="言語" hint="将来的にi18nで切り替え予定">
         <USelect
           v-model="form.language"
-          :options="[
+          :items="[
             { label: '日本語', value: 'ja' },
             { label: 'English', value: 'en' }
           ]"

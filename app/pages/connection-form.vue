@@ -211,7 +211,7 @@ watch(useCustomColor, (enabled) => {
               </UFormField>
 
               <UFormField label="データベースタイプ" required :error="errors.type">
-                <USelect v-model="form.type" :options="databaseOptions" value-attribute="value" />
+                <USelect v-model="form.type" :items="databaseOptions" />
               </UFormField>
             </div>
 

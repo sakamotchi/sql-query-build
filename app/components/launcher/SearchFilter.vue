@@ -46,7 +46,7 @@ const hasActiveFilters = computed(() => searchQuery.value !== '' || environmentF
 
       <USelect
         v-model="environmentFilter"
-        :options="environmentOptions"
+        :items="environmentOptions"
         size="lg"
         icon="i-heroicons-funnel"
       />
