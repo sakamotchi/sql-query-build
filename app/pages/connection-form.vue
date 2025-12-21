@@ -65,13 +65,26 @@ const validateForm = () => {
   return Object.keys(errors).length === 0
 }
 
-const loadConnectionForEdit = () => {
+const loadConnectionForEdit = async () => {
   if (!isEditMode.value) return
-  const existing = connectionStore.getConnectionById(connectionId.value)
-  if (existing) {
-    const { id, createdAt, updatedAt, ...payload } = existing
-    Object.assign(form, payload)
-    useCustomColor.value = Boolean(existing.customColor)
+
+  try {
+    // パスワード復号化付きで接続情報を取得
+    const existing = await connectionStore.getConnectionWithPassword(connectionId.value)
+    if (existing) {
+      const { id, createdAt, updatedAt, ...payload } = existing
+      Object.assign(form, payload)
+      useCustomColor.value = Boolean(existing.customColor)
+    }
+  } catch (error) {
+    console.error('Failed to load connection for edit:', error)
+    // フォールバック: ストアから取得（パスワードなし）
+    const existing = connectionStore.getConnectionById(connectionId.value)
+    if (existing) {
+      const { id, createdAt, updatedAt, ...payload } = existing
+      Object.assign(form, payload)
+      useCustomColor.value = Boolean(existing.customColor)
+    }
   }
 }
 
@@ -122,7 +135,7 @@ onMounted(async () => {
   if (!connections.value.length) {
     await connectionStore.loadConnections()
   }
-  loadConnectionForEdit()
+  await loadConnectionForEdit()
 })
 
 watch(useCustomColor, (enabled) => {
@@ -156,12 +169,11 @@ watch(useCustomColor, (enabled) => {
         </div>
 
         <div class="flex gap-2">
-          <UButton variant="ghost" color="gray" @click="cancel">
+          <UButton variant="outline" color="neutral" @click="cancel">
             キャンセル
           </UButton>
           <UButton
-            variant="outline"
-            color="gray"
+            color="secondary"
             :loading="testing"
             @click="testConnection"
           >

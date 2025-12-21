@@ -20,6 +20,35 @@ async function invokeTauri<T>(command: string, args?: Record<string, unknown>): 
   return invoke<T>(command, args)
 }
 
+// フロントエンド型からRustのFrontendConnection型に変換
+function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>) {
+  const baseConnection = 'id' in connection ? connection : {
+    ...connection,
+    id: '', // 新規接続用の空ID
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+
+  return {
+    id: baseConnection.id,
+    name: baseConnection.name,
+    environment: baseConnection.environment,
+    themeColor: baseConnection.customColor?.primary || '#4CAF50',
+    host: baseConnection.host,
+    port: baseConnection.port,
+    database: baseConnection.database,
+    username: baseConnection.username,
+    password: baseConnection.password || '',
+    savePassword: Boolean(baseConnection.password),
+    type: baseConnection.type,
+    ssl: false,
+    sshTunnel: false,
+    timeout: 30,
+    createdAt: baseConnection.createdAt,
+    updatedAt: baseConnection.updatedAt
+  }
+}
+
 export const useConnectionStore = defineStore('connection', {
   state: () => ({
     connections: [] as Connection[],
@@ -52,12 +81,36 @@ export const useConnectionStore = defineStore('connection', {
       }
     },
 
+    async getConnectionWithPassword(id: string): Promise<Connection | null> {
+      try {
+        // キャメルケースで送信（Tauriが自動的にスネークケースに変換）
+        const params = {
+          id,
+          includePasswordDecrypted: true
+        }
+        console.log('[getConnectionWithPassword] Calling with params:', params)
+        const result = await invokeTauri<Connection | null>('get_connection', params)
+        console.log('[getConnectionWithPassword] Result:', result)
+        return result
+      } catch (error) {
+        console.error('Failed to get connection with password:', error)
+
+        // ブラウザモード用のフォールバック
+        if (error instanceof Error && error.message.includes('Tauri is not available')) {
+          return this.getConnectionById(id) || null
+        }
+
+        throw error
+      }
+    },
+
     async createConnection(connection: Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>) {
       this.loading = true
       this.error = null
 
       try {
-        const newConnection = await invokeTauri<Connection>('create_connection', { connection })
+        const rustConnection = toRustConnection(connection)
+        const newConnection = await invokeTauri<Connection>('create_connection', { connection: rustConnection })
         this.connections.push(newConnection)
         return newConnection
       } catch (error) {
@@ -88,7 +141,15 @@ export const useConnectionStore = defineStore('connection', {
       this.error = null
 
       try {
-        const updated = await invokeTauri<Connection>('update_connection', { id, updates })
+        // 既存の接続情報を取得してマージ
+        const existing = this.connections.find((connection: Connection) => connection.id === id)
+        if (!existing) {
+          throw new Error('Connection not found')
+        }
+
+        const merged = { ...existing, ...updates }
+        const rustConnection = toRustConnection(merged)
+        const updated = await invokeTauri<Connection>('update_connection', { connection: rustConnection })
 
         const index = this.connections.findIndex((connection) => connection.id === id)
         if (index !== -1) {
@@ -154,35 +215,8 @@ export const useConnectionStore = defineStore('connection', {
 
     async testConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>) {
       try {
-        // フロントエンド型からRustのFrontendConnection型に変換
-        const baseConnection = 'id' in connection ? connection : {
-          ...connection,
-          id: '', // 新規接続用の空ID
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-
-        // Rustの FrontendConnection 型に合わせた形式に変換
-        const testPayload = {
-          id: baseConnection.id,
-          name: baseConnection.name,
-          environment: baseConnection.environment,
-          themeColor: baseConnection.customColor?.primary || '#4CAF50',
-          host: baseConnection.host,
-          port: baseConnection.port,
-          database: baseConnection.database,
-          username: baseConnection.username,
-          password: baseConnection.password || '',
-          savePassword: Boolean(baseConnection.password),
-          type: baseConnection.type, // フィールド名はtype（Rustでdb_typeにrename）
-          ssl: false, // デフォルト値
-          sshTunnel: false, // デフォルト値
-          timeout: 30, // デフォルト30秒
-          createdAt: baseConnection.createdAt,
-          updatedAt: baseConnection.updatedAt
-        }
-
-        return await invokeTauri('test_connection', { connection: testPayload })
+        const rustConnection = toRustConnection(connection)
+        return await invokeTauri('test_connection', { connection: rustConnection })
       } catch (error) {
         console.error('Connection test failed:', error)
 
