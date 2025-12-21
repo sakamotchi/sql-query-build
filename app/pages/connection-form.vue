@@ -26,6 +26,8 @@ const testing = ref(false)
 const saving = ref(false)
 const testResult = ref<ConnectionTestResult | null>(null)
 const useCustomColor = ref(false)
+const showPassword = ref(false)
+const loadingConnection = ref(false)
 
 const connectionId = computed(() => (route.query.id as string | undefined) ?? '')
 const isEditMode = computed(() => Boolean(connectionId.value))
@@ -68,6 +70,7 @@ const validateForm = () => {
 const loadConnectionForEdit = async () => {
   if (!isEditMode.value) return
 
+  loadingConnection.value = true
   try {
     // パスワード復号化付きで接続情報を取得
     const existing = await connectionStore.getConnectionWithPassword(connectionId.value)
@@ -85,6 +88,8 @@ const loadConnectionForEdit = async () => {
       Object.assign(form, payload)
       useCustomColor.value = Boolean(existing.customColor)
     }
+  } finally {
+    loadingConnection.value = false
   }
 }
 
@@ -169,12 +174,13 @@ watch(useCustomColor, (enabled) => {
         </div>
 
         <div class="flex gap-2">
-          <UButton variant="outline" color="neutral" @click="cancel">
+          <UButton variant="outline" color="neutral" :disabled="loadingConnection" @click="cancel">
             キャンセル
           </UButton>
           <UButton
             color="secondary"
             :loading="testing"
+            :disabled="loadingConnection"
             @click="testConnection"
           >
             接続テスト
@@ -182,6 +188,7 @@ watch(useCustomColor, (enabled) => {
           <UButton
             color="primary"
             :loading="saving || loading"
+            :disabled="loadingConnection"
             @click="submitForm"
           >
             {{ isEditMode ? '更新' : '作成' }}
@@ -190,7 +197,13 @@ watch(useCustomColor, (enabled) => {
       </div>
 
       <UCard>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div v-if="loadingConnection" class="flex items-center justify-center py-12">
+          <div class="text-center space-y-3">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">接続情報を読み込み中...</p>
+          </div>
+        </div>
+        <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UFormField label="接続名" required :error="errors.name">
@@ -225,7 +238,21 @@ watch(useCustomColor, (enabled) => {
             </div>
 
             <UFormField label="パスワード (任意)">
-              <UInput v-model="form.password" type="password" placeholder="必要に応じて入力" />
+              <UInput
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                placeholder="必要に応じて入力"
+              >
+                <template #trailing>
+                  <UButton
+                    variant="ghost"
+                    color="gray"
+                    size="xs"
+                    :icon="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
+                    @click="showPassword = !showPassword"
+                  />
+                </template>
+              </UInput>
             </UFormField>
           </div>
 
