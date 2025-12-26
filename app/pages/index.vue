@@ -2,8 +2,10 @@
 import { storeToRefs } from 'pinia'
 import type { Connection, Environment } from '~/types'
 import { useConnectionStore } from '~/stores/connection'
+import { windowApi } from '~/api/window'
 
 const { currentEnvironment } = useEnvironment()
+const toast = useToast()
 
 const connectionStore = useConnectionStore()
 const { connections, loading } = storeToRefs(connectionStore)
@@ -52,9 +54,36 @@ const navigateToConnectionForm = (connectionId?: string) => {
   })
 }
 
-const handleConnect = (connection: Connection) => {
-  // TODO: 実際の接続処理を実装
-  console.info('connect to', connection)
+const handleConnect = async (connection: Connection) => {
+  try {
+    // 既存のウィンドウを検索
+    const existing = await windowApi.findWindowByConnection(connection.id)
+
+    if (existing) {
+      // 既存のウィンドウにフォーカス
+      await windowApi.focusWindow(existing.label)
+      toast.add({
+        title: '既存のウィンドウにフォーカスしました',
+        description: `${connection.name} のウィンドウが既に開いています`,
+        color: 'primary',
+      })
+    } else {
+      // 新しいウィンドウを開く
+      await windowApi.openQueryBuilder(connection.id, connection.name, connection.environment)
+      toast.add({
+        title: 'クエリビルダーを起動しました',
+        description: `${connection.name} に接続しています`,
+        color: 'primary',
+      })
+    }
+  } catch (error) {
+    console.error('Failed to open query builder:', error)
+    toast.add({
+      title: 'ウィンドウの起動に失敗しました',
+      description: error instanceof Error ? error.message : '不明なエラーが発生しました',
+      color: 'red',
+    })
+  }
 }
 
 const handleEdit = (connection: Connection) => {

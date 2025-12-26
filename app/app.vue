@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
+import { useWindowStore } from '~/stores/window'
 
 useHead({
   title: 'SQL Query Build',
@@ -10,6 +11,7 @@ useHead({
 })
 
 const securityStore = useSecurityStore()
+const windowStore = useWindowStore()
 const { settings } = storeToRefs(securityStore)
 
 const showVerifyDialog = ref(false)
@@ -20,6 +22,9 @@ const isMasterPasswordProvider = computed(
 )
 
 onMounted(async () => {
+  // ウィンドウストアを初期化
+  await windowStore.initialize()
+
   await securityStore.loadSettings()
 
   if (isMasterPasswordProvider.value && settings.value.masterPasswordSet) {

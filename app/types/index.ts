@@ -69,6 +69,23 @@ export interface SecuritySettings {
 }
 
 /**
+ * ウィンドウの種類
+ */
+export type WindowType = 'launcher' | 'query_builder' | 'settings'
+
+/**
+ * ウィンドウ情報インターフェース（Tauriから返却される）
+ */
+export interface WindowInfo {
+  label: string
+  title: string
+  windowType: WindowType
+  connectionId: string | null
+  focused: boolean
+  visible: boolean
+}
+
+/**
  * ウィンドウ状態インターフェース
  */
 export interface WindowState {
@@ -78,6 +95,23 @@ export interface WindowState {
   size: { width: number; height: number }
   isMaximized: boolean
   createdAt: string
+}
+
+/**
+ * ウィンドウコンテキスト（各ウィンドウ固有の状態）
+ */
+export interface WindowContext {
+  /** ウィンドウラベル（Tauriのウィンドウ識別子） */
+  windowLabel: string
+
+  /** ウィンドウの種類 */
+  windowType: WindowType
+
+  /** 関連する接続ID（クエリビルダーの場合のみ） */
+  connectionId?: string
+
+  /** 環境タイプ（クエリビルダーの場合のみ） */
+  environment?: Environment
 }
 
 /**
