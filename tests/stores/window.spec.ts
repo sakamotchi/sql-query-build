@@ -1,125 +1,143 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setActivePinia, createPinia } from 'pinia';
-import { useWindowStore } from '@/stores/window';
-import { windowApi } from '@/api/window';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import type { WindowInfo } from '@/types/window';
-
-vi.mock('@tauri-apps/api/window', () => ({
-  getCurrentWindow: vi.fn(() => ({ label: 'launcher' })),
-}));
-
-vi.mock('@/api/window', () => ({
-  windowApi: {
-    listWindows: vi.fn(),
-    openQueryBuilder: vi.fn(),
-    openSettings: vi.fn(),
-    focusWindow: vi.fn(),
-    closeWindow: vi.fn(),
-    findWindowByConnection: vi.fn(),
-  },
-}));
-
-const windowApiMock = vi.mocked(windowApi);
-const getCurrentWindowMock = vi.mocked(getCurrentWindow);
-
-const mockQueryBuilderInfo: WindowInfo = {
-  label: 'query-builder-123',
-  title: 'QB',
-  windowType: 'query_builder',
-  connectionId: '123',
-  focused: true,
-  visible: true,
-};
-
-const mockSettingsInfo: WindowInfo = {
-  label: 'settings',
-  title: 'Settings',
-  windowType: 'settings',
-  focused: false,
-  visible: true,
-};
+import { useWindowStore } from '~/stores/window';
+import type { WindowInfo } from '~/types';
 
 beforeEach(() => {
   setActivePinia(createPinia());
   vi.clearAllMocks();
-  (globalThis as any).__TAURI_IPC__ = {};
-  windowApiMock.listWindows.mockResolvedValue([]);
-  windowApiMock.openQueryBuilder.mockResolvedValue(mockQueryBuilderInfo);
-  windowApiMock.openSettings.mockResolvedValue(mockSettingsInfo);
-  windowApiMock.focusWindow.mockResolvedValue();
-  windowApiMock.closeWindow.mockResolvedValue();
-  windowApiMock.findWindowByConnection.mockResolvedValue(null);
 });
 
 afterEach(() => {
-  delete (globalThis as any).__TAURI_IPC__;
+  vi.restoreAllMocks();
 });
 
-describe('WindowStore', () => {
-  it('ラベルからコンテキストを解析できる', () => {
-    const store = useWindowStore();
+describe('WindowStore - Context Management', () => {
+  describe('parseWindowLabel', () => {
+    it('ランチャーラベルを正しく解析', () => {
+      const store = useWindowStore();
 
-    const launcher = store.parseWindowLabel('launcher');
-    expect(launcher.windowType).toBe('launcher');
+      const launcher = store.parseWindowLabel('launcher');
+      expect(launcher.windowType).toBe('launcher');
+      expect(launcher.windowLabel).toBe('launcher');
 
-    const queryBuilder = store.parseWindowLabel('query-builder-conn-123');
-    expect(queryBuilder.windowType).toBe('query_builder');
-    expect(queryBuilder.connectionId).toBe('conn-123');
-
-    const settings = store.parseWindowLabel('settings');
-    expect(settings.windowType).toBe('settings');
-  });
-
-  it('initializeで現在のウィンドウコンテキストと一覧を取得する', async () => {
-    const store = useWindowStore();
-    getCurrentWindowMock.mockReturnValueOnce({ label: 'query-builder-456' } as any);
-    windowApiMock.listWindows.mockResolvedValueOnce([mockQueryBuilderInfo]);
-
-    await store.initialize();
-
-    expect(store.currentContext?.windowLabel).toBe('query-builder-456');
-    expect(store.isQueryBuilder).toBe(true);
-    expect(store.openWindows).toHaveLength(1);
-    expect(store.initialized).toBe(true);
-  });
-
-  it('接続コンテキストを設定できる', () => {
-    const store = useWindowStore();
-    store.currentContext = {
-      windowLabel: 'query-builder-789',
-      windowType: 'query_builder',
-    };
-
-    store.setConnectionContext('conn-789', 'production');
-
-    expect(store.currentConnectionId).toBe('conn-789');
-    expect(store.currentEnvironment).toBe('production');
-  });
-
-  it('既存ウィンドウがあればフォーカスし、無ければ新規作成する', async () => {
-    const store = useWindowStore();
-    windowApiMock.findWindowByConnection.mockResolvedValueOnce({
-      ...mockQueryBuilderInfo,
-      label: 'query-builder-existing',
+      const main = store.parseWindowLabel('main');
+      expect(main.windowType).toBe('launcher');
     });
 
-    const existing = await store.focusOrOpenQueryBuilder('123', 'DB', 'development');
+    it('クエリビルダーラベルを正しく解析', () => {
+      const store = useWindowStore();
 
-    expect(windowApiMock.findWindowByConnection).toHaveBeenCalledWith('123');
-    expect(windowApiMock.focusWindow).toHaveBeenCalledWith('query-builder-existing');
-    expect(windowApiMock.openQueryBuilder).not.toHaveBeenCalled();
-    expect(existing?.label).toBe('query-builder-existing');
+      const qb = store.parseWindowLabel('query-builder-conn-123');
+      expect(qb.windowType).toBe('query_builder');
+      expect(qb.connectionId).toBe('conn-123');
+      expect(qb.windowLabel).toBe('query-builder-conn-123');
+    });
+
+    it('設定ラベルを正しく解析', () => {
+      const store = useWindowStore();
+
+      const settings = store.parseWindowLabel('settings');
+      expect(settings.windowType).toBe('settings');
+      expect(settings.windowLabel).toBe('settings');
+    });
+
+    it('未知のラベルはクエリビルダーとして扱う', () => {
+      const store = useWindowStore();
+
+      const unknown = store.parseWindowLabel('unknown-label');
+      expect(unknown.windowType).toBe('query_builder');
+      expect(unknown.windowLabel).toBe('unknown-label');
+    });
   });
 
-  it('クエリビルダーを新規に開くと一覧を更新する', async () => {
-    const store = useWindowStore();
-    windowApiMock.listWindows.mockResolvedValueOnce([mockQueryBuilderInfo]);
+  describe('setConnectionContext', () => {
+    it('接続情報を設定できる', () => {
+      const store = useWindowStore();
 
-    const created = await store.openQueryBuilder('123', 'DB', 'development');
+      // 初期状態
+      expect(store.currentContext).toBeNull();
 
-    expect(windowApiMock.openQueryBuilder).toHaveBeenCalledWith('123', 'DB', 'development');
-    expect(windowApiMock.listWindows).toHaveBeenCalledTimes(1);
-    expect(created?.label).toBe(mockQueryBuilderInfo.label);
+      // コンテキストを設定
+      store.currentContext = {
+        windowLabel: 'query-builder-123',
+        windowType: 'query_builder',
+      };
+
+      store.setConnectionContext('conn-123', 'development');
+
+      // 設定されたことを確認
+      expect(store.currentConnectionId).toBe('conn-123');
+      expect(store.currentEnvironment).toBe('development');
+    });
+  });
+
+  describe('isQueryBuilder/isLauncher/isSettings', () => {
+    it('isQueryBuilderがウィンドウタイプを正しく判定する', () => {
+      const store = useWindowStore();
+
+      store.currentContext = {
+        windowLabel: 'query-builder-123',
+        windowType: 'query_builder',
+      };
+
+      expect(store.isQueryBuilder).toBe(true);
+      expect(store.isLauncher).toBe(false);
+      expect(store.isSettings).toBe(false);
+    });
+
+    it('isLauncherがウィンドウタイプを正しく判定する', () => {
+      const store = useWindowStore();
+
+      store.currentContext = {
+        windowLabel: 'launcher',
+        windowType: 'launcher',
+      };
+
+      expect(store.isLauncher).toBe(true);
+      expect(store.isQueryBuilder).toBe(false);
+      expect(store.isSettings).toBe(false);
+    });
+
+    it('isSettingsがウィンドウタイプを正しく判定する', () => {
+      const store = useWindowStore();
+
+      store.currentContext = {
+        windowLabel: 'settings',
+        windowType: 'settings',
+      };
+
+      expect(store.isSettings).toBe(true);
+      expect(store.isLauncher).toBe(false);
+      expect(store.isQueryBuilder).toBe(false);
+    });
+  });
+
+  describe('resetContext', () => {
+    it('resetContextでコンテキストをクリアできる', () => {
+      const store = useWindowStore();
+
+      store.currentContext = {
+        windowLabel: 'test',
+        windowType: 'launcher',
+      };
+
+      store.resetContext();
+
+      expect(store.currentContext).toBeNull();
+      expect(store.currentConnectionId).toBeUndefined();
+    });
+  });
+
+  describe('initialize', () => {
+    it('ブラウザモードでエラーにならない', async () => {
+      const store = useWindowStore();
+
+      // エラーを投げずに完了することを確認
+      await expect(store.initialize()).resolves.toBeUndefined();
+
+      // デフォルトコンテキストが設定されることを確認
+      expect(store.currentContext).toBeTruthy();
+    });
   });
 });

@@ -98,6 +98,23 @@ export interface WindowState {
 }
 
 /**
+ * ウィンドウコンテキスト（各ウィンドウ固有の状態）
+ */
+export interface WindowContext {
+  /** ウィンドウラベル（Tauriのウィンドウ識別子） */
+  windowLabel: string
+
+  /** ウィンドウの種類 */
+  windowType: WindowType
+
+  /** 関連する接続ID（クエリビルダーの場合のみ） */
+  connectionId?: string
+
+  /** 環境タイプ（クエリビルダーの場合のみ） */
+  environment?: Environment
+}
+
+/**
  * テーマ設定インターフェース
  */
 export interface ThemeConfig {

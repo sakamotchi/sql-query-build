@@ -1,18 +1,61 @@
 import { defineStore } from 'pinia'
 import { useTauri } from '~/composables/useTauri'
-import type { WindowState } from '~/types'
+import type { WindowState, WindowContext, Environment } from '~/types'
 
 export const useWindowStore = defineStore('window', {
   state: () => ({
     windows: [] as WindowState[],
     loading: false,
-    error: null as string | null
+    error: null as string | null,
+    currentContext: null as WindowContext | null,
   }),
 
   getters: {
     getWindowByConnectionId: (state) => (connectionId: string) =>
       state.windows.find((windowState) => windowState.connectionId === connectionId),
-    allWindows: (state) => state.windows
+    allWindows: (state) => state.windows,
+
+    /**
+     * 現在のウィンドウラベル
+     */
+    currentWindowLabel(state): string | undefined {
+      return state.currentContext?.windowLabel
+    },
+
+    /**
+     * 現在の接続ID
+     */
+    currentConnectionId(state): string | undefined {
+      return state.currentContext?.connectionId
+    },
+
+    /**
+     * 現在の環境
+     */
+    currentEnvironment(state): Environment | undefined {
+      return state.currentContext?.environment
+    },
+
+    /**
+     * ランチャーウィンドウかどうか
+     */
+    isLauncher(state): boolean {
+      return state.currentContext?.windowType === 'launcher'
+    },
+
+    /**
+     * クエリビルダーウィンドウかどうか
+     */
+    isQueryBuilder(state): boolean {
+      return state.currentContext?.windowType === 'query_builder'
+    },
+
+    /**
+     * 設定ウィンドウかどうか
+     */
+    isSettings(state): boolean {
+      return state.currentContext?.windowType === 'settings'
+    },
   },
 
   actions: {
@@ -81,6 +124,129 @@ export const useWindowStore = defineStore('window', {
       } finally {
         this.loading = false
       }
-    }
+    },
+
+    /**
+     * ウィンドウコンテキストを設定
+     *
+     * @param context - 設定するコンテキスト（一部のみでも可）
+     */
+    setContext(context: Partial<WindowContext>) {
+      if (this.currentContext) {
+        this.currentContext = {
+          ...this.currentContext,
+          ...context,
+        }
+      } else {
+        this.currentContext = context as WindowContext
+      }
+    },
+
+    /**
+     * 接続情報を設定
+     *
+     * @param connectionId - 接続ID
+     * @param environment - 環境タイプ
+     *
+     * @example
+     * // クエリビルダー画面のonMountedで呼び出す
+     * windowStore.setConnectionContext('conn-123', 'development')
+     */
+    setConnectionContext(connectionId: string, environment: Environment) {
+      this.setContext({
+        connectionId,
+        environment,
+      })
+    },
+
+    /**
+     * コンテキストをリセット
+     */
+    resetContext() {
+      this.currentContext = null
+    },
+
+    /**
+     * ウィンドウストアを初期化
+     *
+     * アプリ起動時に呼び出し、現在のウィンドウのコンテキストを設定する。
+     * Tauri環境でのみ動作し、ブラウザモードでは安全にスキップする。
+     */
+    async initialize() {
+      // クライアントサイドでない場合はスキップ（SSRガード）
+      if (!import.meta.client) {
+        console.log('[WindowStore] Skipping initialization (not client-side)')
+        return
+      }
+
+      try {
+        // Tauri APIを動的インポート（ブラウザモード対応）
+        const { getCurrentWindow } = await import('@tauri-apps/api/window')
+        const window = getCurrentWindow()
+        const label = window.label
+
+        console.log('[WindowStore] Initializing with label:', label)
+
+        // ラベルからコンテキストを解析
+        const context = this.parseWindowLabel(label)
+        this.currentContext = context
+
+        console.log('[WindowStore] Context initialized:', context)
+      } catch (error) {
+        // ブラウザモードではエラーになるが、無視して続行
+        console.warn('[WindowStore] Failed to initialize (running in browser mode?):', error)
+
+        // ブラウザモード用のデフォルトコンテキスト
+        this.currentContext = {
+          windowLabel: 'browser',
+          windowType: 'launcher',
+        }
+      }
+    },
+
+    /**
+     * ウィンドウラベルからコンテキストを解析
+     *
+     * @param label - Tauriのウィンドウラベル
+     * @returns 解析されたウィンドウコンテキスト
+     *
+     * @example
+     * parseWindowLabel('launcher') // => { windowLabel: 'launcher', windowType: 'launcher' }
+     * parseWindowLabel('query-builder-conn-123') // => { windowLabel: '...', windowType: 'query_builder', connectionId: 'conn-123' }
+     */
+    parseWindowLabel(label: string): WindowContext {
+      // ランチャー
+      if (label === 'launcher' || label === 'main') {
+        return {
+          windowLabel: label,
+          windowType: 'launcher',
+        }
+      }
+
+      // 設定
+      if (label === 'settings') {
+        return {
+          windowLabel: label,
+          windowType: 'settings',
+        }
+      }
+
+      // クエリビルダー
+      if (label.startsWith('query-builder-')) {
+        const connectionId = label.replace('query-builder-', '')
+        return {
+          windowLabel: label,
+          windowType: 'query_builder',
+          connectionId,
+        }
+      }
+
+      // 未知のラベル（デフォルトはクエリビルダー）
+      console.warn('[WindowStore] Unknown window label:', label)
+      return {
+        windowLabel: label,
+        windowType: 'query_builder',
+      }
+    },
   }
 })
