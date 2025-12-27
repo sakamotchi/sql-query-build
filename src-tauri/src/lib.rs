@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod connection;
 pub mod crypto;
+pub mod database;
 pub mod models;
 pub mod services;
 pub mod storage;
@@ -171,6 +172,10 @@ pub fn run() {
             connection::commands::delete_connection,
             connection::commands::mark_connection_used,
             connection::commands::test_connection,
+            commands::database_structure::get_database_structure,
+            commands::database_structure::get_schemas,
+            commands::database_structure::get_tables,
+            commands::database_structure::get_columns,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,
             commands::security::get_security_config,
