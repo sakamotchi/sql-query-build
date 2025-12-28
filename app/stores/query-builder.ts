@@ -25,6 +25,10 @@ interface QueryBuilderState {
   isExecuting: boolean
   /** エラーメッセージ */
   error: string | null
+  /** LIMIT (取得件数) */
+  limit: number | null
+  /** OFFSET (開始位置) */
+  offset: number | null
 }
 
 export const useQueryBuilderStore = defineStore('query-builder', {
@@ -44,6 +48,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
     isExecuting: false,
     error: null,
+    limit: null,
+    offset: null,
   }),
 
   getters: {
@@ -305,6 +311,22 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * LIMITを更新
+     */
+    updateLimit(limit: number | null) {
+      this.limit = limit
+      this.regenerateSql()
+    },
+
+    /**
+     * OFFSETを更新
+     */
+    updateOffset(offset: number | null) {
+      this.offset = offset
+      this.regenerateSql()
+    },
+
+    /**
      * 条件を検索（再帰）
      */
     findCondition(id: string): WhereCondition | ConditionGroup | null {
@@ -395,6 +417,16 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         sql += `\nORDER BY ${orderByClause}`
       }
 
+      // LIMIT句の生成
+      if (this.limit !== null) {
+        sql += `\nLIMIT ${this.limit}`
+      }
+
+      // OFFSET句の生成
+      if (this.offset !== null) {
+        sql += `\nOFFSET ${this.offset}`
+      }
+
       this.generatedSql = sql
     },
 
@@ -450,6 +482,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.query = null
       this.generatedSql = ''
       this.error = null
+      this.limit = null
+      this.offset = null
     },
 
     /**
