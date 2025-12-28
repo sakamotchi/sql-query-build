@@ -1,9 +1,8 @@
 
-import { convertToQueryModel } from './app/utils/query-converter';
-import { QueryBuilderState } from './app/types/query-model';
+import { convertToQueryModel, UIQueryState } from './app/utils/query-converter';
 
-// Mock data
-const mockState: QueryBuilderState = {
+// Mock data matching UI State
+const mockState: UIQueryState = {
   selectedTables: [
     {
       id: 't1',
@@ -11,8 +10,8 @@ const mockState: QueryBuilderState = {
       name: 'users',
       alias: 'u',
       columns: [
-        { name: 'id', dataType: 'integer' },
-        { name: 'name', dataType: 'text' },
+        { name: 'id', dataType: 'integer', displayType: 'int', nullable: false, defaultValue: null, isPrimaryKey: true, comment: null },
+        { name: 'name', dataType: 'text', displayType: 'text', nullable: true, defaultValue: null, isPrimaryKey: false, comment: null },
       ],
     },
   ],
@@ -33,14 +32,10 @@ const mockState: QueryBuilderState = {
     },
   ],
   whereConditions: [],
-  whereLogic: 'AND',
   groupByColumns: [],
-  havingConditions: [],
-  orderByItems: [],
+  orderByColumns: [],
   limit: null,
   offset: null,
-  distinct: false,
-  joins: [],
 };
 
 try {

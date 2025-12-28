@@ -17,13 +17,13 @@ export interface QueryModel {
   /** JOIN句 */
   joins: JoinClause[]
   /** WHERE句 */
-  where: WhereClause | null
+  whereClause?: WhereClause
   /** GROUP BY句 */
-  groupBy: GroupByClause | null
+  groupBy?: GroupByClause
   /** HAVING句 */
-  having: HavingClause | null
+  having?: HavingClause
   /** ORDER BY句 */
-  orderBy: OrderByClause | null
+  orderBy?: OrderByClause
   /** LIMIT/OFFSET */
   limit: LimitClause | null
   /** 作成日時 */

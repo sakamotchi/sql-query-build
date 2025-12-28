@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import SqlPreview from './SqlPreview.vue'
 import QueryInfo from './QueryInfo.vue'
@@ -8,6 +9,7 @@ const queryBuilderStore = useQueryBuilderStore()
 
 const generatedSql = computed(() => queryBuilderStore.generatedSql)
 const queryInfo = computed(() => queryBuilderStore.queryInfo)
+const { smartQuote } = storeToRefs(queryBuilderStore) // Pinia state to ref
 
 const copyToClipboard = async () => {
   try {
@@ -25,14 +27,24 @@ const copyToClipboard = async () => {
     <div class="flex flex-col flex-1 min-h-[200px] overflow-hidden">
       <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
         <span class="text-sm font-medium">SQLプレビュー</span>
-        <UButton
-          icon="i-heroicons-clipboard-document"
-          size="xs"
-          color="gray"
-          variant="ghost"
-          title="コピー"
-          @click="copyToClipboard"
-        />
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5" title="必要な場合のみ引用符をつける">
+            <USwitch
+              :model-value="smartQuote"
+              @update:model-value="(val) => queryBuilderStore.setSmartQuote(val)"
+              size="sm"
+            />
+            <span class="text-xs text-gray-500 dark:text-gray-400">スマート引用符</span>
+          </div>
+          <UButton
+            icon="i-heroicons-clipboard-document"
+            size="xs"
+            color="gray"
+            variant="ghost"
+            title="コピー"
+            @click="copyToClipboard"
+          />
+        </div>
       </div>
       <SqlPreview :sql="generatedSql" />
     </div>

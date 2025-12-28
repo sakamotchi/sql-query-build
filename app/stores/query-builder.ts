@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
+import { queryApi } from '@/api/query'
+import { convertToQueryModel } from '@/utils/query-converter'
+import { useConnectionStore } from '@/stores/connection'
+import { useWindowStore } from '@/stores/window'
 import type { Table } from '@/types/database-structure'
 
 interface QueryBuilderState {
@@ -27,8 +31,14 @@ interface QueryBuilderState {
   error: string | null
   /** LIMIT (取得件数) */
   limit: number | null
+
   /** OFFSET (開始位置) */
   offset: number | null
+  /** SQL生成中フラグ */
+  isGeneratingSql: boolean
+  /** SQL生成エラー */
+  sqlGenerationError: string | null
+  smartQuote: boolean // スマートクォーティング（true: 最小限, false: 常に引用符）
 }
 
 export const useQueryBuilderStore = defineStore('query-builder', {
@@ -50,6 +60,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     error: null,
     limit: null,
     offset: null,
+    isGeneratingSql: false,
+    sqlGenerationError: null,
+    smartQuote: true, // デフォルトで有効
   }),
 
   getters: {
@@ -370,64 +383,40 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     /**
      * SQLを再生成
      */
-    regenerateSql() {
-      // TODO: SQL生成エンジン実装時に詳細化
-      // 当面は簡易的なSQL生成を行う
+    async regenerateSql() {
+      // バックエンドでのSQL生成
       if (this.selectedColumns.length === 0) {
         this.generatedSql = ''
         return
       }
 
-      const selectClause = this.selectedColumns
-        .map((col) => {
-          const colName = `${col.tableAlias}.${col.columnName}`
-          return col.columnAlias ? `${colName} AS ${col.columnAlias}` : colName
-        })
-        .join(',\n  ')
+      this.isGeneratingSql = true
+      this.sqlGenerationError = null
 
-      const fromClause = this.selectedTables
-        .map((table) => `${table.name} AS ${table.alias}`)
-        .join(',\n  ') // 本来はJOIN句を使うべきだが、簡易的にカンマ区切り
+      try {
+        const connectionStore = useConnectionStore()
+        const windowStore = useWindowStore()
+        const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
 
-      let sql = `SELECT\n  ${selectClause}\nFROM\n  ${fromClause}`
-
-      // WHERE句の生成
-      if (this.whereConditions.length > 0) {
-        const whereClause = this.generateWhereClause(this.whereConditions)
-        if (whereClause) {
-          sql += `\nWHERE\n  ${whereClause}`
+        if (!connectionId) {
+          throw new Error('Connection not selected')
         }
-      }
 
-      // GROUP BY句の生成
-      const validGroupBy = this.groupByColumns.filter(g => g.column)
-      if (validGroupBy.length > 0) {
-        const groupByClause = validGroupBy
-          .map(g => `${g.column!.tableAlias}.${g.column!.columnName}`)
-          .join(', ')
-        sql += `\nGROUP BY ${groupByClause}`
+        // this.$state は UIQueryState と互換性があるはず
+        // ただし Pinia の $state には余計なプロパティが含まれる可能性があるが、
+        // convertToQueryModel は必要なプロパティだけ読み取るので基本的には大丈夫。
+        // TSエラーが出る場合はキャストする。
+        const queryModel = convertToQueryModel(this.$state as any, connectionId);
+        
+        // バックエンドAPIを呼び出し
+        this.generatedSql = await queryApi.generateSqlFormatted(queryModel, true, this.smartQuote);
+      } catch (error) {
+        console.error('Failed to generate SQL:', error)
+        this.sqlGenerationError = error instanceof Error ? error.message : 'Unknown error'
+        this.generatedSql = ''
+      } finally {
+        this.isGeneratingSql = false
       }
-
-      // ORDER BY句の生成
-      const validOrderBy = this.orderByColumns.filter(o => o.column)
-      if (validOrderBy.length > 0) {
-        const orderByClause = validOrderBy
-          .map(o => `${o.column!.tableAlias}.${o.column!.columnName} ${o.direction}`)
-          .join(', ')
-        sql += `\nORDER BY ${orderByClause}`
-      }
-
-      // LIMIT句の生成
-      if (this.limit !== null) {
-        sql += `\nLIMIT ${this.limit}`
-      }
-
-      // OFFSET句の生成
-      if (this.offset !== null) {
-        sql += `\nOFFSET ${this.offset}`
-      }
-
-      this.generatedSql = sql
     },
 
     /**
@@ -507,5 +496,10 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         this.isExecuting = false
       }
     },
+
+    setSmartQuote(enabled: boolean) {
+      this.smartQuote = enabled
+      this.regenerateSql()
+    }
   },
 })

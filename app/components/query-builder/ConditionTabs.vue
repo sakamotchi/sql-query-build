@@ -11,60 +11,62 @@ const items = [
   {
     key: 'select',
     label: 'SELECT',
+    value: 'select',
   },
   {
     key: 'where',
     label: 'WHERE',
+    value: 'where',
   },
   {
     key: 'group',
     label: 'GROUP BY',
+    value: 'group',
   },
   {
     key: 'order',
     label: 'ORDER BY',
+    value: 'order',
   },
   {
     key: 'limit',
     label: 'LIMIT',
+    value: 'limit',
   },
 ]
 
-// 選択中のタブ（インデックス）
-const selectedIndex = ref(0)
-
-// 選択中のタブキー
-const selectedKey = computed(() => items[selectedIndex.value]?.key)
+// 選択中のタブ
+const selectedTab = ref('select')
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-white dark:bg-gray-900">
     <!-- タブヘッダー -->
     <UTabs
-      v-model="selectedIndex"
+      v-model="selectedTab"
       :items="items"
       class="border-b border-gray-200 dark:border-gray-800"
     />
 
     <!-- タブコンテンツ -->
     <div class="flex-1 overflow-auto p-4">
-      <div v-if="selectedKey === 'select'" class="h-full">
+      <div v-if="selectedTab === 'select'" class="h-full">
         <SelectTab />
       </div>
 
-      <div v-else-if="selectedKey === 'where'" class="h-full">
+      <div v-else-if="selectedTab === 'where'" class="h-full">
         <WhereTab />
       </div>
 
-      <div v-else-if="selectedKey === 'group'" class="h-full">
+      <div v-else-if="selectedTab === 'group'" class="h-full">
         <GroupByTab />
       </div>
 
-      <div v-else-if="selectedKey === 'order'" class="h-full">
+      <div v-else-if="selectedTab === 'order'" class="h-full">
         <OrderByTab />
       </div>
 
-      <div v-else-if="selectedKey === 'limit'" class="h-full">
+      <div v-else-if="selectedTab === 'limit'" class="h-full">
         <LimitTab />
       </div>
     </div>

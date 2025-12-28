@@ -112,28 +112,35 @@ const handleOperatorChange = (operator: WhereOperator) => {
 
 // 値変更
 const handleValueChange = (value: string | string[] | { from: string; to: string }) => {
-  emit('update', { value })
-  validateCondition(value)
+  const isValid = checkValidity(value)
+  emit('update', { value, isValid })
 }
 
-// バリデーション
-const validateCondition = (value: any) => {
-  let isValid = false
-
+// バリデーションロジック（純粋関数的に）
+const checkValidity = (value: any): boolean => {
   if (!props.condition.column) {
-    isValid = false
+    return false
   } else if (props.condition.operator === 'IS NULL' || props.condition.operator === 'IS NOT NULL') {
-    isValid = true
+    return true
   } else if (valueInputType.value === 'multi') {
-    isValid = Array.isArray(value) && value.length > 0
+    return Array.isArray(value) && value.length > 0
   } else if (valueInputType.value === 'range') {
-    isValid = typeof value === 'object' && value.from !== '' && value.to !== ''
+    return typeof value === 'object' && value.from !== '' && value.to !== ''
   } else {
-    isValid = value !== ''
+    return value !== ''
   }
-
-  emit('update', { isValid })
 }
+
+// 既存のvalidateConditionは削除し、checkValidityを使用するように変更
+// ただし、handleOperatorChangeでもisValid計算が必要なため、そこも修正が必要だが、
+// handleOperatorChangeはすでに内部でisValidを計算している。
+// 念のため共通化する。
+
+/*
+  FIX: handleOperatorChange内のisValid計算とcheckValidityを共通化したいが、
+  handleOperatorChangeではnewValueを計算してからチェックしている。
+  ここではhandleValueChangeの修正に集中する。
+*/
 </script>
 
 <template>

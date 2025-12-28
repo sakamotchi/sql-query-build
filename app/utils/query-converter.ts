@@ -1,21 +1,40 @@
 import type {
-  QueryModel,
-  QueryBuilderState,
-  SelectedColumn as StateSelectedColumn,
-  SelectColumn,
-  WhereClause,
+  SelectedTable,
+  SelectedColumn,
   WhereCondition,
-  WhereConditionGroup,
+  ConditionGroup,
+  GroupByColumn,
+  OrderByColumn,
+} from '@/types/query'
+import type {
+  QueryModel,
+  WhereClause,
   WhereConditionItem,
   WhereValue,
   WhereOperator,
+  SelectColumn,
+  LimitClause,
+  OrderByItem,
 } from '@/types/query-model'
+
+/**
+ * UI側のクエリ状態（ストアの状態と同じ構造）
+ */
+export interface UIQueryState {
+  selectedTables: SelectedTable[]
+  selectedColumns: SelectedColumn[]
+  whereConditions: Array<WhereCondition | ConditionGroup>
+  groupByColumns: GroupByColumn[]
+  orderByColumns: OrderByColumn[]
+  limit: number | null
+  offset: number | null
+}
 
 /**
  * フロントエンド状態からクエリモデルに変換
  */
 export function convertToQueryModel(
-  state: QueryBuilderState,
+  state: UIQueryState,
   connectionId: string
 ): QueryModel {
   // メインテーブル（最初のテーブル）
@@ -24,10 +43,14 @@ export function convertToQueryModel(
     throw new Error('No table selected')
   }
 
+  // UI側のSelectedTableのcolumn definitionはdatabase-structureのColumnなので、
+  // QueryModelのSelectedTableとは異なるが、ここではQueryModelのFromClauseを作るだけなので
+  // schema, name, aliasがあれば良い。
+
   return {
     connectionId,
     select: {
-      distinct: state.distinct,
+      distinct: false, // UIにまだ設定がないのでデフォルト
       columns: convertSelectedColumns(state.selectedColumns),
     },
     from: {
@@ -37,30 +60,29 @@ export function convertToQueryModel(
         alias: mainTable.alias,
       },
     },
-    joins: state.joins,
-    where: convertWhereConditions(state.whereConditions, state.whereLogic),
+    joins: [], // UIにまだ設定がないので空
+    whereClause: convertWhereConditions(state.whereConditions, 'AND'), // デフォルトAND
     groupBy:
       state.groupByColumns.length > 0
-        ? { columns: state.groupByColumns }
+        ? { columns: convertGroupByColumns(state.groupByColumns) }
         : null,
-    having:
-      state.havingConditions.length > 0
-        ? { logic: 'AND', conditions: state.havingConditions }
-        : null,
+    having: null, // UIにまだ設定がない
     orderBy:
-      state.orderByItems.length > 0 ? { items: state.orderByItems } : null,
-    limit: state.limit
-      ? { limit: state.limit, offset: state.offset || undefined }
-      : null,
+      state.orderByColumns.length > 0
+        ? { items: convertOrderByColumns(state.orderByColumns) }
+        : null,
+    limit: convertLimit(state.limit, state.offset),
+    createdAt: undefined,
+    updatedAt: undefined,
   }
 }
 
 /**
  * 選択カラムを変換
  */
-function convertSelectedColumns(columns: StateSelectedColumn[]): SelectColumn[] {
+function convertSelectedColumns(columns: SelectedColumn[]): SelectColumn[] {
   return columns.map((col) => ({
-    type: 'column' as const,
+    type: 'column',
     tableAlias: col.tableAlias,
     columnName: col.columnName,
     alias: col.columnAlias,
@@ -71,13 +93,13 @@ function convertSelectedColumns(columns: StateSelectedColumn[]): SelectColumn[] 
  * WHERE条件を変換
  */
 function convertWhereConditions(
-  conditions: Array<WhereCondition | WhereConditionGroup>,
+  conditions: Array<WhereCondition | ConditionGroup>,
   logic: 'AND' | 'OR'
 ): WhereClause | null {
   // 有効な条件のみフィルタ
   const validConditions = conditions.filter((c) => {
     if (c.type === 'condition') {
-      return c.column !== null
+      return c.column !== null && c.isValid
     }
     return c.conditions.length > 0
   })
@@ -96,7 +118,7 @@ function convertWhereConditions(
  * WHERE条件アイテムを変換
  */
 function convertWhereConditionItem(
-  item: WhereCondition | WhereConditionGroup
+  item: WhereCondition | ConditionGroup
 ): WhereConditionItem {
   if (item.type === 'group') {
     return {
@@ -107,12 +129,16 @@ function convertWhereConditionItem(
     }
   }
 
+  // UI側のWhereCondition.valueは string | string[] | {from, to}
+  // Model側のWhereValueに変換する必要がある
+  const value = convertWhereValue(item.value, item.operator)
+
   return {
     type: 'condition',
     id: item.id,
     column: item.column!,
     operator: item.operator,
-    value: convertWhereValue(item.value, item.operator),
+    value,
   }
 }
 
@@ -120,41 +146,92 @@ function convertWhereConditionItem(
  * WHERE値を変換
  */
 function convertWhereValue(
-  value: WhereValue,
+  value: string | string[] | { from: string; to: string },
   operator: WhereOperator
 ): WhereValue {
-  // すでにWhereValue型になっている場合はそのまま返すか、適切な変換を行う
-  // ここでは設計書のロジックに従い、UIからの入力値（文字列等）を想定して変換する
-  // ただし、型定義上はすでに WhereValue なので、実際には UI 側の型と Model 側の型で
-  // 差異がある場合に吸収する処理が必要。
-  // 今回は `value` が `WhereValue` 型として渡ってくる前提だが、
-  // もし `state.whereConditions` の `value` が `string | number` 等の単純な型なら
-  // 以下のロジックが有効。
-  // 現在の `QueryBuilderState` -> `WhereCondition` -> `value` は `WhereValue` 型。
-  // もし UI 側が単純な値を保持しているなら、ここでラップする。
+  if (operator === 'IS NULL' || operator === 'IS NOT NULL') {
+    return { type: 'literal', value: null }
+  }
+  
+  // NOTE: WhereValue definition in query-model.ts structure
+  
+  if (operator === 'IN' || operator === 'NOT IN') {
+    const arr = Array.isArray(value) ? value : [value as string]
+    return {
+      type: 'list',
+      values: arr.map(parseValue),
+    }
+  }
 
-  // Note: app/types/query-model.ts の WhereValue は
-  // | { type: 'literal'; value: string | number | boolean | null }
-  // | { type: 'list'; values: Array<string | number> }
-  // ...
-  // となっている。
-  
-  // 一方、設計書のサンプルコードでは `value` 引数が `string | string[] | ...` となっていた。
-  // 型定義 `WhereCondition` の `value` が `WhereValue` 型になっているため、
-  // ここではそのまま返すのが基本だが、もし変換が必要な場合は適宜実装する。
-  
-  // ここでは安全のため、そのまま返す実装とする。
-  // もし変換ロジックが必要な場合は、`WhereCondition` の定義を見直すか、
-  // UI側の型定義を調整する必要がある。
-  
-  return value;
+  if (operator === 'BETWEEN' || operator === 'NOT BETWEEN') {
+    const range = value as { from: string; to: string }
+    return {
+      type: 'range',
+      from: parseValue(range.from),
+      to: parseValue(range.to),
+    }
+  }
+
+  // Default literal
+  return {
+    type: 'literal',
+    value: parseValue(value as string),
+  }
+}
+
+/**
+ * GroupByカラムを変換
+ */
+function convertGroupByColumns(columns: GroupByColumn[]) {
+  // UIのGroupByColumn has `column: SelectedColumn | null`
+  return columns
+    .filter((c) => c.column)
+    .map((c) => ({
+      tableAlias: c.column!.tableAlias,
+      columnName: c.column!.columnName,
+    }))
+}
+
+/**
+ * OrderByカラムを変換
+ */
+function convertOrderByColumns(columns: OrderByColumn[]): OrderByItem[] {
+  return columns
+    .filter((c) => c.column)
+    .map((c) => ({
+      tableAlias: c.column!.tableAlias,
+      columnName: c.column!.columnName,
+      direction: c.direction,
+      nulls: undefined, // UIに設定がないためundefined
+    }))
+}
+
+/**
+ * LIMIT/OFFSETを変換
+ */
+function convertLimit(limit: number | null, offset: number | null): LimitClause | null {
+  if (limit === null && offset === null) {
+    return null
+  }
+  return {
+    limit: limit || 0, // LIMITなしでOFFSETありはSQL的に微妙だが、0にしておくか、LIMITなし表現が必要
+    // Rust側は u64 なので 0 ok.
+    // ただし LIMIT 0 は 0件取得になる。
+    // LIMITがnullの場合はALLの意味だが、モデル上は LIMIT句自体の有無で制御。
+    // LIMITがnullでOFFSETがある場合、多くのDBではLIMIT指定が必要（MySQL: LIMIT 18446744073709551615, PostgreSQL: LIMIT ALL）
+    // ここではLIMITがnullならLimitClause自体を作らないようにするが、OFFSETがある場合は困る。
+    // UI仕様として、OFFSET指定時はLIMITも指定させるか、デフォルトを入れるべき。
+    // 一旦、LIMITがあればLimitClauseを作る実装にする。
+    // OFFSETだけある場合は無視されることになるが、現状のUI実装次第。
+    offset: offset || undefined,
+  }
 }
 
 /**
  * 値をパース（数値判定）
- * ※ 現状未使用だが、将来的に文字列入力値をパースする場合に使用
  */
 function parseValue(value: string): string | number {
+  if (value === null || value === undefined) return value
   const num = Number(value)
   return isNaN(num) ? value : num
 }

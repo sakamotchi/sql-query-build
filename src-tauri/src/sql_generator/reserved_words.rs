@@ -1,0 +1,60 @@
+
+
+/// 安全な識別子かどうかを判定
+/// 
+/// 以下の条件を満たす場合は安全とみなす（引用符不要）:
+/// 1. アルファベット、数字、アンダースコアのみで構成されている
+/// 2. 数字で始まっていない
+/// 3. 予約語に含まれていない
+pub fn is_safe_identifier(identifier: &str, _dialect: &str) -> bool {
+    // 空文字は安全でない
+    if identifier.is_empty() {
+        return false;
+    }
+
+    // 数字で始まっている場合は安全でない
+    if identifier.chars().next().map_or(false, |c| c.is_numeric()) {
+        return false;
+    }
+
+    // 使用可能な文字種チェック
+    if !identifier.chars().all(|c| c.is_alphanumeric() || c == '_') {
+        return false;
+    }
+
+    // 予約語チェック（大文字小文字を無視）
+    !simple_impl::is_reserved(identifier)
+}
+
+pub mod simple_impl {
+    pub fn is_reserved(word: &str) -> bool {
+        let upper = word.to_uppercase();
+        let reserved = [
+            "ALL", "AND", "ANY", "AS", "ASC", "AUTHORIZATION", "AVG", "BACKUP", "BEGIN", "BETWEEN",
+            "BREAK", "BROWSE", "BULK", "BY", "CASCADE", "CASE", "CHECK", "CHECKPOINT", "CLOSE",
+            "CLUSTERED", "COALESCE", "COLLATE", "COLUMN", "COMMIT", "COMPUTE", "CONSTRAINT",
+            "CONTAINS", "CONTAINSTABLE", "CONTINUE", "CONVERT", "COUNT", "CREATE", "CROSS", "CURRENT",
+            "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATABASE",
+            "DBCC", "DEALLOCATE", "DECLARE", "DEFAULT", "DELETE", "DENY", "DESC", "DISK", "DISTINCT",
+            "DISTRIBUTED", "DOUBLE", "DROP", "DUMP", "ELSE", "END", "ERRLVL", "ESCAPE", "EXCEPT",
+            "EXEC", "EXECUTE", "EXISTS", "EXIT", "EXTERNAL", "FETCH", "FILE", "FILLFACTOR", "FOR",
+            "FOREIGN", "FREETEXT", "FREETEXTTABLE", "FROM", "FULL", "FUNCTION", "GOTO", "GRANT",
+            "GROUP", "HAVING", "HOLDLOCK", "IDENTITY", "IDENTITY_INSERT", "IDENTITYCOL", "IF", "IN",
+            "INDEX", "INNER", "INSERT", "INTERSECT", "INTO", "IS", "JOIN", "KEY", "KILL", "LEFT",
+            "LIKE", "LINENO", "LOAD", "MERGE", "NATIONAL", "NOCHECK", "NONCLUSTERED", "NOT", "NULL",
+            "NULLIF", "OF", "OFF", "OFFSETS", "ON", "OPEN", "OPENDATASOURCE", "OPENQUERY",
+            "OPENROWSET", "OPENXML", "OPTION", "OR", "ORDER", "OUTER", "OVER", "PERCENT", "PIVOT",
+            "PLAN", "PRECISION", "PRIMARY", "PRINT", "PROC", "PROCEDURE", "PUBLIC", "RAISERROR",
+            "READ", "READTEXT", "RECONFIGURE", "REFERENCES", "REPLICATION", "RESTORE", "RESTRICT",
+            "RETURN", "REVERT", "REVOKE", "RIGHT", "ROLLBACK", "ROWCOUNT", "ROWGUIDCOL", "RULE",
+            "SAVE", "SCHEMA", "SECURITYAUDIT", "SELECT", "SEMANTICKEYPHRASETABLE",
+            "SEMANTICSIMILARITYDETAILSTABLE", "SEMANTICSIMILARITYTABLE", "SESSION_USER", "SET",
+            "SETUSER", "SHUTDOWN", "SOME", "STATISTICS", "SUM", "SYSTEM_USER", "TABLE", "TABLESAMPLE",
+            "TEXTSIZE", "THEN", "TO", "TOP", "TRAN", "TRANSACTION", "TRIGGER", "TRUNCATE",
+            "TRY_CONVERT", "TSEQUAL", "UNION", "UNIQUE", "UNPIVOT", "UPDATE", "UPDATETEXT", "USE",
+            "USER", "VALUES", "VARYING", "VIEW", "WAITFOR", "WHEN", "WHERE", "WHILE", "WITH",
+            "WITHIN", "WRITETEXT", "LIMIT", "OFFSET"
+        ];
+        reserved.contains(&upper.as_str())
+    }
+}
