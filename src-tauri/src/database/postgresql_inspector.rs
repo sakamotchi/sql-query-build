@@ -34,8 +34,8 @@ impl PostgresqlInspector {
     async fn get_primary_key(&self, schema: &str, table: &str) -> Result<Option<PrimaryKey>, String> {
         let query = r#"
             SELECT
-                tc.constraint_name,
-                array_agg(kcu.column_name ORDER BY kcu.ordinal_position) as columns
+                tc.constraint_name::TEXT,
+                array_agg(kcu.column_name::TEXT ORDER BY kcu.ordinal_position) as columns
             FROM information_schema.table_constraints tc
             JOIN information_schema.key_column_usage kcu
               ON tc.constraint_name = kcu.constraint_name
@@ -203,40 +203,37 @@ impl DatabaseInspector for PostgresqlInspector {
                 END as display_type,
                 c.is_nullable = 'YES' as nullable,
                 c.column_default,
-                COALESCE(
-                    (SELECT true FROM information_schema.key_column_usage kcu
-                     JOIN information_schema.table_constraints tc
-                       ON kcu.constraint_name = tc.constraint_name
-                      AND kcu.table_schema = tc.table_schema
-                     WHERE tc.constraint_type = 'PRIMARY KEY'
-                       AND kcu.table_schema = c.table_schema
-                       AND kcu.table_name = c.table_name
-                       AND kcu.column_name = c.column_name),
-                    false
+                EXISTS (
+                    SELECT 1 FROM information_schema.key_column_usage kcu
+                    JOIN information_schema.table_constraints tc
+                      ON kcu.constraint_name = tc.constraint_name
+                     AND kcu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'PRIMARY KEY'
+                      AND kcu.table_schema = c.table_schema
+                      AND kcu.table_name = c.table_name
+                      AND kcu.column_name = c.column_name
                 ) as is_primary_key,
-                COALESCE(
-                    (SELECT true FROM information_schema.key_column_usage kcu
-                     JOIN information_schema.table_constraints tc
-                       ON kcu.constraint_name = tc.constraint_name
-                      AND kcu.table_schema = tc.table_schema
-                     WHERE tc.constraint_type = 'FOREIGN KEY'
-                       AND kcu.table_schema = c.table_schema
-                       AND kcu.table_name = c.table_name
-                       AND kcu.column_name = c.column_name),
-                    false
+                EXISTS (
+                    SELECT 1 FROM information_schema.key_column_usage kcu
+                    JOIN information_schema.table_constraints tc
+                      ON kcu.constraint_name = tc.constraint_name
+                     AND kcu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                      AND kcu.table_schema = c.table_schema
+                      AND kcu.table_name = c.table_name
+                      AND kcu.column_name = c.column_name
                 ) as is_foreign_key,
-                COALESCE(
-                    (SELECT true FROM information_schema.key_column_usage kcu
-                     JOIN information_schema.table_constraints tc
-                       ON kcu.constraint_name = tc.constraint_name
-                      AND kcu.table_schema = tc.table_schema
-                     WHERE tc.constraint_type = 'UNIQUE'
-                       AND kcu.table_schema = c.table_schema
-                       AND kcu.table_name = c.table_name
-                       AND kcu.column_name = c.column_name),
-                    false
+                EXISTS (
+                    SELECT 1 FROM information_schema.key_column_usage kcu
+                    JOIN information_schema.table_constraints tc
+                      ON kcu.constraint_name = tc.constraint_name
+                     AND kcu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'UNIQUE'
+                      AND kcu.table_schema = c.table_schema
+                      AND kcu.table_name = c.table_name
+                      AND kcu.column_name = c.column_name
                 ) as is_unique,
-                c.column_default LIKE '%nextval%' as is_auto_increment,
+                COALESCE(c.column_default LIKE '%nextval%', false) as is_auto_increment,
                 c.ordinal_position,
                 col_description(
                     (quote_ident(c.table_schema) || '.' || quote_ident(c.table_name))::regclass,
@@ -280,11 +277,11 @@ impl DatabaseInspector for PostgresqlInspector {
     async fn get_indexes(&self, schema: &str, table: &str) -> Result<Vec<Index>, String> {
         let query = r#"
             SELECT
-                i.relname as index_name,
+                i.relname::TEXT as index_name,
                 ix.indisunique as is_unique,
                 ix.indisprimary as is_primary,
-                am.amname as index_type,
-                array_agg(a.attname ORDER BY array_position(ix.indkey, a.attnum)) as columns
+                am.amname::TEXT as index_type,
+                array_agg(a.attname::TEXT ORDER BY array_position(ix.indkey, a.attnum)) as columns
             FROM pg_index ix
             JOIN pg_class t ON t.oid = ix.indrelid
             JOIN pg_class i ON i.oid = ix.indexrelid
@@ -323,13 +320,13 @@ impl DatabaseInspector for PostgresqlInspector {
     async fn get_foreign_keys(&self, schema: &str, table: &str) -> Result<Vec<ForeignKey>, String> {
         let query = r#"
             SELECT
-                tc.constraint_name,
-                array_agg(kcu.column_name ORDER BY kcu.ordinal_position) as columns,
-                ccu.table_schema as referenced_schema,
-                ccu.table_name as referenced_table,
-                array_agg(ccu.column_name ORDER BY kcu.ordinal_position) as referenced_columns,
-                rc.delete_rule as on_delete,
-                rc.update_rule as on_update
+                tc.constraint_name::TEXT,
+                array_agg(kcu.column_name::TEXT ORDER BY kcu.ordinal_position) as columns,
+                ccu.table_schema::TEXT as referenced_schema,
+                ccu.table_name::TEXT as referenced_table,
+                array_agg(ccu.column_name::TEXT ORDER BY kcu.ordinal_position) as referenced_columns,
+                rc.delete_rule::TEXT as on_delete,
+                rc.update_rule::TEXT as on_update
             FROM information_schema.table_constraints tc
             JOIN information_schema.key_column_usage kcu
               ON tc.constraint_name = kcu.constraint_name
@@ -379,11 +376,11 @@ impl DatabaseInspector for PostgresqlInspector {
     ) -> Result<Vec<ForeignKeyReference>, String> {
         let query = r#"
             SELECT
-                tc.table_schema as source_schema,
-                tc.table_name as source_table,
-                array_agg(kcu.column_name ORDER BY kcu.ordinal_position) as source_columns,
-                array_agg(ccu.column_name ORDER BY kcu.ordinal_position) as target_columns,
-                tc.constraint_name
+                tc.table_schema::TEXT as source_schema,
+                tc.table_name::TEXT as source_table,
+                array_agg(kcu.column_name::TEXT ORDER BY kcu.ordinal_position) as source_columns,
+                array_agg(ccu.column_name::TEXT ORDER BY kcu.ordinal_position) as target_columns,
+                tc.constraint_name::TEXT
             FROM information_schema.table_constraints tc
             JOIN information_schema.key_column_usage kcu
               ON tc.constraint_name = kcu.constraint_name

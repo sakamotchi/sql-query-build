@@ -5,6 +5,7 @@ pub mod database;
 pub mod models;
 pub mod services;
 pub mod storage;
+pub mod sql_generator;
 
 use connection::{ConnectionService, ConnectionStorage};
 use crypto::{
@@ -176,6 +177,8 @@ pub fn run() {
             commands::database_structure::get_schemas,
             commands::database_structure::get_tables,
             commands::database_structure::get_columns,
+            commands::query::generate_sql,
+            commands::query::generate_sql_formatted,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,
             commands::security::get_security_config,

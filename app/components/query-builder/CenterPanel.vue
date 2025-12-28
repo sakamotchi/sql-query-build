@@ -42,10 +42,10 @@ const stopDrag = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
+  <div class="flex flex-col h-full center-panel">
     <!-- 上部: テーブル関係図 -->
     <div
-      class="overflow-hidden min-h-[100px]"
+      class="min-h-[100px] overflow-hidden"
       :style="{ height: `${splitRatio}%` }"
     >
       <TableRelationArea />

@@ -91,7 +91,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
+  <div class="flex flex-col h-full">
     <!-- ツールバー -->
     <QueryBuilderToolbar
       class="flex-shrink-0"
@@ -101,7 +101,7 @@ defineExpose({
     />
 
     <!-- メインコンテンツエリア -->
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 min-h-0">
       <!-- 左パネル -->
       <ResizablePanel
         v-if="!isLeftPanelCollapsed"
@@ -125,7 +125,7 @@ defineExpose({
       </div>
 
       <!-- 中央パネル -->
-      <div class="flex-1 overflow-hidden min-w-[400px]">
+      <div class="flex-1 min-w-[400px] h-full">
         <CenterPanel />
       </div>
 

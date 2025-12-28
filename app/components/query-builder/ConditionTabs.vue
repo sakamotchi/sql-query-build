@@ -1,27 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import SelectTab from './select/SelectTab.vue'
+import WhereTab from './where/WhereTab.vue'
+import GroupByTab from './group-by/GroupByTab.vue'
+import OrderByTab from './order-by/OrderByTab.vue'
+import LimitTab from './limit/LimitTab.vue'
 
 // タブアイテム
 const items = [
   {
     key: 'select',
     label: 'SELECT',
+    value: 'select',
   },
   {
     key: 'where',
     label: 'WHERE',
+    value: 'where',
   },
   {
     key: 'group',
     label: 'GROUP BY',
+    value: 'group',
   },
   {
     key: 'order',
     label: 'ORDER BY',
+    value: 'order',
   },
   {
     key: 'limit',
     label: 'LIMIT',
+    value: 'limit',
   },
 ]
 
@@ -40,34 +50,24 @@ const selectedTab = ref('select')
 
     <!-- タブコンテンツ -->
     <div class="flex-1 overflow-auto p-4">
-      <div v-if="selectedTab === 'select'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-cursor-arrow-rays" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">SELECT句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.5で実装)</p>
+      <div v-if="selectedTab === 'select'" class="h-full">
+        <SelectTab />
       </div>
 
-      <div v-else-if="selectedTab === 'where'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-funnel" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">WHERE句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.6で実装)</p>
+      <div v-else-if="selectedTab === 'where'" class="h-full">
+        <WhereTab />
       </div>
 
-      <div v-else-if="selectedTab === 'group'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-squares-plus" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">GROUP BY句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.7で実装)</p>
+      <div v-else-if="selectedTab === 'group'" class="h-full">
+        <GroupByTab />
       </div>
 
-      <div v-else-if="selectedTab === 'order'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-arrows-up-down" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">ORDER BY句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.8で実装)</p>
+      <div v-else-if="selectedTab === 'order'" class="h-full">
+        <OrderByTab />
       </div>
 
-      <div v-else-if="selectedTab === 'limit'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-numbered-list" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">LIMIT句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.9で実装)</p>
+      <div v-else-if="selectedTab === 'limit'" class="h-full">
+        <LimitTab />
       </div>
     </div>
   </div>

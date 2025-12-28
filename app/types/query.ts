@@ -1,6 +1,83 @@
+import type { Column } from './database-structure'
+
 /**
  * クエリモデル型定義
  */
+
+/**
+ * 選択されたテーブル（テーブルカード用）
+ */
+export interface SelectedTable {
+  /** 一意識別子（schema.table_name） */
+  id: string
+  /** スキーマ名 */
+  schema: string
+  /** テーブル名 */
+  name: string
+  /** エイリアス */
+  alias: string
+  /** カラム一覧 */
+  columns: Column[]
+}
+
+/**
+ * WHERE演算子
+ */
+export type WhereOperator =
+  | '='
+  | '!='
+  | '>'
+  | '>='
+  | '<'
+  | '<='
+  | 'LIKE'
+  | 'NOT LIKE'
+  | 'IN'
+  | 'NOT IN'
+  | 'BETWEEN'
+  | 'IS NULL'
+  | 'IS NOT NULL'
+
+/**
+ * WHERE条件
+ */
+export interface WhereCondition {
+  id: string
+  type: 'condition'
+  column: {
+    tableAlias: string
+    columnName: string
+  } | null
+  operator: WhereOperator
+  value: string | string[] | { from: string; to: string }
+  isValid: boolean
+}
+
+/**
+ * 条件グループ
+ */
+export interface ConditionGroup {
+  id: string
+  type: 'group'
+  logic: 'AND' | 'OR'
+  conditions: Array<WhereCondition | ConditionGroup>
+}
+
+/**
+ * 選択されたカラム（カラム選択UI用）
+ */
+export interface SelectedColumn {
+  /** テーブルID（SelectedTable.idに対応） */
+  tableId: string
+  /** テーブルエイリアス */
+  tableAlias: string
+  /** カラム名 */
+  columnName: string
+  /** カラムエイリアス */
+  columnAlias: string | null
+  /** データ型 */
+  dataType: string
+}
 
 /**
  * テーブル情報
@@ -44,18 +121,14 @@ export interface ColumnInfo {
   aggregate?: 'COUNT' | 'SUM' | 'AVG' | 'MIN' | 'MAX';
 }
 
+
+
 /**
- * WHERE条件
+ * GROUP BYカラム
  */
-export interface WhereCondition {
-  /** カラム */
-  column: string;
-  /** 演算子 */
-  operator: '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE' | 'IN' | 'IS NULL' | 'IS NOT NULL';
-  /** 値 */
-  value?: any;
-  /** 論理演算子 */
-  logic?: 'AND' | 'OR';
+export interface GroupByColumn {
+  id: string
+  column: SelectedColumn | null
 }
 
 /**
@@ -69,6 +142,15 @@ export interface OrderByInfo {
 }
 
 /**
+ * ORDER BYカラム (UI用)
+ */
+export interface OrderByColumn {
+  id: string
+  column: SelectedColumn | null
+  direction: 'ASC' | 'DESC'
+}
+
+/**
  * クエリモデル
  */
 export interface QueryModel {
@@ -78,12 +160,12 @@ export interface QueryModel {
   joins: JoinInfo[];
   /** カラム一覧 */
   columns: ColumnInfo[];
-  /** WHERE条件一覧 */
-  where: WhereCondition[];
+  /** WHERE条件一覧 (ルートはグループまたは条件のリスト) */
+  where: Array<WhereCondition | ConditionGroup>;
   /** GROUP BY一覧 */
   groupBy: string[];
   /** HAVING条件一覧 */
-  having: WhereCondition[];
+  having: Array<WhereCondition | ConditionGroup>;
   /** ORDER BY一覧 */
   orderBy: OrderByInfo[];
   /** LIMIT */
