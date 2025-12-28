@@ -21,6 +21,49 @@ export interface SelectedTable {
 }
 
 /**
+ * WHERE演算子
+ */
+export type WhereOperator =
+  | '='
+  | '!='
+  | '>'
+  | '>='
+  | '<'
+  | '<='
+  | 'LIKE'
+  | 'NOT LIKE'
+  | 'IN'
+  | 'NOT IN'
+  | 'BETWEEN'
+  | 'IS NULL'
+  | 'IS NOT NULL'
+
+/**
+ * WHERE条件
+ */
+export interface WhereCondition {
+  id: string
+  type: 'condition'
+  column: {
+    tableAlias: string
+    columnName: string
+  } | null
+  operator: WhereOperator
+  value: string | string[] | { from: string; to: string }
+  isValid: boolean
+}
+
+/**
+ * 条件グループ
+ */
+export interface ConditionGroup {
+  id: string
+  type: 'group'
+  logic: 'AND' | 'OR'
+  conditions: Array<WhereCondition | ConditionGroup>
+}
+
+/**
  * 選択されたカラム（カラム選択UI用）
  */
 export interface SelectedColumn {
@@ -78,19 +121,7 @@ export interface ColumnInfo {
   aggregate?: 'COUNT' | 'SUM' | 'AVG' | 'MIN' | 'MAX';
 }
 
-/**
- * WHERE条件
- */
-export interface WhereCondition {
-  /** カラム */
-  column: string;
-  /** 演算子 */
-  operator: '=' | '!=' | '<' | '<=' | '>' | '>=' | 'LIKE' | 'IN' | 'IS NULL' | 'IS NOT NULL';
-  /** 値 */
-  value?: any;
-  /** 論理演算子 */
-  logic?: 'AND' | 'OR';
-}
+
 
 /**
  * ORDER BY情報
@@ -112,12 +143,12 @@ export interface QueryModel {
   joins: JoinInfo[];
   /** カラム一覧 */
   columns: ColumnInfo[];
-  /** WHERE条件一覧 */
-  where: WhereCondition[];
+  /** WHERE条件一覧 (ルートはグループまたは条件のリスト) */
+  where: Array<WhereCondition | ConditionGroup>;
   /** GROUP BY一覧 */
   groupBy: string[];
   /** HAVING条件一覧 */
-  having: WhereCondition[];
+  having: Array<WhereCondition | ConditionGroup>;
   /** ORDER BY一覧 */
   orderBy: OrderByInfo[];
   /** LIMIT */

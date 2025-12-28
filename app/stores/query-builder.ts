@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn } from '@/types/query'
+import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup } from '@/types/query'
 import type { Table } from '@/types/database-structure'
 
 interface QueryBuilderState {
@@ -9,6 +9,8 @@ interface QueryBuilderState {
   selectedColumns: SelectedColumn[]
   /** ドラッグ中のテーブル（ドラッグ&ドロップ用） */
   draggingTable: Table | null
+  /** WHERE条件一覧 */
+  whereConditions: Array<WhereCondition | ConditionGroup>
   /** 現在のクエリモデル */
   query: QueryModel | null
   /** 生成されたSQL */
@@ -26,6 +28,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     selectedTables: [],
     selectedColumns: [],
     draggingTable: null,
+    whereConditions: [],
     query: null,
     generatedSql: '',
     queryInfo: {
@@ -150,8 +153,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         return
       }
       const movedColumns = this.selectedColumns.splice(fromIndex, 1)
-      if (movedColumns.length > 0) {
-        this.selectedColumns.splice(toIndex, 0, movedColumns[0])
+      const col = movedColumns[0]
+      if (col) {
+        this.selectedColumns.splice(toIndex, 0, col)
       }
       this.regenerateSql()
     },
@@ -194,6 +198,107 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * WHERE条件を追加
+     */
+    addWhereCondition(condition: WhereCondition) {
+      this.whereConditions.push(condition)
+      this.regenerateSql()
+    },
+
+    /**
+     * 条件グループを追加
+     */
+    addWhereConditionGroup(group: ConditionGroup) {
+      this.whereConditions.push(group)
+      this.regenerateSql()
+    },
+
+    /**
+     * WHERE条件を削除
+     */
+    removeWhereCondition(id: string) {
+      const index = this.whereConditions.findIndex((c) => c.id === id)
+      if (index !== -1) {
+        this.whereConditions.splice(index, 1)
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * WHERE条件を更新
+     */
+    updateWhereCondition(id: string, updates: Partial<WhereCondition>) {
+      const condition = this.findCondition(id)
+      if (condition && condition.type === 'condition') {
+        Object.assign(condition, updates)
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * グループ内に条件追加
+     */
+    addConditionToGroup(groupId: string, condition: WhereCondition) {
+      const group = this.findCondition(groupId)
+      if (group && group.type === 'group') {
+        group.conditions.push(condition)
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * グループから条件削除
+     */
+    removeConditionFromGroup(groupId: string, conditionId: string) {
+      const group = this.findCondition(groupId)
+      if (group && group.type === 'group') {
+        const index = group.conditions.findIndex((c) => c.id === conditionId)
+        if (index !== -1) {
+          group.conditions.splice(index, 1)
+          this.regenerateSql()
+        }
+      }
+    },
+
+    /**
+     * グループのロジック変更
+     */
+    updateGroupLogic(groupId: string, logic: 'AND' | 'OR') {
+      const group = this.findCondition(groupId)
+      if (group && group.type === 'group') {
+        group.logic = logic
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * 条件を検索（再帰）
+     */
+    findCondition(id: string): WhereCondition | ConditionGroup | null {
+      const search = (
+        items: Array<WhereCondition | ConditionGroup>
+      ): WhereCondition | ConditionGroup | null => {
+        for (const item of items) {
+          if (item.id === id) return item
+          if (item.type === 'group') {
+            const found = search(item.conditions)
+            if (found) return found
+          }
+        }
+        return null
+      }
+      return search(this.whereConditions)
+    },
+
+    /**
+     * 全条件をクリア
+     */
+    clearWhereConditions() {
+      this.whereConditions = []
+      this.regenerateSql()
+    },
+
+    /**
      * 関連するJOINを削除
      */
     removeRelatedJoins(_tableId: string) {
@@ -229,7 +334,59 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         .map((table) => `${table.name} AS ${table.alias}`)
         .join(',\n  ') // 本来はJOIN句を使うべきだが、簡易的にカンマ区切り
 
-      this.generatedSql = `SELECT\n  ${selectClause}\nFROM\n  ${fromClause}`
+      let sql = `SELECT\n  ${selectClause}\nFROM\n  ${fromClause}`
+
+      // WHERE句の生成
+      if (this.whereConditions.length > 0) {
+        const whereClause = this.generateWhereClause(this.whereConditions)
+        if (whereClause) {
+          sql += `\nWHERE\n  ${whereClause}`
+        }
+      }
+
+      this.generatedSql = sql
+    },
+
+    /**
+     * WHERE句の生成（再帰）
+     */
+    generateWhereClause(conditions: Array<WhereCondition | ConditionGroup>, logic: 'AND' | 'OR' = 'AND'): string {
+      if (conditions.length === 0) return ''
+
+      const parts = conditions
+        .map((item) => {
+          if (item.type === 'group') {
+            const groupClause = this.generateWhereClause(item.conditions, item.logic)
+            return groupClause ? `(${groupClause})` : ''
+          } else {
+            if (!item.isValid || !item.column) return ''
+            const colName = `${item.column.tableAlias}.${item.column.columnName}`
+            const val = this.formatValue(item.value, item.operator)
+            if (item.operator === 'IS NULL' || item.operator === 'IS NOT NULL') {
+              return `${colName} ${item.operator}`
+            }
+            return `${colName} ${item.operator} ${val}`
+          }
+        })
+        .filter((part) => part !== '')
+
+      return parts.join(` ${logic} `)
+    },
+
+    /**
+     * 値のフォーマット
+     */
+    formatValue(value: any, operator: string): string {
+      if (operator === 'IN' || operator === 'NOT IN') {
+        const vals = Array.isArray(value) ? value : []
+        return `(${vals.map((v) => `'${v}'`).join(', ')})`
+      }
+      if (operator === 'BETWEEN') {
+        const from = value?.from || ''
+        const to = value?.to || ''
+        return `'${from}' AND '${to}'`
+      }
+      return `'${value}'`
     },
 
     /**
@@ -238,6 +395,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     resetQuery() {
       this.selectedTables = []
       this.selectedColumns = []
+      this.whereConditions = []
       this.query = null
       this.generatedSql = ''
       this.error = null
@@ -254,7 +412,10 @@ export const useQueryBuilderStore = defineStore('query-builder', {
 
       try {
         // TODO: タスク1.7.4で実装
-        console.log('Execute query:', this.selectedColumns)
+        console.log('Execute query:', {
+          columns: this.selectedColumns,
+          where: this.whereConditions
+        })
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Unknown error'
       } finally {
