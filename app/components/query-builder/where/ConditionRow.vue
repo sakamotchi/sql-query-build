@@ -145,11 +145,11 @@ const checkValidity = (value: any): boolean => {
 
 <template>
   <div
-    class="flex items-start gap-2 p-2 border rounded-md bg-white dark:bg-gray-800"
+    class="flex flex-wrap items-start gap-2 p-2 border rounded-md bg-white dark:bg-gray-800"
     :class="{ 'border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-900/10': !condition.isValid }"
   >
     <!-- カラム選択 -->
-    <div class="flex-2 min-w-[150px]">
+    <div class="flex-2 min-w-[150px] w-full sm:w-auto">
       <ColumnSelect
         :model-value="condition.column"
         :columns="availableColumns"
@@ -158,7 +158,7 @@ const checkValidity = (value: any): boolean => {
     </div>
 
     <!-- 演算子選択 -->
-    <div class="flex-1 min-w-[140px]">
+    <div class="flex-1 min-w-[140px] w-full sm:w-auto">
       <OperatorSelect
         :model-value="condition.operator"
         :data-type="selectedColumn?.dataType"
@@ -167,7 +167,14 @@ const checkValidity = (value: any): boolean => {
     </div>
 
     <!-- 値入力 -->
-    <div class="flex-2 min-w-[150px]">
+    <div
+      class="min-w-[150px]"
+      :class="[
+        valueInputType === 'range' 
+          ? 'w-full basis-full mt-2' 
+          : 'flex-2 w-full sm:w-auto'
+      ]"
+    >
       <template v-if="valueInputType === 'single'">
         <ValueInput
           :model-value="condition.value as string"
