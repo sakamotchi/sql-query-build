@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import ColumnNode from './ColumnNode.vue'
 import TreeNodeIcon from './TreeNodeIcon.vue'
+import { useQueryBuilderStore } from '@/stores/query-builder'
+import { useTableSelection } from '@/composables/useTableSelection'
 import type { Table, Column } from '@/types/database-structure'
+
+const queryBuilderStore = useQueryBuilderStore()
+const { addTable } = useTableSelection()
 
 const props = defineProps<{
   table: Table
@@ -38,15 +43,113 @@ const handleClick = () => {
 }
 
 const handleDoubleClick = () => {
-  emit('select-table', props.table)
+  // ダブルクリックでテーブルを追加
+  if (addTable(props.table)) {
+    // 成功時の処理（必要ならトーストなど）
+  }
 }
 
-const handleDragStart = (e: DragEvent) => {
-  e.dataTransfer?.setData('application/json', JSON.stringify({
-    type: 'table',
-    data: props.table,
-  }))
-  emit('drag-start-table', props.table)
+// --------------------------------------------------------------------------
+// Custom Pointer Events Drag System
+// --------------------------------------------------------------------------
+const isDragging = ref(false)
+let ghostElement: HTMLElement | null = null
+
+const handleMouseDown = (e: MouseEvent) => {
+  // 左クリックのみ反応
+  if (e.button !== 0) return
+  
+  // ドラッグ開始
+  isDragging.value = true
+  
+  // ゴースト要素を作成
+  createGhostElement(e)
+  
+  // グローバルイベント登録
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+  
+  // デフォルトのテキスト選択などを無効化
+  e.preventDefault()
+  
+  // ストアにドラッグ状態を通知（UIハイライト用など）
+  queryBuilderStore.setDraggingTable(props.table)
+}
+
+const createGhostElement = (e: MouseEvent) => {
+  // 簡単なゴースト要素を作成
+  const ghost = document.createElement('div')
+  ghost.textContent = props.table.name
+  ghost.style.position = 'fixed'
+  ghost.style.top = `${e.clientY}px`
+  ghost.style.left = `${e.clientX}px`
+  ghost.style.padding = '8px 12px'
+  ghost.style.background = 'white'
+  ghost.style.border = '1px solid #ccc'
+  ghost.style.borderRadius = '4px'
+  ghost.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  ghost.style.zIndex = '9999'
+  ghost.style.pointerEvents = 'none' // マウスイベントを透過させる
+  ghost.style.opacity = '0.9'
+  ghost.style.transform = 'translate(-50%, -50%)' // 真ん中を掴む
+  ghost.style.fontFamily = 'sans-serif'
+  ghost.style.fontSize = '14px'
+  
+  // ダークモード対応（簡易）
+  if (document.documentElement.classList.contains('dark')) {
+      ghost.style.background = '#1f2937'
+      ghost.style.borderColor = '#374151'
+      ghost.style.color = '#fff'
+  }
+
+  document.body.appendChild(ghost)
+  ghostElement = ghost
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (ghostElement) {
+    ghostElement.style.top = `${e.clientY}px`
+    ghostElement.style.left = `${e.clientX}px`
+  }
+}
+
+const handleMouseUp = (e: MouseEvent) => {
+  // クリーンアップ
+  if (ghostElement) {
+    document.body.removeChild(ghostElement)
+    ghostElement = null
+  }
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', handleMouseUp)
+  isDragging.value = false
+  queryBuilderStore.setDraggingTable(null)
+
+  // Hit Test: ドロップ先のエリアを探す
+  const dropTarget = document.getElementById('query-builder-canvas')
+  if (dropTarget) {
+    const rect = dropTarget.getBoundingClientRect()
+    // コンテナ内判定
+    const isInside = 
+      e.clientX >= rect.left && 
+      e.clientX <= rect.right && 
+      e.clientY >= rect.top && 
+      e.clientY <= rect.bottom
+      
+    if (isInside) {
+      // ドロップ成功！カスタムイベントを発火する
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      
+      const event = new CustomEvent('table-drop', {
+        detail: {
+            table: props.table,
+            x,
+            y
+        }
+      })
+      dropTarget.dispatchEvent(event)
+    }
+  }
 }
 
 const handleColumnSelect = (column: Column) => {
@@ -67,10 +170,9 @@ const handleColumnDragStart = (column: Column) => {
         'bg-primary-50 dark:bg-primary-900/20': isSelected,
         'bg-yellow-50 dark:bg-yellow-900/20': matchesSearch,
       }"
-      draggable="true"
       @click="handleClick"
       @dblclick="handleDoubleClick"
-      @dragstart="handleDragStart"
+      @mousedown="handleMouseDown"
     >
       <UIcon
         name="i-heroicons-chevron-right"

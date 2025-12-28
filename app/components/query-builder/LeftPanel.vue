@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import DatabaseTree from './DatabaseTree.vue'
+import { useTableSelection } from '@/composables/useTableSelection'
 import type { Table, Column } from '@/types/database-structure'
 
 const emit = defineEmits<{
@@ -9,6 +10,8 @@ const emit = defineEmits<{
   (e: 'drag-start-table', table: Table): void
   (e: 'drag-start-column', column: Column, table: Table): void
 }>()
+
+const { addTable } = useTableSelection()
 
 // 検索クエリ
 const searchQuery = ref('')
@@ -22,9 +25,10 @@ const refreshTree = () => {
 }
 
 /**
- * テーブル選択
+ * テーブル選択（ダブルクリック時にテーブル関係図エリアに追加）
  */
 const handleTableSelect = (table: Table) => {
+  addTable(table)
   emit('select-table', table)
 }
 

@@ -1,6 +1,24 @@
+import type { Column } from './database-structure'
+
 /**
  * クエリモデル型定義
  */
+
+/**
+ * 選択されたテーブル（テーブルカード用）
+ */
+export interface SelectedTable {
+  /** 一意識別子（schema.table_name） */
+  id: string
+  /** スキーマ名 */
+  schema: string
+  /** テーブル名 */
+  name: string
+  /** エイリアス */
+  alias: string
+  /** カラム一覧 */
+  columns: Column[]
+}
 
 /**
  * テーブル情報

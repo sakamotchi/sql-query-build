@@ -102,7 +102,7 @@ onUnmounted(() => {
 <template>
   <div
     ref="panelRef"
-    class="relative flex overflow-hidden"
+    class="relative flex"
     :style="panelStyle"
   >
     <div class="flex-1 overflow-auto">
