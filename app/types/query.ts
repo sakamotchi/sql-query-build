@@ -21,6 +21,22 @@ export interface SelectedTable {
 }
 
 /**
+ * 選択されたカラム（カラム選択UI用）
+ */
+export interface SelectedColumn {
+  /** テーブルID（SelectedTable.idに対応） */
+  tableId: string
+  /** テーブルエイリアス */
+  tableAlias: string
+  /** カラム名 */
+  columnName: string
+  /** カラムエイリアス */
+  columnAlias: string | null
+  /** データ型 */
+  dataType: string
+}
+
+/**
  * テーブル情報
  */
 export interface TableInfo {

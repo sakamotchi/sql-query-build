@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import SelectTab from './select/SelectTab.vue'
 
 // タブアイテム
 const items = [
@@ -40,10 +41,8 @@ const selectedTab = ref('select')
 
     <!-- タブコンテンツ -->
     <div class="flex-1 overflow-auto p-4">
-      <div v-if="selectedTab === 'select'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-cursor-arrow-rays" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">SELECT句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.5で実装)</p>
+      <div v-if="selectedTab === 'select'" class="h-full">
+        <SelectTab />
       </div>
 
       <div v-else-if="selectedTab === 'where'" class="flex flex-col items-center justify-center h-full">
