@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup } from '@/types/query'
+import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn } from '@/types/query'
 import type { Table } from '@/types/database-structure'
 
 interface QueryBuilderState {
@@ -11,6 +11,8 @@ interface QueryBuilderState {
   draggingTable: Table | null
   /** WHERE条件一覧 */
   whereConditions: Array<WhereCondition | ConditionGroup>
+  /** GROUP BYカラム一覧 */
+  groupByColumns: GroupByColumn[]
   /** 現在のクエリモデル */
   query: QueryModel | null
   /** 生成されたSQL */
@@ -29,6 +31,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     selectedColumns: [],
     draggingTable: null,
     whereConditions: [],
+    groupByColumns: [],
     query: null,
     generatedSql: '',
     queryInfo: {
@@ -342,6 +345,15 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         if (whereClause) {
           sql += `\nWHERE\n  ${whereClause}`
         }
+      }
+
+      // GROUP BY句の生成
+      const validGroupBy = this.groupByColumns.filter(g => g.column)
+      if (validGroupBy.length > 0) {
+        const groupByClause = validGroupBy
+          .map(g => `${g.column!.tableAlias}.${g.column!.columnName}`)
+          .join(', ')
+        sql += `\nGROUP BY ${groupByClause}`
       }
 
       this.generatedSql = sql

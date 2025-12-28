@@ -124,6 +124,14 @@ export interface ColumnInfo {
 
 
 /**
+ * GROUP BYカラム
+ */
+export interface GroupByColumn {
+  id: string
+  column: SelectedColumn | null
+}
+
+/**
  * ORDER BY情報
  */
 export interface OrderByInfo {

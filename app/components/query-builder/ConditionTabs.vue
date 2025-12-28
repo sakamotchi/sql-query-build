@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import SelectTab from './select/SelectTab.vue'
 import WhereTab from './where/WhereTab.vue'
+import GroupByTab from './group-by/GroupByTab.vue'
 
 // タブアイテム
 const items = [
@@ -53,10 +54,8 @@ const selectedKey = computed(() => items[selectedIndex.value]?.key)
         <WhereTab />
       </div>
 
-      <div v-else-if="selectedKey === 'group'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-squares-plus" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">GROUP BY句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.7で実装)</p>
+      <div v-else-if="selectedKey === 'group'" class="h-full">
+        <GroupByTab />
       </div>
 
       <div v-else-if="selectedKey === 'order'" class="flex flex-col items-center justify-center h-full">
