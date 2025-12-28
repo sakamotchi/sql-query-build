@@ -142,6 +142,15 @@ export interface OrderByInfo {
 }
 
 /**
+ * ORDER BYカラム (UI用)
+ */
+export interface OrderByColumn {
+  id: string
+  column: SelectedColumn | null
+  direction: 'ASC' | 'DESC'
+}
+
+/**
  * クエリモデル
  */
 export interface QueryModel {

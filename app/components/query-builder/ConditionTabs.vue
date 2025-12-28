@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import SelectTab from './select/SelectTab.vue'
 import WhereTab from './where/WhereTab.vue'
 import GroupByTab from './group-by/GroupByTab.vue'
+import OrderByTab from './order-by/OrderByTab.vue'
 
 // タブアイテム
 const items = [
@@ -58,10 +59,8 @@ const selectedKey = computed(() => items[selectedIndex.value]?.key)
         <GroupByTab />
       </div>
 
-      <div v-else-if="selectedKey === 'order'" class="flex flex-col items-center justify-center h-full">
-        <UIcon name="i-heroicons-arrows-up-down" class="text-3xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">ORDER BY句設定</p>
-        <p class="text-xs text-gray-400 dark:text-gray-500">(タスク1.6.8で実装)</p>
+      <div v-else-if="selectedKey === 'order'" class="h-full">
+        <OrderByTab />
       </div>
 
       <div v-else-if="selectedKey === 'limit'" class="flex flex-col items-center justify-center h-full">

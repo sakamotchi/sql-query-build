@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn } from '@/types/query'
+import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
 import type { Table } from '@/types/database-structure'
 
 interface QueryBuilderState {
@@ -13,6 +13,8 @@ interface QueryBuilderState {
   whereConditions: Array<WhereCondition | ConditionGroup>
   /** GROUP BYカラム一覧 */
   groupByColumns: GroupByColumn[]
+  /** ORDER BYカラム一覧 */
+  orderByColumns: OrderByColumn[]
   /** 現在のクエリモデル */
   query: QueryModel | null
   /** 生成されたSQL */
@@ -32,6 +34,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     draggingTable: null,
     whereConditions: [],
     groupByColumns: [],
+    orderByColumns: [],
     query: null,
     generatedSql: '',
     queryInfo: {
@@ -275,6 +278,33 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * ORDER BYカラムを追加
+     */
+    addOrderByColumn(column: OrderByColumn) {
+      this.orderByColumns.push(column)
+      this.regenerateSql()
+    },
+
+    /**
+     * ORDER BYカラムを削除
+     */
+    removeOrderByColumn(id: string) {
+      const index = this.orderByColumns.findIndex((c) => c.id === id)
+      if (index !== -1) {
+        this.orderByColumns.splice(index, 1)
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * ORDER BYカラム一覧を更新（並べ替え用）
+     */
+    updateOrderByColumns(columns: OrderByColumn[]) {
+      this.orderByColumns = columns
+      this.regenerateSql()
+    },
+
+    /**
      * 条件を検索（再帰）
      */
     findCondition(id: string): WhereCondition | ConditionGroup | null {
@@ -354,6 +384,15 @@ export const useQueryBuilderStore = defineStore('query-builder', {
           .map(g => `${g.column!.tableAlias}.${g.column!.columnName}`)
           .join(', ')
         sql += `\nGROUP BY ${groupByClause}`
+      }
+
+      // ORDER BY句の生成
+      const validOrderBy = this.orderByColumns.filter(o => o.column)
+      if (validOrderBy.length > 0) {
+        const orderByClause = validOrderBy
+          .map(o => `${o.column!.tableAlias}.${o.column!.columnName} ${o.direction}`)
+          .join(', ')
+        sql += `\nORDER BY ${orderByClause}`
       }
 
       this.generatedSql = sql
