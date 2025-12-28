@@ -63,8 +63,16 @@ export const useDatabaseStructureStore = defineStore('database-structure', {
         const structure = await databaseStructureApi.getDatabaseStructure(connectionId);
         this.structures[connectionId] = structure;
       } catch (error) {
-        this.errors[connectionId] =
-          error instanceof Error ? error.message : 'Unknown error';
+        console.error('[database-structure store] fetchDatabaseStructure error:', error);
+        let errorMessage: string;
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        } else {
+          errorMessage = JSON.stringify(error) || 'Unknown error';
+        }
+        this.errors[connectionId] = errorMessage;
         throw error;
       } finally {
         this.loadingIds.delete(connectionId);

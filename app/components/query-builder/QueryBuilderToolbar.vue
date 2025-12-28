@@ -60,7 +60,7 @@ const openHistory = () => {
       @click="emit('toggle-left-panel')"
     />
 
-    <UDivider orientation="vertical" class="h-6" />
+    <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
     <!-- メインアクション -->
     <UButton
@@ -100,7 +100,7 @@ const openHistory = () => {
       新規
     </UButton>
 
-    <UDivider orientation="vertical" class="h-6" />
+    <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
     <!-- 履歴 -->
     <UButton
@@ -133,7 +133,7 @@ const openHistory = () => {
       @click="emit('toggle-right-panel')"
     />
 
-    <UDivider orientation="vertical" class="h-6" />
+    <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
     <!-- ダークモード切り替え -->
     <UButton

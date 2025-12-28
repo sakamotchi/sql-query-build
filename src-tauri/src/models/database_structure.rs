@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// データベース構造全体
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DatabaseStructure {
     pub connection_id: String,
     pub database_name: String,
@@ -12,6 +13,7 @@ pub struct DatabaseStructure {
 
 /// スキーマ情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Schema {
     pub name: String,
     pub is_system: bool,
@@ -21,6 +23,7 @@ pub struct Schema {
 
 /// テーブル情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Table {
     pub name: String,
     pub schema: String,
@@ -35,6 +38,7 @@ pub struct Table {
 
 /// ビュー情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct View {
     pub name: String,
     pub schema: String,
@@ -45,6 +49,7 @@ pub struct View {
 
 /// カラム情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Column {
     pub name: String,
     pub data_type: String,
@@ -61,6 +66,7 @@ pub struct Column {
 
 /// プライマリキー情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PrimaryKey {
     pub name: String,
     pub columns: Vec<String>,
@@ -68,6 +74,7 @@ pub struct PrimaryKey {
 
 /// インデックス情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Index {
     pub name: String,
     pub is_unique: bool,
@@ -79,6 +86,7 @@ pub struct Index {
 
 /// 外部キー情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ForeignKey {
     pub name: String,
     pub columns: Vec<String>,
@@ -91,6 +99,7 @@ pub struct ForeignKey {
 
 /// 外部キー参照情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ForeignKeyReference {
     pub source_schema: String,
     pub source_table: String,
