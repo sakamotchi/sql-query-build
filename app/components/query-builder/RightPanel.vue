@@ -9,6 +9,7 @@ const queryBuilderStore = useQueryBuilderStore()
 
 const generatedSql = computed(() => queryBuilderStore.generatedSql)
 const queryInfo = computed(() => queryBuilderStore.queryInfo)
+const analysisResult = computed(() => queryBuilderStore.analysisResult)
 const { smartQuote } = storeToRefs(queryBuilderStore) // Pinia state to ref
 
 const copyToClipboard = async () => {
@@ -49,6 +50,7 @@ const copyToClipboard = async () => {
       <SqlPreview
         :sql="generatedSql"
         :error-details="queryBuilderStore.queryError?.details"
+        :analysis-result="analysisResult"
       />
     </div>
 

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
+import type { QueryAnalysisResult } from '@/types/query-analysis'
 import { queryApi } from '@/api/query'
 import { convertToQueryModel } from '@/utils/query-converter'
 import { useConnectionStore } from '@/stores/connection'
@@ -41,6 +42,9 @@ interface QueryBuilderState {
   sqlGenerationError: string | null
   smartQuote: boolean // スマートクォーティング（true: 最小限, false: 常に引用符）
 
+  /** クエリ解析結果 */
+  analysisResult: QueryAnalysisResult | null
+
   // クエリ実行結果関連
   /** クエリ実行結果 */
   queryResult: QueryExecuteResult | null
@@ -74,6 +78,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     isGeneratingSql: false,
     sqlGenerationError: null,
     smartQuote: true, // デフォルトで有効
+    analysisResult: null,
     
     // クエリ実行結果初期値
     queryResult: null,
@@ -437,10 +442,18 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         
         // バックエンドAPIを呼び出し
         this.generatedSql = await queryApi.generateSqlFormatted(queryModel, true, this.smartQuote);
+
+        // クエリ解析を実行
+        const activeConnection = connectionStore.activeConnection || connectionStore.connections.find(c => c.id === connectionId)
+        if (activeConnection) {
+          const dialect = activeConnection.type.toLowerCase() // 'postgresql', 'mysql', 'sqlite'
+          this.analysisResult = await queryApi.analyzeQuery(this.generatedSql, dialect)
+        }
       } catch (error) {
         console.error('Failed to generate SQL:', error)
         this.sqlGenerationError = error instanceof Error ? error.message : 'Unknown error'
         this.generatedSql = ''
+        this.analysisResult = null
       } finally {
         this.isGeneratingSql = false
       }
@@ -500,6 +513,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.queryError = null
       this.limit = null
       this.offset = null
+      this.analysisResult = null
     },
 
     /**

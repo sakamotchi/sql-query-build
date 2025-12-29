@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { QueryErrorDetails } from '@/types/query-result'
+import type { QueryAnalysisResult } from '@/types/query-analysis'
 
 const props = defineProps<{
   sql: string
   errorDetails?: QueryErrorDetails | null
+  analysisResult?: QueryAnalysisResult | null
 }>()
 
 // SQLを行に分割
@@ -105,8 +107,35 @@ const errorColumn = computed(() => {
         <span>エラー位置: {{ errorLine }}行目<span v-if="errorColumn">, {{ errorColumn }}列目</span></span>
       </div>
     </div>
+
+    <!-- リスク警告 -->
+    <div
+      v-if="analysisResult && analysisResult.riskLevel !== 'safe'"
+      class="border-t border-gray-200 dark:border-gray-800"
+    >
+      <div
+        class="p-2 text-xs"
+        :class="{
+          'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400': analysisResult.riskLevel === 'warning',
+          'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400': analysisResult.riskLevel === 'danger'
+        }"
+      >
+        <div class="flex items-center gap-2 font-bold mb-1">
+          <UIcon
+            :name="analysisResult.riskLevel === 'danger' ? 'i-heroicons-shield-exclamation' : 'i-heroicons-exclamation-triangle'"
+            class="text-lg"
+          />
+          <span>{{ analysisResult.riskLevel === 'danger' ? '危険なクエリ' : '注意が必要なクエリ' }}</span>
+        </div>
+        <ul class="list-disc list-inside px-1 space-y-0.5 ml-5">
+          <li v-for="factor in analysisResult.riskFactors" :key="factor.code">
+            {{ factor.message }}
+          </li>
+        </ul>
+      </div>
+    </div>
     
-    <div v-else class="flex flex-col items-center justify-center h-full p-4">
+    <div v-else-if="!sql" class="flex flex-col items-center justify-center h-full p-4">
       <UIcon name="i-heroicons-code-bracket" class="text-3xl text-gray-400" />
       <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">SQLプレビュー</p>
       <p class="text-xs text-gray-400 dark:text-gray-500">クエリを構築すると表示されます</p>

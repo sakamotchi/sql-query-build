@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { QueryModel } from '@/types/query-model';
 import type { QueryExecuteRequest, QueryExecuteResponse } from '@/types/query-result';
+import type { QueryAnalysisResult } from '@/types/query-analysis';
 
 export const queryApi = {
   /**
@@ -29,5 +30,12 @@ export const queryApi = {
    */
   async cancelQuery(queryId: string): Promise<boolean> {
     return await invoke<boolean>('cancel_query', { queryId })
+  },
+
+  /**
+   * クエリを解析して危険度を判定
+   */
+  async analyzeQuery(sql: string, dialect: string): Promise<QueryAnalysisResult> {
+    return await invoke<QueryAnalysisResult>('analyze_query', { sql, dialect })
   },
 };
