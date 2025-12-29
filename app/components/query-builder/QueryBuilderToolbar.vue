@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
+import DangerousQueryDialog from './dialog/DangerousQueryDialog.vue'
 
 const emit = defineEmits<{
   (e: 'toggle-left-panel'): void
@@ -17,11 +18,31 @@ const canExecute = computed(() => queryBuilderStore.canExecuteQuery)
 // 実行中かどうか
 const isExecuting = computed(() => queryBuilderStore.isExecuting)
 
+// 確認ダイアログの表示状態
+const showConfirmDialog = ref(false)
+
 /**
  * クエリ実行
  */
 const executeQuery = () => {
+  // 解析結果がない、またはSafeの場合は直接実行
+  if (!queryBuilderStore.analysisResult || queryBuilderStore.analysisResult.riskLevel === 'safe') {
+    queryBuilderStore.executeQuery()
+    return
+  }
+
+  // Warning/Dangerの場合は確認ダイアログを表示
+  showConfirmDialog.value = true
+}
+
+// ダイアログで確認された場合
+const handleConfirm = () => {
   queryBuilderStore.executeQuery()
+}
+
+// ダイアログでキャンセルされた場合
+const handleCancel = () => {
+  // 何もしない（ダイアログは自動で閉じる）
 }
 
 /**
@@ -143,6 +164,16 @@ const openHistory = () => {
       variant="ghost"
       :title="isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'"
       @click="toggleColorMode"
+    />
+
+    <!-- 確認ダイアログ -->
+    <DangerousQueryDialog
+      v-if="queryBuilderStore.analysisResult"
+      v-model:open="showConfirmDialog"
+      :analysis-result="queryBuilderStore.analysisResult"
+      :sql="queryBuilderStore.generatedSql"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
     />
   </nav>
 </template>
