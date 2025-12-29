@@ -5,6 +5,7 @@ import { convertToQueryModel } from '@/utils/query-converter'
 import { useConnectionStore } from '@/stores/connection'
 import { useWindowStore } from '@/stores/window'
 import type { Table } from '@/types/database-structure'
+import type { QueryExecuteResult, QueryExecuteError, QueryResultRow } from '@/types/query-result'
 
 interface QueryBuilderState {
   /** 選択されたテーブル一覧（テーブルカード用） */
@@ -39,6 +40,16 @@ interface QueryBuilderState {
   /** SQL生成エラー */
   sqlGenerationError: string | null
   smartQuote: boolean // スマートクォーティング（true: 最小限, false: 常に引用符）
+
+  // クエリ実行結果関連
+  /** クエリ実行結果 */
+  queryResult: QueryExecuteResult | null
+  /** 現在のページ（1始まり） */
+  currentPage: number
+  /** 1ページあたりの行数 */
+  pageSize: number
+  /** 実行中のクエリID（キャンセル用） */
+  executingQueryId: string | null
 }
 
 export const useQueryBuilderStore = defineStore('query-builder', {
@@ -63,6 +74,12 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     isGeneratingSql: false,
     sqlGenerationError: null,
     smartQuote: true, // デフォルトで有効
+    
+    // クエリ実行結果初期値
+    queryResult: null,
+    currentPage: 1,
+    pageSize: 100,
+    executingQueryId: null,
   }),
 
   getters: {
@@ -71,6 +88,16 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     canExecuteQuery(state): boolean {
       return state.selectedColumns.length > 0
+    },
+
+    /**
+     * 現在ページの行データ
+     */
+    paginatedRows(state): QueryResultRow[] {
+      if (!state.queryResult) return []
+      const start = (state.currentPage - 1) * state.pageSize
+      const end = start + state.pageSize
+      return state.queryResult.rows.slice(start, end)
     },
   },
 
@@ -480,21 +507,90 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     async executeQuery() {
       if (!this.canExecuteQuery) return
+      if (!this.generatedSql) return
 
       this.isExecuting = true
       this.error = null
+      this.queryResult = null
+      this.currentPage = 1
 
       try {
-        // TODO: タスク1.7.4で実装
-        console.log('Execute query:', {
-          columns: this.selectedColumns,
-          where: this.whereConditions
+        const connectionStore = useConnectionStore()
+        const windowStore = useWindowStore()
+        const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+
+        if (!connectionId) {
+          throw new Error('接続が選択されていません')
+        }
+
+        const response = await queryApi.executeQuery({
+          connectionId,
+          sql: this.generatedSql,
+          timeoutSeconds: 30,
         })
+
+        this.executingQueryId = response.queryId
+        this.queryResult = response.result
+        this.queryInfo = {
+          rowCount: response.result.rowCount,
+          executionTime: response.result.executionTimeMs,
+          lastExecutedAt: new Date(),
+        }
       } catch (error) {
-        this.error = error instanceof Error ? error.message : 'Unknown error'
+        if (error instanceof Error) {
+          this.error = error.message
+        } else if (typeof error === 'string') {
+          // Rust側からのエラーはJSON文字列の可能性
+          try {
+            const parsed = JSON.parse(error) as QueryExecuteError
+            this.error = parsed.message
+          } catch {
+            this.error = error
+          }
+        } else {
+          this.error = 'Unknown error'
+        }
       } finally {
         this.isExecuting = false
+        this.executingQueryId = null
       }
+    },
+
+    /**
+     * 実行中のクエリをキャンセル
+     */
+    async cancelQuery() {
+      if (!this.executingQueryId) return
+
+      try {
+        await queryApi.cancelQuery(this.executingQueryId)
+      } catch (error) {
+        console.error('Failed to cancel query:', error)
+      }
+    },
+
+    /**
+     * 現在ページを設定
+     */
+    setCurrentPage(page: number) {
+      this.currentPage = page
+    },
+
+    /**
+     * ページサイズを設定
+     */
+    setPageSize(size: number) {
+      this.pageSize = size
+      this.currentPage = 1
+    },
+
+    /**
+     * 結果をクリア
+     */
+    clearResult() {
+      this.queryResult = null
+      this.currentPage = 1
+      this.error = null
     },
 
     setSmartQuote(enabled: boolean) {

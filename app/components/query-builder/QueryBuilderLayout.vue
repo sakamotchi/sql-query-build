@@ -83,6 +83,18 @@ const showResultPanel = () => {
   isResultPanelVisible.value = true
 }
 
+// ストア監視
+import { useQueryBuilderStore } from '@/stores/query-builder'
+import { watch } from 'vue'
+
+const store = useQueryBuilderStore()
+
+watch(() => store.isExecuting, (newVal) => {
+  if (newVal) {
+    showResultPanel()
+  }
+})
+
 // コンポーネント公開
 defineExpose({
   showResultPanel,

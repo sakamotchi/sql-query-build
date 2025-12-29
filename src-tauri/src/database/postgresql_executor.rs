@@ -112,20 +112,31 @@ impl PostgresExecutor {
                             .ok()
                             .map(QueryValue::Bytes)
                             .unwrap_or(QueryValue::Null),
-                        // 日付型などもStringとして扱う
-                        "DATE" | "TIME" | "TIMESTAMP" | "TIMESTAMPTZ" => {
-                            // sqlx::types::time系が必要だが、単純にStringキャストを試みる
-                            // あるいはDisplay実装に頼る
-                            // ここでは簡易的に文字列として取得（実装依存）
-                            // sqlxで文字列として取得できない場合はエラーになるため、一旦単純なString取得を試みる
-                            row.try_get::<String, _>(i)
-                                .ok()
-                                .map(QueryValue::String)
-                                .unwrap_or_else(|| {
-                                    // 文字列取得できない場合はデバッグ表示などを返すかNullにする
-                                    QueryValue::String(format!("{:?}", val.as_str().unwrap_or("?")))
-                                })
-                        }
+                        "UUID" => row
+                            .try_get::<uuid::Uuid, _>(i)
+                            .ok()
+                            .map(|u| QueryValue::String(u.to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "DATE" => row
+                            .try_get::<chrono::NaiveDate, _>(i)
+                            .ok()
+                            .map(|d| QueryValue::String(d.to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "TIME" => row
+                            .try_get::<chrono::NaiveTime, _>(i)
+                            .ok()
+                            .map(|t| QueryValue::String(t.to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "TIMESTAMP" => row
+                            .try_get::<chrono::NaiveDateTime, _>(i)
+                            .ok()
+                            .map(|t| QueryValue::String(t.to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "TIMESTAMPTZ" => row
+                            .try_get::<chrono::DateTime<chrono::Utc>, _>(i)
+                            .ok()
+                            .map(|t| QueryValue::String(t.to_string()))
+                            .unwrap_or(QueryValue::Null),
                         _ => {
                             // 未対応の型は文字列として取得を試みる
                             row.try_get::<String, _>(i)
