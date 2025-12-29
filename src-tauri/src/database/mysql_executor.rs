@@ -1,6 +1,7 @@
 use crate::connection::ConnectionInfo;
 use crate::models::query_result::{
-    QueryError, QueryErrorCode, QueryResult, QueryResultColumn, QueryResultRow, QueryValue,
+    QueryError, QueryErrorCode, QueryErrorDetails, QueryResult, QueryResultColumn, QueryResultRow,
+    QueryValue,
 };
 use crate::services::query_executor::QueryExecutor;
 use async_trait::async_trait;
@@ -24,6 +25,7 @@ impl MysqlExecutor {
                     code: QueryErrorCode::ConnectionFailed,
                     message: format!("Failed to build connection string: {}", e),
                     details: None,
+                    native_code: None,
                 })?;
 
         let pool = MySqlPool::connect(&connection_string)
@@ -32,38 +34,102 @@ impl MysqlExecutor {
                 code: QueryErrorCode::ConnectionFailed,
                 message: format!("Failed to connect: {}", e),
                 details: None,
+                native_code: None,
             })?;
 
         Ok(Self { pool })
     }
 
     fn map_error(err: sqlx::Error) -> QueryError {
-        match err {
+        match &err {
+            sqlx::Error::Database(db_err) => {
+                let code = db_err.code().map(|c| c.to_string());
+                let error_code = Self::parse_mysql_error(code.as_deref());
+
+                QueryError {
+                    code: error_code,
+                    message: db_err.message().to_string(),
+                    details: Some(QueryErrorDetails {
+                        line: None,
+                        column: None,
+                        sql_snippet: None,
+                        position: None,
+                        object_name: None,
+                        context: None,
+                    }),
+                    native_code: code,
+                }
+            }
             sqlx::Error::RowNotFound => QueryError {
                 code: QueryErrorCode::Unknown,
                 message: "Row not found".to_string(),
                 details: None,
+                native_code: None,
             },
             sqlx::Error::TypeNotFound { type_name } => QueryError {
                 code: QueryErrorCode::Unknown,
                 message: format!("Type not found: {}", type_name),
                 details: None,
+                native_code: None,
             },
             sqlx::Error::ColumnNotFound(col) => QueryError {
                 code: QueryErrorCode::ColumnNotFound,
                 message: format!("Column not found: {}", col),
-                details: None,
+                details: Some(QueryErrorDetails {
+                    object_name: Some(col.clone()),
+                    line: None,
+                    column: None,
+                    sql_snippet: None,
+                    position: None,
+                    context: None,
+                }),
+                native_code: None,
             },
-            sqlx::Error::Database(db_err) => QueryError {
-                code: QueryErrorCode::Unknown,
-                message: db_err.message().to_string(),
+            sqlx::Error::Io(io_err) => QueryError {
+                code: QueryErrorCode::ConnectionFailed,
+                message: format!("IO error: {}", io_err),
                 details: None,
+                native_code: None,
             },
             _ => QueryError {
                 code: QueryErrorCode::Unknown,
                 message: err.to_string(),
                 details: None,
+                native_code: None,
             },
+        }
+    }
+
+    fn parse_mysql_error(code: Option<&str>) -> QueryErrorCode {
+        match code {
+            Some(c) => match c {
+                // Connection
+                "1045" | "28000" => QueryErrorCode::AuthenticationFailed,
+                "2002" | "2003" => QueryErrorCode::ConnectionFailed,
+
+                // Syntax
+                "1064" => QueryErrorCode::SyntaxError,
+
+                // Objects
+                "1146" => QueryErrorCode::TableNotFound,
+                "1054" => QueryErrorCode::ColumnNotFound,
+                "1049" => QueryErrorCode::DatabaseNotFound,
+
+                // Permissions
+                "1044" | "1142" | "1143" => QueryErrorCode::PermissionDenied,
+
+                // Constraints
+                "1062" => QueryErrorCode::UniqueViolation,
+                "1451" | "1452" => QueryErrorCode::ForeignKeyViolation,
+                "1048" => QueryErrorCode::NotNullViolation,
+
+                // Data
+                "1406" => QueryErrorCode::DataTruncation,
+                "1365" => QueryErrorCode::DivisionByZero,
+
+                _ => QueryErrorCode::Unknown,
+            },
+            None => QueryErrorCode::Unknown,
         }
     }
 
@@ -178,6 +244,7 @@ impl QueryExecutor for MysqlExecutor {
                 code: QueryErrorCode::QueryTimeout,
                 message: format!("Query timed out after {:?}", timeout),
                 details: None,
+                native_code: None,
             })?
     }
 

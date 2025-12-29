@@ -102,6 +102,7 @@ pub async fn execute_query(
                 code: QueryErrorCode::QueryCancelled,
                 message: "Query was cancelled".to_string(),
                 details: None,
+                native_code: None,
             })
         }
     };

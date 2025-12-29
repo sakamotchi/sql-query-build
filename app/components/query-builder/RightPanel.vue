@@ -46,7 +46,10 @@ const copyToClipboard = async () => {
           />
         </div>
       </div>
-      <SqlPreview :sql="generatedSql" />
+      <SqlPreview
+        :sql="generatedSql"
+        :error-details="queryBuilderStore.queryError?.details"
+      />
     </div>
 
     <!-- クエリ情報 -->

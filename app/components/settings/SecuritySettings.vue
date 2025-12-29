@@ -142,7 +142,7 @@ const resetSecurity = async () => {
         <UFormField label="セキュリティレベル" hint="暗号化強度を選択します">
           <URadioGroup
             :model-value="settings.level"
-            :options="levelOptions"
+            :items="levelOptions"
             value-attribute="value"
             :disabled="saving || loading"
             @update:model-value="updateLevel"
