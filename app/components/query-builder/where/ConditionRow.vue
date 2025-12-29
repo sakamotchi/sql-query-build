@@ -47,6 +47,25 @@ const valueInputType = computed(() => {
   return 'single'
 })
 
+// 型安全な値取得用computed
+const singleValue = computed(() => {
+  const val = props.condition.value
+  return typeof val === 'string' ? val : ''
+})
+
+const multiValue = computed(() => {
+  const val = props.condition.value
+  return Array.isArray(val) ? val : []
+})
+
+const rangeValue = computed(() => {
+  const val = props.condition.value
+  if (typeof val === 'object' && val !== null && 'from' in val && 'to' in val) {
+    return val as { from: string; to: string }
+  }
+  return { from: '', to: '' }
+})
+
 // カラム変更
 const handleColumnChange = (column: { tableAlias: string; columnName: string } | null) => {
   emit('update', {
@@ -177,7 +196,7 @@ const checkValidity = (value: any): boolean => {
     >
       <template v-if="valueInputType === 'single'">
         <ValueInput
-          :model-value="condition.value as string"
+          :model-value="singleValue"
           :data-type="selectedColumn?.dataType"
           @update:model-value="handleValueChange"
         />
@@ -185,7 +204,7 @@ const checkValidity = (value: any): boolean => {
 
       <template v-else-if="valueInputType === 'multi'">
         <MultiValueInput
-          :model-value="condition.value as string[]"
+          :model-value="multiValue"
           :data-type="selectedColumn?.dataType"
           @update:model-value="handleValueChange"
         />
@@ -193,7 +212,7 @@ const checkValidity = (value: any): boolean => {
 
       <template v-else-if="valueInputType === 'range'">
         <RangeInput
-          :model-value="condition.value as { from: string; to: string }"
+          :model-value="rangeValue"
           :data-type="selectedColumn?.dataType"
           @update:model-value="handleValueChange"
         />
