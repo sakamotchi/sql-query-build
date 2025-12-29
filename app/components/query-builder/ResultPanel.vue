@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import ResultTable from './result/ResultTable.vue'
 import ResultPagination from './result/ResultPagination.vue'
+import QueryErrorDisplay from './error/QueryErrorDisplay.vue'
 
 const store = useQueryBuilderStore()
 
@@ -12,7 +13,9 @@ const emit = defineEmits<{
 
 // 計算プロパティ
 const hasResult = computed(() => store.queryResult !== null)
+const hasError = computed(() => store.queryError !== null)
 const isLoading = computed(() => store.isExecuting)
+
 const executionInfo = computed(() => {
   if (!store.queryResult) return null
   return {
@@ -20,6 +23,22 @@ const executionInfo = computed(() => {
     executionTimeMs: store.queryResult.executionTimeMs,
   }
 })
+
+const headerIcon = computed(() => {
+  if (isLoading.value) return 'i-heroicons-arrow-path'
+  if (hasError.value) return 'i-heroicons-exclamation-circle'
+  return 'i-heroicons-table-cells'
+})
+
+const headerIconClass = computed(() => {
+  if (isLoading.value) return 'animate-spin text-gray-400'
+  if (hasError.value) return 'text-red-500'
+  return 'text-gray-400'
+})
+
+const retryQuery = () => {
+  store.executeQuery()
+}
 </script>
 
 <template>
@@ -27,10 +46,12 @@ const executionInfo = computed(() => {
     <!-- ヘッダー -->
     <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
       <div class="flex items-center gap-2">
-        <UIcon name="i-heroicons-table-cells" class="text-lg" />
-        <span class="text-sm font-medium">実行結果</span>
+        <UIcon :name="headerIcon" class="text-lg" :class="headerIconClass" />
+        <span class="text-sm font-medium" :class="{ 'text-red-500': hasError }">
+          {{ hasError ? '実行エラー' : '実行結果' }}
+        </span>
         <!-- 実行情報 -->
-        <template v-if="executionInfo">
+        <template v-if="executionInfo && !hasError">
           <span class="text-xs text-gray-500">
             {{ executionInfo.rowCount }}行
           </span>
@@ -68,9 +89,11 @@ const executionInfo = computed(() => {
       </div>
 
       <!-- エラー -->
-      <div v-else-if="store.error" class="flex-1 flex flex-col items-center justify-center p-4">
-        <UIcon name="i-heroicons-exclamation-circle" class="text-4xl text-red-500 mb-2" />
-        <p class="text-red-500 font-medium whitespace-pre-wrap text-center">{{ store.error }}</p>
+      <div v-else-if="store.queryError" class="flex-1 overflow-auto p-4">
+        <QueryErrorDisplay
+          :error="store.queryError"
+          @retry="retryQuery"
+        />
       </div>
 
       <!-- 結果なし -->

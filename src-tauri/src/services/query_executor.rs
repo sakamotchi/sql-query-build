@@ -29,6 +29,7 @@ pub trait QueryExecutor: Send + Sync {
                 code: QueryErrorCode::QueryTimeout,
                 message: format!("Query timed out after {:?}", timeout),
                 details: None,
+                native_code: None,
             })?
     }
 

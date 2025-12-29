@@ -76,32 +76,66 @@ pub struct QueryExecuteResponse {
 pub struct QueryError {
     /// エラーコード
     pub code: QueryErrorCode,
-    /// エラーメッセージ
+    /// エラーメッセージ（DB由来のオリジナル）
     pub message: String,
     /// 詳細情報（SQL位置など）
     pub details: Option<QueryErrorDetails>,
+    /// DBネイティブのエラーコード（PostgreSQL: SQLSTATE等）
+    pub native_code: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryErrorCode {
+    // 接続関連
     ConnectionFailed,
+    ConnectionTimeout,
+    AuthenticationFailed,
+
+    // クエリ実行関連
     QueryTimeout,
     QueryCancelled,
+
+    // SQL構文関連
     SyntaxError,
+
+    // 権限関連
     PermissionDenied,
+
+    // オブジェクト関連
     TableNotFound,
     ColumnNotFound,
+    SchemaNotFound,
+    DatabaseNotFound,
+
+    // 制約関連
+    UniqueViolation,
+    ForeignKeyViolation,
+    CheckViolation,
+    NotNullViolation,
+
+    // データ関連
+    DataTruncation,
+    DivisionByZero,
+    InvalidDataType,
+
+    // その他
     Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryErrorDetails {
-    /// エラー位置（行）
+    /// エラー位置（行番号、1始まり）
     pub line: Option<u32>,
-    /// エラー位置（列）
+    /// エラー位置（列番号、1始まり）
     pub column: Option<u32>,
-    /// エラー発生箇所のSQL
+    /// エラー発生箇所のSQL抜粋
     pub sql_snippet: Option<String>,
+    /// エラー発生箇所の文字位置（SQL全体での位置）
+    pub position: Option<u32>,
+    /// 問題のあるオブジェクト名（テーブル名、カラム名等）
+    pub object_name: Option<String>,
+    /// 追加のコンテキスト情報
+    pub context: Option<String>,
 }

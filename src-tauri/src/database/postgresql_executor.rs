@@ -1,6 +1,7 @@
 use crate::connection::ConnectionInfo;
 use crate::models::query_result::{
-    QueryError, QueryErrorCode, QueryResult, QueryResultColumn, QueryResultRow, QueryValue,
+    QueryError, QueryErrorCode, QueryErrorDetails, QueryResult, QueryResultColumn, QueryResultRow,
+    QueryValue,
 };
 use crate::services::query_executor::QueryExecutor;
 use async_trait::async_trait;
@@ -24,6 +25,7 @@ impl PostgresExecutor {
                     code: QueryErrorCode::ConnectionFailed,
                     message: format!("Failed to build connection string: {}", e),
                     details: None,
+                    native_code: None,
                 })?;
 
         let pool = PgPool::connect(&connection_string)
@@ -32,39 +34,131 @@ impl PostgresExecutor {
                 code: QueryErrorCode::ConnectionFailed,
                 message: format!("Failed to connect: {}", e),
                 details: None,
+                native_code: None,
             })?;
 
         Ok(Self { pool })
     }
 
     fn map_error(err: sqlx::Error) -> QueryError {
-        match err {
+        match &err {
+            sqlx::Error::Database(db_err) => {
+                // PostgreSQL SQLSTATE コードでマッピング
+                let code = db_err.code().map(|c| c.to_string());
+                let (error_code, position) = Self::parse_pg_error(db_err.as_ref(), code.as_deref());
+
+                QueryError {
+                    code: error_code,
+                    message: db_err.message().to_string(),
+                    details: Some(QueryErrorDetails {
+                        line: None, // 行番号はフロントエンドで計算するか、別途解析が必要
+                        column: None,
+                        sql_snippet: None,
+                        position,
+                        object_name: Self::extract_object_name(db_err.as_ref()),
+                        context: db_err.constraint().map(|s| s.to_string()),
+                    }),
+                    native_code: code,
+                }
+            }
             sqlx::Error::RowNotFound => QueryError {
                 code: QueryErrorCode::Unknown,
                 message: "Row not found".to_string(),
                 details: None,
+                native_code: None,
             },
             sqlx::Error::TypeNotFound { type_name } => QueryError {
                 code: QueryErrorCode::Unknown,
                 message: format!("Type not found: {}", type_name),
                 details: None,
+                native_code: None,
             },
             sqlx::Error::ColumnNotFound(col) => QueryError {
                 code: QueryErrorCode::ColumnNotFound,
                 message: format!("Column not found: {}", col),
-                details: None,
+                details: Some(QueryErrorDetails {
+                    object_name: Some(col.clone()),
+                    line: None,
+                    column: None,
+                    sql_snippet: None,
+                    position: None,
+                    context: None,
+                }),
+                native_code: None,
             },
-            sqlx::Error::Database(db_err) => QueryError {
-                code: QueryErrorCode::Unknown,
-                message: db_err.message().to_string(),
+            sqlx::Error::Io(io_err) => QueryError {
+                code: QueryErrorCode::ConnectionFailed,
+                message: format!("IO error: {}", io_err),
                 details: None,
+                native_code: None,
             },
             _ => QueryError {
                 code: QueryErrorCode::Unknown,
                 message: err.to_string(),
                 details: None,
+                native_code: None,
             },
         }
+    }
+
+    fn parse_pg_error(
+        db_err: &dyn sqlx::error::DatabaseError,
+        code: Option<&str>,
+    ) -> (QueryErrorCode, Option<u32>) {
+        let position = Self::extract_position(db_err.message());
+
+        let error_code = match code {
+            // Syntax Error Class (42xxx)
+            Some(c) if c.starts_with("42601") => QueryErrorCode::SyntaxError,
+            Some(c) if c.starts_with("42P01") => QueryErrorCode::TableNotFound,
+            Some(c) if c.starts_with("42703") => QueryErrorCode::ColumnNotFound,
+            Some(c) if c.starts_with("42501") => QueryErrorCode::PermissionDenied,
+            Some(c) if c.starts_with("3D000") => QueryErrorCode::DatabaseNotFound,
+            Some(c) if c.starts_with("3F000") => QueryErrorCode::SchemaNotFound,
+
+            // Integrity Constraint Violation (23xxx)
+            Some(c) if c.starts_with("23505") => QueryErrorCode::UniqueViolation,
+            Some(c) if c.starts_with("23503") => QueryErrorCode::ForeignKeyViolation,
+            Some(c) if c.starts_with("23514") => QueryErrorCode::CheckViolation,
+            Some(c) if c.starts_with("23502") => QueryErrorCode::NotNullViolation,
+
+            // Data Exception (22xxx)
+            Some(c) if c.starts_with("22001") => QueryErrorCode::DataTruncation,
+            Some(c) if c.starts_with("22012") => QueryErrorCode::DivisionByZero,
+            Some(c) if c.starts_with("22P02") => QueryErrorCode::InvalidDataType,
+
+            // Authentication (28xxx)
+            Some(c) if c.starts_with("28") => QueryErrorCode::AuthenticationFailed,
+
+            _ => QueryErrorCode::Unknown,
+        };
+
+        (error_code, position)
+    }
+
+    /// エラーメッセージから位置情報を抽出
+    fn extract_position(message: &str) -> Option<u32> {
+        // PostgreSQLは "at character N" という形式で位置を返すことがあるが、
+        // sqlxのDatabaseErrorは別途offsetを持っている場合もある。
+        // ここでは簡易的にメッセージ解析を行う。
+        let pattern = "at character ";
+        if let Some(pos) = message.find(pattern) {
+            let start = pos + pattern.len();
+            let end = message[start..]
+                .find(|c: char| !c.is_ascii_digit())
+                .unwrap_or(message.len() - start);
+            message[start..start + end].parse().ok()
+        } else {
+            None
+        }
+    }
+
+    /// エラーからオブジェクト名を抽出
+    fn extract_object_name(_db_err: &dyn sqlx::error::DatabaseError) -> Option<String> {
+        // テーブル名やカラム名をエラー詳細から取得
+        // sqlx 0.7系では table(), column() などが利用可能か確認が必要
+        // TODO: sqlxのAPI仕様を確認して実装
+        None
     }
 
     fn convert_row(row: &PgRow, columns: &[QueryResultColumn]) -> QueryResultRow {
@@ -211,6 +305,7 @@ impl QueryExecutor for PostgresExecutor {
                 code: QueryErrorCode::QueryTimeout,
                 message: format!("Query timed out after {:?}", timeout),
                 details: None,
+                native_code: None,
             })?
     }
 

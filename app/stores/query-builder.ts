@@ -28,8 +28,8 @@ interface QueryBuilderState {
   queryInfo: QueryInfo
   /** 実行中フラグ */
   isExecuting: boolean
-  /** エラーメッセージ */
-  error: string | null
+  /** クエリ実行エラー */
+  queryError: QueryExecuteError | null
   /** LIMIT (取得件数) */
   limit: number | null
 
@@ -68,7 +68,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       lastExecutedAt: null,
     },
     isExecuting: false,
-    error: null,
+    queryError: null,
     limit: null,
     offset: null,
     isGeneratingSql: false,
@@ -497,7 +497,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.whereConditions = []
       this.query = null
       this.generatedSql = ''
-      this.error = null
+      this.queryError = null
       this.limit = null
       this.offset = null
     },
@@ -510,7 +510,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       if (!this.generatedSql) return
 
       this.isExecuting = true
-      this.error = null
+      this.queryError = null
       this.queryResult = null
       this.currentPage = 1
 
@@ -537,18 +537,28 @@ export const useQueryBuilderStore = defineStore('query-builder', {
           lastExecutedAt: new Date(),
         }
       } catch (error) {
-        if (error instanceof Error) {
-          this.error = error.message
-        } else if (typeof error === 'string') {
-          // Rust側からのエラーはJSON文字列の可能性
+        if (typeof error === 'string') {
+          // Rust側からのエラーはJSON文字列の可能性が高い
           try {
             const parsed = JSON.parse(error) as QueryExecuteError
-            this.error = parsed.message
+            this.queryError = parsed
           } catch {
-            this.error = error
+            this.queryError = {
+              code: 'unknown',
+              message: error,
+            }
           }
+        } else if (error instanceof Error) {
+           // 通常のJSエラー
+           this.queryError = {
+             code: 'unknown',
+             message: error.message,
+           }
         } else {
-          this.error = 'Unknown error'
+          this.queryError = {
+            code: 'unknown',
+            message: 'Unknown error',
+          }
         }
       } finally {
         this.isExecuting = false
@@ -590,7 +600,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     clearResult() {
       this.queryResult = null
       this.currentPage = 1
-      this.error = null
+      this.queryError = null
     },
 
     setSmartQuote(enabled: boolean) {
