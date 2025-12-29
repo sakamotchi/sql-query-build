@@ -82,9 +82,9 @@ const onDirectionChange = () => {
 
      <!-- Direction Select -->
      <div class="w-[140px]">
-       <USelect 
-         v-model="item.direction" 
-         :options="directions"
+       <USelect
+         v-model="item.direction"
+         :items="directions"
          option-attribute="label"
          value-attribute="value"
          @update:model-value="onDirectionChange"
