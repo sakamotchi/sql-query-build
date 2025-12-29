@@ -85,9 +85,9 @@ export const useSettingsStore = defineStore('settings', {
           return this.settings
         }
 
-        const defaultSettings = await invokeCommand<AppSettings>('reset_settings')
-        this.settings = defaultSettings
-        return defaultSettings
+        const appDefaults = await invokeCommand<AppSettings>('reset_settings')
+        this.settings = appDefaults
+        return appDefaults
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to reset settings'
         console.error('Failed to reset settings:', error)
