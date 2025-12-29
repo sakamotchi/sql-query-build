@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
+import { useWindowStore } from '@/stores/window'
 import DangerousQueryDialog from './dialog/DangerousQueryDialog.vue'
 import { useSafetyStore } from '@/stores/safety'
 import { useEnvironment } from '@/composables/useEnvironment'
+import { windowApi } from '@/api/window'
+import type { Environment } from '@/types'
 
 const emit = defineEmits<{
   (e: 'toggle-left-panel'): void
@@ -12,10 +15,29 @@ const emit = defineEmits<{
 }>()
 
 const queryBuilderStore = useQueryBuilderStore()
+const windowStore = useWindowStore()
 const { toggleColorMode, isDark } = useTheme()
 const safetyStore = useSafetyStore()
-const { currentEnvironment } = useEnvironment()
+const { getEnvironmentColors } = useEnvironment()
 const toast = useToast()
+
+// Tauriから取得した環境（初期化時に設定）
+const fetchedEnvironment = ref<Environment | null>(null)
+
+// 現在のアクティブな接続の環境を取得
+// 優先順位: fetchedEnvironment > windowStore.currentEnvironment > 'development'
+const activeEnvironment = computed<Environment>(() => {
+  return fetchedEnvironment.value || windowStore.currentEnvironment || 'development'
+})
+
+// 環境に応じたツールバーのスタイル
+const toolbarStyle = computed(() => {
+  const colors = getEnvironmentColors(activeEnvironment.value)
+  return {
+    backgroundColor: colors.bg,
+    borderColor: colors.border,
+  }
+})
 
 // 実行可能かどうか
 const canExecute = computed(() => queryBuilderStore.canExecuteQuery)
@@ -28,11 +50,22 @@ const showConfirmDialog = ref(false)
 
 // 現在の環境の安全設定
 const safetyConfig = computed(() => {
-  return safetyStore.getConfigForEnvironment(currentEnvironment.value)
+  return safetyStore.getConfigForEnvironment(activeEnvironment.value)
 })
 
-onMounted(() => {
+onMounted(async () => {
   safetyStore.loadSettings()
+
+  // Tauriから現在のウィンドウの環境を取得
+  try {
+    const env = await windowApi.getWindowEnvironment()
+    if (env) {
+      fetchedEnvironment.value = env as Environment
+    }
+  } catch (error) {
+    // ブラウザモードではエラーになるが、無視
+    console.warn('[QueryBuilderToolbar] Failed to get window environment:', error)
+  }
 })
 
 /**
@@ -122,7 +155,10 @@ const openHistory = () => {
 </script>
 
 <template>
-  <nav class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+  <nav
+    class="flex items-center gap-2 px-4 py-2 border-b-2"
+    :style="toolbarStyle"
+  >
     <!-- 左パネル切り替え -->
     <UButton
       icon="i-heroicons-circle-stack"

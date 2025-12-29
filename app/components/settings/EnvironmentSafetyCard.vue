@@ -12,6 +12,7 @@ const props = defineProps<{
 }>()
 
 const safetyStore = useSafetyStore()
+const { getEnvironmentColors } = useEnvironment()
 
 // ローカル状態（編集用）
 const localConfig = reactive<EnvironmentSafetyConfig>({ ...props.config })
@@ -42,16 +43,14 @@ watch(localConfig, () => {
   debouncedSave()
 }, { deep: true })
 
-// 環境に応じた色
-const environmentColor = computed(() => {
-  const colors: Record<Environment, string> = {
-    development: 'blue',
-    test: 'green',
-    staging: 'amber',
-    production: 'red',
-  }
-  return colors[props.environment]
-})
+// 環境のテーマカラー
+const themeColors = computed(() => getEnvironmentColors(props.environment))
+
+// ヘッダーのスタイル
+const headerStyle = computed(() => ({
+  backgroundColor: themeColors.value.bg,
+  borderColor: themeColors.value.border,
+}))
 
 // 本番環境かどうか
 const isProduction = computed(() => props.environment === 'production')
@@ -72,11 +71,19 @@ const countdownOptions = Array.from({ length: 11 }, (_, i) => ({
 <template>
   <UCard>
     <template #header>
-      <div class="flex items-center gap-2">
-        <UBadge :color="environmentColor" variant="soft">
-          {{ label }}
-        </UBadge>
-        <span class="text-sm text-neutral-500">{{ description }}</span>
+      <div
+        class="flex items-center gap-3 -m-4 p-4 rounded-t-lg border-b-2"
+        :style="headerStyle"
+      >
+        <UIcon
+          name="i-heroicons-shield-check"
+          class="text-xl"
+          :style="{ color: themeColors.primary }"
+        />
+        <div>
+          <h4 class="font-semibold text-gray-900">{{ label }}</h4>
+          <span class="text-sm text-gray-600">{{ description }}</span>
+        </div>
       </div>
     </template>
 
