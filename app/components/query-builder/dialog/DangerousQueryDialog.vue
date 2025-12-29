@@ -4,6 +4,7 @@ import type { QueryAnalysisResult } from '@/types/query-analysis'
 const props = defineProps<{
   analysisResult: QueryAnalysisResult
   sql: string
+  countdownSeconds: number
 }>()
 
 const emit = defineEmits<{
@@ -33,14 +34,21 @@ const clearTimer = () => {
   }
 }
 
-// Dangerレベルの場合、3秒カウントダウン開始
+// Dangerレベルの場合、指定秒数カウントダウン開始
 const startCountdown = () => {
   if (props.analysisResult.riskLevel !== 'danger') return
 
   // 既存タイマーをクリア
   clearTimer()
 
-  countdown.value = 3
+  // カウントダウンが0または負の場合は即時実行可能
+  if (props.countdownSeconds <= 0) {
+      countdown.value = 0
+      isCountingDown.value = false
+      return
+  }
+
+  countdown.value = props.countdownSeconds
   isCountingDown.value = true
 
   timerId = setInterval(() => {
@@ -119,7 +127,7 @@ const executeButtonLabel = computed(() => {
             <UIcon :name="riskIcon" class="mr-1" />
             {{ riskLabel }}
           </UBadge>
-          <span class="text-sm text-muted">
+          <span class="text-sm text-neutral-500">
             {{ analysisResult.queryType.toUpperCase() }} クエリ
           </span>
         </div>
@@ -163,7 +171,7 @@ const executeButtonLabel = computed(() => {
         </div>
 
         <!-- 確認メッセージ -->
-        <p class="text-sm text-muted">
+        <p class="text-sm text-neutral-500">
           このクエリを実行してもよろしいですか？
           <template v-if="analysisResult.riskLevel === 'danger'">
             <strong class="text-red-600 dark:text-red-400">この操作は取り消せません。</strong>

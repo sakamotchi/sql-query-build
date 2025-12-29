@@ -56,6 +56,7 @@ describe('DangerousQueryDialog', () => {
         open: true,
         analysisResult: dangerResult,
         sql: 'DELETE FROM users',
+        countdownSeconds: 3,
       },
       global: { stubs }
     })
@@ -83,6 +84,7 @@ describe('DangerousQueryDialog', () => {
         open: true,
         analysisResult: warningResult,
         sql: 'UPDATE users SET name = "test" WHERE id = 1',
+        countdownSeconds: 3,
       },
       global: { stubs }
     })
@@ -98,6 +100,7 @@ describe('DangerousQueryDialog', () => {
         open: true,
         analysisResult: dangerResult,
         sql: 'DELETE FROM users',
+        countdownSeconds: 3,
       },
       global: { stubs }
     })
@@ -112,6 +115,7 @@ describe('DangerousQueryDialog', () => {
         open: true,
         analysisResult: dangerResult,
         sql: 'DELETE FROM users',
+        countdownSeconds: 3,
       },
       global: { stubs }
     })
@@ -127,6 +131,7 @@ describe('DangerousQueryDialog', () => {
         open: true,
         analysisResult: dangerResult,
         sql: 'DELETE FROM users',
+        countdownSeconds: 3,
       },
       global: { stubs }
     })
@@ -138,7 +143,7 @@ describe('DangerousQueryDialog', () => {
     // 実行ボタンを探してクリック (実行するボタンは2つ目のボタン)
     const buttons = wrapper.findAll('button')
     const executeButton = buttons[buttons.length - 1]
-    
+
     if (executeButton) {
       await executeButton.trigger('click')
       expect(wrapper.emitted('confirm')).toBeTruthy()
@@ -155,6 +160,7 @@ describe('DangerousQueryDialog', () => {
         open: true,
         analysisResult: warningResult,
         sql: 'UPDATE users SET name = "test"',
+        countdownSeconds: 3,
       },
       global: { stubs }
     })
@@ -169,5 +175,21 @@ describe('DangerousQueryDialog', () => {
     } else {
       throw new Error('Cancel button not found')
     }
+  })
+
+  it('カウントダウン0秒の場合は即座に実行可能', async () => {
+    const wrapper = mount(DangerousQueryDialog, {
+      props: {
+        open: true,
+        analysisResult: dangerResult,
+        sql: 'DELETE FROM users',
+        countdownSeconds: 0,
+      },
+      global: { stubs }
+    })
+
+    // カウントダウンなし、即座に実行可能
+    expect(wrapper.text()).not.toContain('秒待機')
+    expect(wrapper.text()).toContain('実行する')
   })
 })

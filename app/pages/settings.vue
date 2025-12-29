@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
 import { useSettingsStore } from '~/stores/settings'
 
-type SettingsTab = 'general' | 'security' | 'about'
+type SettingsTab = 'general' | 'safety' | 'security' | 'about'
 
 const settingsStore = useSettingsStore()
 const securityStore = useSecurityStore()
@@ -14,6 +14,7 @@ const { loading: securityLoading, error: securityError } = storeToRefs(securityS
 
 const tabs: { key: SettingsTab; value: SettingsTab; label: string; icon: string }[] = [
   { key: 'general', value: 'general', label: '一般設定', icon: 'i-heroicons-cog-6-tooth' },
+  { key: 'safety', value: 'safety', label: '安全設定', icon: 'i-heroicons-shield-check' },
   { key: 'security', value: 'security', label: 'セキュリティ', icon: 'i-heroicons-lock-closed' },
   { key: 'about', value: 'about', label: 'について', icon: 'i-heroicons-information-circle' }
 ]
@@ -68,6 +69,7 @@ onMounted(async () => {
             </div>
 
             <GeneralSettings v-else-if="item.value === 'general'" />
+            <SafetySettingsPanel v-else-if="item.value === 'safety'" />
             <SecuritySettings v-else-if="item.value === 'security'" />
             <AboutSection v-else-if="item.value === 'about'" />
           </div>

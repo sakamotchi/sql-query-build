@@ -4,6 +4,7 @@ pub mod window;
 
 pub mod query_analysis;
 pub mod query_result;
+pub mod safety_settings;
 
 pub use database_structure::*;
 pub use window::*;

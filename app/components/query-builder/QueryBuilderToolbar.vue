@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import DangerousQueryDialog from './dialog/DangerousQueryDialog.vue'
+import { useSafetyStore } from '@/stores/safety'
+import { useEnvironment } from '@/composables/useEnvironment'
 
 const emit = defineEmits<{
   (e: 'toggle-left-panel'): void
@@ -11,6 +13,9 @@ const emit = defineEmits<{
 
 const queryBuilderStore = useQueryBuilderStore()
 const { toggleColorMode, isDark } = useTheme()
+const safetyStore = useSafetyStore()
+const { currentEnvironment } = useEnvironment()
+const toast = useToast()
 
 // 実行可能かどうか
 const canExecute = computed(() => queryBuilderStore.canExecuteQuery)
@@ -21,18 +26,65 @@ const isExecuting = computed(() => queryBuilderStore.isExecuting)
 // 確認ダイアログの表示状態
 const showConfirmDialog = ref(false)
 
+// 現在の環境の安全設定
+const safetyConfig = computed(() => {
+  return safetyStore.getConfigForEnvironment(currentEnvironment.value)
+})
+
+onMounted(() => {
+  safetyStore.loadSettings()
+})
+
 /**
  * クエリ実行
  */
 const executeQuery = () => {
+    const analysis = queryBuilderStore.analysisResult
+    const config = safetyConfig.value
+
+    // 禁止操作チェック
+    if (config.disableDrop && analysis?.queryType === 'drop') {
+        toast.add({
+            title: '実行エラー',
+            description: '現在の環境ではDROPクエリの実行は禁止されています',
+            color: 'red',
+            icon: 'i-heroicons-exclamation-circle'
+        })
+        return
+    }
+    if (config.disableTruncate && analysis?.queryType === 'truncate') {
+        toast.add({
+            title: '実行エラー',
+            description: '現在の環境ではTRUNCATEクエリの実行は禁止されています',
+            color: 'red',
+            icon: 'i-heroicons-exclamation-circle'
+        })
+        return
+    }
+
   // 解析結果がない、またはSafeの場合は直接実行
-  if (!queryBuilderStore.analysisResult || queryBuilderStore.analysisResult.riskLevel === 'safe') {
+  if (!analysis || analysis.riskLevel === 'safe') {
     queryBuilderStore.executeQuery()
     return
   }
+  
+  // 確認ダイアログの表示判定
+  let shouldConfirm = false
+  if (config.confirmationEnabled) {
+      if (config.confirmationThreshold === 'warning') {
+          // Warning以上で表示
+          shouldConfirm = true
+      } else if (config.confirmationThreshold === 'danger' && analysis.riskLevel === 'danger') {
+          // Dangerのみ表示
+          shouldConfirm = true
+      }
+  }
 
-  // Warning/Dangerの場合は確認ダイアログを表示
-  showConfirmDialog.value = true
+  if (shouldConfirm) {
+      showConfirmDialog.value = true
+  } else {
+      queryBuilderStore.executeQuery()
+  }
 }
 
 // ダイアログで確認された場合
@@ -172,6 +224,7 @@ const openHistory = () => {
       v-model:open="showConfirmDialog"
       :analysis-result="queryBuilderStore.analysisResult"
       :sql="queryBuilderStore.generatedSql"
+      :countdown-seconds="safetyConfig.countdownSeconds"
       @confirm="handleConfirm"
       @cancel="handleCancel"
     />
