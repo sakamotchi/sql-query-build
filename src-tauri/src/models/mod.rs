@@ -1,6 +1,8 @@
 pub mod database_structure;
-pub mod window;
 pub mod query;
+pub mod window;
+
+pub mod query_result;
 
 pub use database_structure::*;
 pub use window::*;

@@ -4,14 +4,15 @@ pub mod crypto;
 pub mod database;
 pub mod models;
 pub mod services;
-pub mod storage;
 pub mod sql_generator;
+pub mod storage;
 
 use connection::{ConnectionService, ConnectionStorage};
 use crypto::{
     CredentialStorage, MasterKeyManager, ProviderSwitcher, SecurityConfigStorage,
     SecurityProviderManager,
 };
+use services::query_executor::{ConnectionPoolManager, QueryCancellationManager};
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -145,6 +146,10 @@ pub fn run() {
         Arc::clone(&master_key_manager_service),
     );
 
+    // QueryExecutor関連のマネージャーを初期化
+    let connection_pool_manager = ConnectionPoolManager::new();
+    let query_cancellation_manager = QueryCancellationManager::new();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -152,6 +157,8 @@ pub fn run() {
         .manage(file_storage_for_commands)
         .manage(master_key_manager_commands)
         .manage(connection_service)
+        .manage(connection_pool_manager)
+        .manage(query_cancellation_manager)
         .manage(Arc::clone(&security_config_storage))
         .manage(security_provider_manager)
         .manage(Arc::clone(&provider_switcher))
@@ -179,6 +186,8 @@ pub fn run() {
             commands::database_structure::get_columns,
             commands::query::generate_sql,
             commands::query::generate_sql_formatted,
+            commands::query::execute_query,
+            commands::query::cancel_query,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,
             commands::security::get_security_config,
