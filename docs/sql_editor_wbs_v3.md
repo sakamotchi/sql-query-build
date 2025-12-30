@@ -20,6 +20,9 @@
 | **1.5a** セキュリティ情報格納方式変更 | 完了 | SecurityProvider（Simple/MasterPassword/Keychain） |
 | **1.5b** Nuxt + Nuxt UI v4 フレッシュスタート | 完了 | 全コンポーネントをNuxt UIに移行 |
 | **1.6** クエリビルダー基盤 | 完了 | SQL生成エンジン、DB方言対応 |
+| **2** クエリ実行・結果表示 | 完了 | QueryExecutor、ResultTable UI |
+| **3** 本番環境安全機能 | 完了 | QueryAnalyzer、DangerousQueryDialog |
+| **4.1-4.2** クエリ保存・管理UI | 2025-12-30 | QueryStorage、SaveQueryDialog、SavedQuerySlideover |
 
 ### 1.6 詳細実装状況
 
@@ -44,9 +47,10 @@
 
 | Phase | 名称 | 優先度 | 依存 | 状態 |
 |-------|------|--------|------|------|
-| **2** | クエリ実行・結果表示 | 最高 | 1.6 | 📝 次のフェーズ |
-| **3** | 本番環境安全機能 | 高 | 2, 8 | 📝 待機中 |
-| **4** | クエリ保存・履歴 | 中 | 2 | 📝 待機中 |
+| **2** | クエリ実行・結果表示 | 最高 | 1.6 | ✅ 完了 |
+| **3** | 本番環境安全機能 | 高 | 2, 8 | ✅ 完了 |
+| **4.1-4.2** | クエリ保存・管理UI | 中 | 2 | ✅ 完了 |
+| **4.3** | クエリ履歴機能 | 中 | 4.1-4.2 | 📝 次のフェーズ |
 | **5** | エクスポート機能 | 中 | 2 | 📝 待機中 |
 | **6** | JOIN設定UI拡張 | 中 | 2 | 📝 待機中 |
 | **7** | 監査ログ・UX改善 | 低 | 3 | 📝 待機中 |
@@ -157,25 +161,38 @@
 
 **目的**: クエリの保存・再利用と履歴管理
 
-### 4.1 クエリ保存機能
+### 4.1 クエリ保存機能 ✅
 
-| タスクID | タスク名 | 依存関係 | 完了条件 |
-|---------|---------|---------|---------|
-| 4.1.1 | SavedQuery型定義（Rust） | Phase 2 | JSON構造確定 |
-| 4.1.2 | QueryStorage実装 | 4.1.1 | ファイルへの保存/読み込み |
-| 4.1.3 | save_query/load_queryコマンド | 4.1.2 | Tauriコマンド |
+| タスクID | タスク名 | 依存関係 | 完了条件 | 状態 |
+|---------|---------|---------|---------|------|
+| 4.1.1 | SavedQuery型定義（Rust） | Phase 2 | JSON構造確定 | ✅ |
+| 4.1.2 | QueryStorage実装 | 4.1.1 | ファイルへの保存/読み込み | ✅ |
+| 4.1.3 | save_query/load_queryコマンド | 4.1.2 | Tauriコマンド | ✅ |
 
-### 4.2 クエリ管理UI
+**実装ファイル**:
+- `src-tauri/src/models/saved_query.rs` - SavedQuery型定義
+- `src-tauri/src/services/query_storage.rs` - QueryStorageサービス
+- `src-tauri/src/commands/query_storage_commands.rs` - Tauriコマンド
 
-| タスクID | タスク名 | 依存関係 | 完了条件 |
-|---------|---------|---------|---------|
-| 4.2.1 | SaveQueryDialog.vue | 4.1.3 | 名前/説明/タグ入力UI |
-| 4.2.2 | SavedQueryList.vue | 4.1.3 | 保存済みクエリ一覧 |
-| 4.2.3 | QuerySearchFilter.vue | 4.2.2 | 名前/タグで検索 |
-| 4.2.4 | ToolbarにSave/Loadボタン統合 | 4.2.1-3 | 既存TODOの解消 |
+### 4.2 クエリ管理UI ✅
 
-**参照ファイル**:
-- `app/components/query-builder/QueryBuilderToolbar.vue` - L31のTODO
+| タスクID | タスク名 | 依存関係 | 完了条件 | 状態 |
+|---------|---------|---------|---------|------|
+| 4.2.1 | SaveQueryDialog.vue | 4.1.3 | 名前/説明/タグ入力UI | ✅ |
+| 4.2.2 | SavedQuerySlideover.vue | 4.1.3 | 保存済みクエリ一覧 | ✅ |
+| 4.2.3 | 検索・フィルタ機能 | 4.2.2 | 名前/タグで検索 | ✅ (4.2.2に統合) |
+| 4.2.4 | ToolbarにSave/Loadボタン統合 | 4.2.1-3 | 既存TODOの解消 | ✅ |
+
+**実装ファイル**:
+- `app/components/query-builder/dialog/SaveQueryDialog.vue` - 保存ダイアログ
+- `app/components/query-builder/SavedQuerySlideover.vue` - 一覧・検索（統合型）
+- `app/components/query-builder/QueryBuilderToolbar.vue` - 保存/読み込みボタン
+- `app/stores/saved-query.ts` - Piniaストア
+- `app/api/query-storage.ts` - API実装
+- `app/types/saved-query.ts` - 型定義
+
+**実装メモ**:
+- 4.2.3の検索機能は`SavedQuerySlideover.vue`内に統合実装（独立コンポーネントは不要と判断）
 
 ### 4.3 履歴機能
 
@@ -403,6 +420,14 @@
 | 2025-12-07 | 2.0 | 1.5bフェーズ再設計（フレッシュスタート方式） | - |
 | 2025-12-28 | **3.0** | **実装状況反映・フェーズ再構成** | - |
 | 2025-12-29 | **3.1** | **Phase 8（データ変更クエリビルダー）追加** | - |
+| 2025-12-30 | **3.2** | **Phase 4.1-4.2完了状態を反映** | - |
+
+### v3.2 主な変更点
+
+1. **Phase 4.1-4.2完了**: クエリ保存機能とクエリ管理UI実装完了を反映
+2. **実装ファイル一覧追加**: 4.1と4.2セクションに実装ファイルリスト追加
+3. **次フェーズ明確化**: Phase 4.3（履歴機能）が次のフェーズと明示
+4. **完了済みフェーズ更新**: Phase 2, 3, 4.1-4.2を完了済みに追加
 
 ### v3.1 主な変更点
 
@@ -420,4 +445,4 @@
 
 ---
 
-**次のアクション**: Phase 2.1.1 QueryExecutorトレイト定義の開始
+**次のアクション**: Phase 4.3.1 QueryHistory型定義の開始
