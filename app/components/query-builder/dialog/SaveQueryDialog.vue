@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useSavedQueryStore } from '@/stores/saved-query'
+import type { SerializableQueryState } from '@/stores/query-builder'
 
 interface FormError {
   path: string
@@ -10,6 +11,8 @@ interface FormError {
 const props = defineProps<{
   open: boolean
   defaultName?: string
+  query?: SerializableQueryState
+  connectionId?: string
 }>()
 
 const emit = defineEmits<{
@@ -79,7 +82,10 @@ const handleSave = async () => {
   const success = await savedQueryStore.saveCurrentQuery(
     state.value.name,
     state.value.description,
-    tagsList
+    tagsList,
+    undefined,
+    props.query,
+    props.connectionId
   )
 
   if (success) {

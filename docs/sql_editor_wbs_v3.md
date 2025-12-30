@@ -23,6 +23,7 @@
 | **2** クエリ実行・結果表示 | 完了 | QueryExecutor、ResultTable UI |
 | **3** 本番環境安全機能 | 完了 | QueryAnalyzer、DangerousQueryDialog |
 | **4.1-4.2** クエリ保存・管理UI | 2025-12-30 | QueryStorage、SaveQueryDialog、SavedQuerySlideover |
+| **4.3** クエリ履歴機能 | 2025-12-30 | QueryHistoryService、QueryHistorySlideover |
 
 ### 1.6 詳細実装状況
 
@@ -50,7 +51,7 @@
 | **2** | クエリ実行・結果表示 | 最高 | 1.6 | ✅ 完了 |
 | **3** | 本番環境安全機能 | 高 | 2, 8 | ✅ 完了 |
 | **4.1-4.2** | クエリ保存・管理UI | 中 | 2 | ✅ 完了 |
-| **4.3** | クエリ履歴機能 | 中 | 4.1-4.2 | 📝 次のフェーズ |
+| **4.3** | クエリ履歴機能 | 中 | 4.1-4.2 | ✅ 完了 |
 | **5** | エクスポート機能 | 中 | 2 | 📝 待機中 |
 | **6** | JOIN設定UI拡張 | 中 | 2 | 📝 待機中 |
 | **7** | 監査ログ・UX改善 | 低 | 3 | 📝 待機中 |
@@ -194,29 +195,45 @@
 **実装メモ**:
 - 4.2.3の検索機能は`SavedQuerySlideover.vue`内に統合実装（独立コンポーネントは不要と判断）
 
-### 4.3 履歴機能
+### 4.3 履歴機能 ✅
 
-| タスクID | タスク名 | 依存関係 | 完了条件 |
-|---------|---------|---------|---------|
-| 4.3.1 | QueryHistory型定義 | 4.1.1 | 履歴データ構造 |
-| 4.3.2 | 自動履歴記録 | 4.3.1 | 実行時に自動記録 |
-| 4.3.3 | HistoryPanel.vue | 4.3.2 | 履歴一覧表示 |
-| 4.3.4 | 履歴からの復元 | 4.3.3 | クリックで復元 |
-| 4.3.5 | ToolbarにHistoryボタン統合 | 4.3.4 | 既存TODOの解消 |
+| タスクID | タスク名 | 依存関係 | 完了条件 | 状態 |
+|---------|---------|---------|---------|------|
+| 4.3.1 | QueryHistory型定義（Rust/TypeScript） | 4.1.1 | 履歴データ構造 | ✅ |
+| 4.3.2 | QueryHistoryService実装 | 4.3.1 | ファイルへの保存/読み込み | ✅ |
+| 4.3.3 | query_history コマンド実装 | 4.3.2 | Tauriコマンド | ✅ |
+| 4.3.4 | query-history.ts ストア実装 | 4.3.3 | Piniaストア | ✅ |
+| 4.3.5 | QueryHistorySlideover.vue実装 | 4.3.4 | 履歴一覧UI | ✅ |
+| 4.3.6 | クエリ実行時の自動履歴記録 | 4.3.4 | executeQuery()統合 | ✅ |
+| 4.3.7 | ToolbarにHistoryボタン統合 | 4.3.5 | 履歴ボタン追加 | ✅ |
 
-**参照ファイル**:
-- `app/components/query-builder/QueryBuilderToolbar.vue` - L46のTODO
+**実装ファイル**:
+- `src-tauri/src/models/query_history.rs` - QueryHistory型定義
+- `src-tauri/src/services/query_history.rs` - QueryHistoryService
+- `src-tauri/src/commands/query_history_commands.rs` - Tauriコマンド
+- `src-tauri/src/storage/path_manager.rs` - history_dir()追加
+- `app/types/query-history.ts` - TypeScript型定義
+- `app/api/query-history.ts` - API実装
+- `app/stores/query-history.ts` - Piniaストア
+- `app/components/query-builder/QueryHistorySlideover.vue` - 履歴一覧UI
+- `app/stores/query-builder.ts` - executeQuery()に履歴記録追加
+- `app/components/query-builder/QueryBuilderToolbar.vue` - 履歴ボタン追加
 
-**成果物**:
-- QueryStorageとTauriコマンド
-- SaveQueryDialog/SavedQueryList UI
-- HistoryPanel UI
+**実装メモ**:
+- 単一ファイル保存（`query_history.json`）により高速な読み込みを実現
+- 最大1000件の履歴を自動管理（古いものから削除）
+- 成功/失敗両方の履歴を記録
+- 履歴からクエリビルダーへの復元機能を実装
+- 履歴から保存済みクエリへの昇格機能を実装
 
 **完了条件**:
 - ✅ クエリを名前付きで保存できる
 - ✅ 保存済みクエリを一覧表示・検索できる
 - ✅ 実行履歴が自動記録される
 - ✅ 履歴からクエリを復元できる
+- ✅ 履歴の検索・フィルタができる
+- ✅ 履歴を削除できる
+- ✅ 履歴から保存済みクエリに昇格できる
 
 ---
 
@@ -421,6 +438,14 @@
 | 2025-12-28 | **3.0** | **実装状況反映・フェーズ再構成** | - |
 | 2025-12-29 | **3.1** | **Phase 8（データ変更クエリビルダー）追加** | - |
 | 2025-12-30 | **3.2** | **Phase 4.1-4.2完了状態を反映** | - |
+| 2025-12-30 | **3.3** | **Phase 4.3完了状態を反映** | - |
+
+### v3.3 主な変更点
+
+1. **Phase 4.3完了**: クエリ履歴機能の実装完了を反映
+2. **実装ファイル一覧追加**: 4.3セクションに実装ファイルリスト追加
+3. **完了済みフェーズ更新**: Phase 4.3を完了済みに追加
+4. **タスク詳細化**: 4.3を7つのサブタスクに分割して記載
 
 ### v3.2 主な変更点
 
@@ -445,4 +470,4 @@
 
 ---
 
-**次のアクション**: Phase 4.3.1 QueryHistory型定義の開始
+**次のアクション**: Phase 5エクスポート機能、またはPhase 6 JOIN設定UI拡張の開始を検討

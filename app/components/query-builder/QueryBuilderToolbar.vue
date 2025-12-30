@@ -9,6 +9,7 @@ import { windowApi } from '@/api/window'
 import type { Environment } from '@/types'
 import SaveQueryDialog from './dialog/SaveQueryDialog.vue'
 import SavedQuerySlideover from './SavedQuerySlideover.vue'
+import QueryHistorySlideover from './QueryHistorySlideover.vue'
 
 const emit = defineEmits<{
   (e: 'toggle-left-panel'): void
@@ -51,6 +52,7 @@ const isExecuting = computed(() => queryBuilderStore.isExecuting)
 const showConfirmDialog = ref(false)
 const showSaveDialog = ref(false)
 const showSavedQueriesSlideover = ref(false)
+const showHistorySlideover = ref(false)
 
 // 現在の環境の安全設定
 const safetyConfig = computed(() => {
@@ -159,8 +161,7 @@ const createNewQuery = () => {
  * クエリ履歴を開く
  */
 const openHistory = () => {
-  // TODO: クエリ履歴パネルを開く
-  console.log('Open history')
+  showHistorySlideover.value = true
 }
 </script>
 
@@ -293,6 +294,11 @@ const openHistory = () => {
 
     <SavedQuerySlideover
       v-model:open="showSavedQueriesSlideover"
+    />
+
+    <QueryHistorySlideover
+      v-model:open="showHistorySlideover"
+      @loaded="showHistorySlideover = false"
     />
   </nav>
 </template>

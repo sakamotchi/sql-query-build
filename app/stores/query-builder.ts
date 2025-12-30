@@ -561,6 +561,17 @@ export const useQueryBuilderStore = defineStore('query-builder', {
           executionTime: response.result.executionTimeMs,
           lastExecutedAt: new Date(),
         }
+        // 履歴に追加
+        const { useQueryHistoryStore } = await import('./query-history')
+        const historyStore = useQueryHistoryStore()
+        historyStore.addHistory({
+            connectionId,
+            query: this.getSerializableState(),
+            sql: this.generatedSql,
+            success: true,
+            resultCount: response.result.rowCount,
+            executionTimeMs: response.result.executionTimeMs || undefined,
+        })
       } catch (error) {
         if (typeof error === 'string') {
           // Rust側からのエラーはJSON文字列の可能性が高い
@@ -584,6 +595,23 @@ export const useQueryBuilderStore = defineStore('query-builder', {
             code: 'unknown',
             message: 'Unknown error',
           }
+        }
+
+        // 履歴に追加（失敗）
+        const { useQueryHistoryStore } = await import('./query-history')
+        const connectionStore = useConnectionStore()
+        const windowStore = useWindowStore()
+        const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+        
+        if (connectionId) {
+            const historyStore = useQueryHistoryStore()
+            historyStore.addHistory({
+                connectionId,
+                query: this.getSerializableState(),
+                sql: this.generatedSql,
+                success: false,
+                errorMessage: this.queryError?.message || 'Unknown error'
+            })
         }
       } finally {
         this.isExecuting = false

@@ -1,6 +1,7 @@
 pub mod database_inspector;
 pub mod query_analyzer;
 pub mod query_executor;
+pub mod query_history;
 pub mod query_storage;
 pub mod safety_config;
 pub mod window_manager;

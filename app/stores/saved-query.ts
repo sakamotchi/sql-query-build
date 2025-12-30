@@ -58,19 +58,31 @@ export const useSavedQueryStore = defineStore('saved-query', {
     /**
      * 現在のクエリを保存
      */
-    async saveCurrentQuery(name: string, description: string, tags: string[], overwriteId?: string): Promise<boolean> {
+    async saveCurrentQuery(
+      name: string,
+      description: string,
+      tags: string[],
+      overwriteId?: string,
+      queryOverride?: SerializableQueryState,
+      connectionIdOverride?: string
+    ): Promise<boolean> {
       const queryBuilderStore = useQueryBuilderStore()
       const connectionStore = useConnectionStore()
       const windowStore = useWindowStore()
-
-      // クエリが構築されているかチェック（selectedColumnsが最低限必要）
-      if (!queryBuilderStore.selectedColumns.length) {
-        this.error = 'クエリが構築されていません。カラムを選択してください。'
-        return false
+      
+      // クエリの状態を決定
+      let queryState = queryOverride
+      if (!queryState) {
+        // クエリビルダーの状態を使用
+        if (!queryBuilderStore.selectedColumns.length) {
+          this.error = 'クエリが構築されていません。カラムを選択してください。'
+          return false
+        }
+        queryState = queryBuilderStore.getSerializableState()
       }
 
       // 接続IDの取得と検証
-      const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+      const connectionId = connectionIdOverride || connectionStore.activeConnection?.id || windowStore.currentConnectionId
       if (!connectionId) {
         this.error = '接続情報が見つかりません。データベースに接続してください。'
         return false
@@ -86,7 +98,7 @@ export const useSavedQueryStore = defineStore('saved-query', {
           description,
           tags,
           connectionId,
-          query: queryBuilderStore.getSerializableState(),
+          query: queryState,
         }
 
         await queryStorageApi.saveQuery(request)
