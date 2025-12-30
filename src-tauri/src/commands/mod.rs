@@ -1,6 +1,8 @@
 pub mod database_structure;
 pub mod query;
 pub mod query_analyzer;
+pub mod query_history_commands;
+pub mod query_storage_commands;
 pub mod safety;
 pub mod security;
 pub mod settings;

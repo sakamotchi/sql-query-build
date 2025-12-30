@@ -7,12 +7,14 @@ pub mod services;
 pub mod sql_generator;
 pub mod storage;
 
+use commands::query_history_commands::QueryHistoryState;
 use connection::{ConnectionService, ConnectionStorage};
 use crypto::{
     CredentialStorage, MasterKeyManager, ProviderSwitcher, SecurityConfigStorage,
     SecurityProviderManager,
 };
 use services::query_executor::{ConnectionPoolManager, QueryCancellationManager};
+use services::query_storage::QueryStorage;
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -101,6 +103,10 @@ pub fn run() {
     let data_storage = Arc::new(
         FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage"),
     );
+    let saved_queries_storage = Arc::new(
+        FileStorage::new(path_manager.saved_queries_dir())
+            .expect("Failed to initialize saved queries FileStorage"),
+    );
     let file_storage_for_commands =
         FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage");
     let security_storage = Arc::new(
@@ -150,6 +156,14 @@ pub fn run() {
     let connection_pool_manager = ConnectionPoolManager::new();
     let query_cancellation_manager = QueryCancellationManager::new();
 
+    // QueryStorageを初期化
+    let query_storage = Arc::new(QueryStorage::new(Arc::clone(&saved_queries_storage)));
+
+    // QueryHistoryStateを初期化
+    let query_history_state = QueryHistoryState::default();
+    // PathManagerをStateとして管理するために再作成（ProjectDirsがCloneできないため）
+    let path_manager_managed = PathManager::new().expect("Failed to initialize PathManager");
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -159,6 +173,9 @@ pub fn run() {
         .manage(connection_service)
         .manage(connection_pool_manager)
         .manage(query_cancellation_manager)
+        .manage(query_storage)
+        .manage(query_history_state)
+        .manage(path_manager_managed)
         .manage(Arc::clone(&security_config_storage))
         .manage(security_provider_manager)
         .manage(Arc::clone(&provider_switcher))
@@ -223,6 +240,18 @@ pub fn run() {
             commands::safety::get_safety_settings,
             commands::safety::update_environment_safety,
             commands::safety::reset_safety_settings,
+            commands::query_storage_commands::save_query,
+            commands::query_storage_commands::load_query,
+            commands::query_storage_commands::delete_query,
+            commands::query_storage_commands::list_saved_queries,
+            commands::query_storage_commands::search_saved_queries,
+            commands::query_history_commands::add_query_history,
+            commands::query_history_commands::load_query_history,
+            commands::query_history_commands::delete_query_history,
+            commands::query_history_commands::list_query_histories,
+            commands::query_history_commands::search_query_histories,
+            commands::query_history_commands::clear_old_query_histories,
+            commands::query_history_commands::clear_all_query_histories,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
