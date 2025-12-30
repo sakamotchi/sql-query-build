@@ -4,6 +4,8 @@ import { useQueryBuilderStore } from '@/stores/query-builder'
 import ResultTable from './result/ResultTable.vue'
 import ResultPagination from './result/ResultPagination.vue'
 import QueryErrorDisplay from './error/QueryErrorDisplay.vue'
+import ExportDialog from './dialog/ExportDialog.vue'
+import { ref } from 'vue'
 
 const store = useQueryBuilderStore()
 
@@ -39,6 +41,8 @@ const headerIconClass = computed(() => {
 const retryQuery = () => {
   store.executeQuery()
 }
+
+const showExportDialog = ref(false)
 </script>
 
 <template>
@@ -68,6 +72,7 @@ const retryQuery = () => {
           variant="ghost"
           title="エクスポート"
           :disabled="!hasResult"
+          @click="showExportDialog = true"
         />
         <UButton
           icon="i-heroicons-x-mark"
@@ -121,5 +126,9 @@ const retryQuery = () => {
         </div>
       </template>
     </div>
+    <ExportDialog
+      v-model:open="showExportDialog"
+      :queryResult="store.queryResult"
+    />
   </div>
 </template>
