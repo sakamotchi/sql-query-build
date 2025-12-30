@@ -1,7 +1,13 @@
 # 設計書: クエリ保存機能
 
 **作成日**: 2025年12月29日
+**最終更新**: 2025年12月30日
 **WBS参照**: Phase 4.1 クエリ保存機能
+
+> **重要な実装差異**:
+> - `query`フィールドは設計書では`QueryModel`型としていましたが、実装では`SerializableQueryState`型（Rust側では`serde_json::Value`）を使用しています
+> - これは、UIの状態をそのまま保存することで、クエリビルダーの状態を完全に復元できるようにするためです
+> - バリデーション機能が追加されています（セキュリティ強化）
 
 ---
 
@@ -89,9 +95,12 @@ src-tauri/src/
 
 ```rust
 use serde::{Deserialize, Serialize};
-use crate::query::QueryModel;
 
 /// 保存されたクエリ
+///
+/// **実装注記**: queryフィールドはserde_json::Value型を使用しています。
+/// これにより、クエリビルダーの状態（SerializableQueryState）を
+/// 柔軟に保存・復元できるようにしています。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SavedQuery {
@@ -100,7 +109,7 @@ pub struct SavedQuery {
     pub description: String,
     pub tags: Vec<String>,
     pub connection_id: String,
-    pub query: QueryModel,
+    pub query: serde_json::Value,  // SerializableQueryStateを保存
     pub created_at: String,
     pub updated_at: String,
 }
@@ -141,7 +150,7 @@ pub struct SaveQueryRequest {
     pub description: String,
     pub tags: Vec<String>,
     pub connection_id: String,
-    pub query: QueryModel,
+    pub query: serde_json::Value,  // SerializableQueryStateを保存
 }
 
 /// クエリ検索リクエスト
@@ -295,33 +304,87 @@ impl QueryStorage {
 ```rust
 use crate::models::saved_query::{SavedQuery, SavedQueryMetadata, SaveQueryRequest, SearchQueryRequest};
 use crate::services::query_storage::QueryStorage;
-use crate::storage::path_manager::PathManager;
+use std::sync::Arc;
 use tauri::State;
-use std::sync::Mutex;
 
-pub struct QueryStorageState(pub Mutex<Option<QueryStorage>>);
-
-/// QueryStorageを初期化（遅延初期化）
-fn get_storage(
-    state: &State<QueryStorageState>,
-    path_manager: &State<PathManager>,
-) -> Result<(), String> {
-    let mut guard = state.0.lock().map_err(|e| e.to_string())?;
-    if guard.is_none() {
-        *guard = Some(QueryStorage::new(path_manager)?);
+/// クエリIDのバリデーション（セキュリティ対策）
+fn validate_query_id(id: &str) -> Result<(), String> {
+    // パストラバーサル攻撃対策
+    if id.contains("..") || id.contains("/") || id.contains("\\") {
+        return Err("不正なクエリIDです".to_string());
     }
+
+    // 長さチェック
+    if id.is_empty() || id.len() > 100 {
+        return Err("クエリIDは1〜100文字である必要があります".to_string());
+    }
+
+    // 許可された文字のみ（UUID形式）
+    if !id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+        return Err("クエリIDに不正な文字が含まれています".to_string());
+    }
+
+    Ok(())
+}
+
+/// 保存リクエストのバリデーション
+fn validate_save_request(request: &SaveQueryRequest) -> Result<(), String> {
+    // クエリ名のチェック
+    if request.name.is_empty() {
+        return Err("クエリ名は必須です".to_string());
+    }
+    if request.name.len() > 200 {
+        return Err("クエリ名は200文字以内で入力してください".to_string());
+    }
+
+    // 説明文のチェック
+    if request.description.len() > 1000 {
+        return Err("説明は1000文字以内で入力してください".to_string());
+    }
+
+    // タグのチェック
+    if request.tags.len() > 20 {
+        return Err("タグは20個までです".to_string());
+    }
+    for tag in &request.tags {
+        if tag.len() > 50 {
+            return Err("各タグは50文字以内で入力してください".to_string());
+        }
+    }
+
+    // 接続IDのチェック
+    if request.connection_id.is_empty() {
+        return Err("接続IDが指定されていません".to_string());
+    }
+
+    // IDが指定されている場合はバリデーション
+    if let Some(ref id) = request.id {
+        validate_query_id(id)?;
+    }
+
     Ok(())
 }
 
 #[tauri::command]
-pub fn save_query(
+pub async fn save_query(
     request: SaveQueryRequest,
-    state: State<QueryStorageState>,
-    path_manager: State<PathManager>,
+    storage: State<'_, Arc<QueryStorage>>,
 ) -> Result<SavedQuery, String> {
-    get_storage(&state, &path_manager)?;
-    let guard = state.0.lock().map_err(|e| e.to_string())?;
-    guard.as_ref().unwrap().save_query(request)
+    // バリデーション
+    validate_save_request(&request)?;
+
+    let query = SavedQuery {
+        id: request.id.unwrap_or_default(),
+        name: request.name,
+        description: request.description,
+        tags: request.tags,
+        connection_id: request.connection_id,
+        query: request.query,
+        created_at: String::new(),
+        updated_at: String::new(),
+    };
+
+    storage.save_query(query)
 }
 
 #[tauri::command]

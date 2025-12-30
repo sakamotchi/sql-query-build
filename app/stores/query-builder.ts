@@ -56,6 +56,17 @@ interface QueryBuilderState {
   executingQueryId: string | null
 }
 
+export interface SerializableQueryState {
+  selectedTables: SelectedTable[]
+  selectedColumns: SelectedColumn[]
+  whereConditions: Array<WhereCondition | ConditionGroup>
+  groupByColumns: GroupByColumn[]
+  orderByColumns: OrderByColumn[]
+  limit: number | null
+  offset: number | null
+  smartQuote: boolean
+}
+
 export const useQueryBuilderStore = defineStore('query-builder', {
   state: (): QueryBuilderState => ({
     selectedTables: [],
@@ -619,6 +630,40 @@ export const useQueryBuilderStore = defineStore('query-builder', {
 
     setSmartQuote(enabled: boolean) {
       this.smartQuote = enabled
+      this.regenerateSql()
+    },
+
+    /**
+     * 保存可能な状態を取得
+     */
+    getSerializableState(): SerializableQueryState {
+      return {
+        selectedTables: JSON.parse(JSON.stringify(this.selectedTables)),
+        selectedColumns: JSON.parse(JSON.stringify(this.selectedColumns)),
+        whereConditions: JSON.parse(JSON.stringify(this.whereConditions)),
+        groupByColumns: JSON.parse(JSON.stringify(this.groupByColumns)),
+        orderByColumns: JSON.parse(JSON.stringify(this.orderByColumns)),
+        limit: this.limit,
+        offset: this.offset,
+        smartQuote: this.smartQuote,
+      }
+    },
+
+    /**
+     * 状態を復元
+     */
+    loadState(state: SerializableQueryState) {
+      this.resetQuery()
+      
+      this.selectedTables = state.selectedTables || []
+      this.selectedColumns = state.selectedColumns || []
+      this.whereConditions = state.whereConditions || []
+      this.groupByColumns = state.groupByColumns || []
+      this.orderByColumns = state.orderByColumns || []
+      this.limit = state.limit || null
+      this.offset = state.offset || null
+      this.smartQuote = state.smartQuote ?? true
+      
       this.regenerateSql()
     }
   },

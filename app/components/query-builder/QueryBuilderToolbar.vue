@@ -7,6 +7,8 @@ import { useSafetyStore } from '@/stores/safety'
 import { useEnvironment } from '@/composables/useEnvironment'
 import { windowApi } from '@/api/window'
 import type { Environment } from '@/types'
+import SaveQueryDialog from './dialog/SaveQueryDialog.vue'
+import SavedQuerySlideover from './SavedQuerySlideover.vue'
 
 const emit = defineEmits<{
   (e: 'toggle-left-panel'): void
@@ -47,6 +49,8 @@ const isExecuting = computed(() => queryBuilderStore.isExecuting)
 
 // 確認ダイアログの表示状態
 const showConfirmDialog = ref(false)
+const showSaveDialog = ref(false)
+const showSavedQueriesSlideover = ref(false)
 
 // 現在の環境の安全設定
 const safetyConfig = computed(() => {
@@ -134,8 +138,14 @@ const handleCancel = () => {
  * クエリ保存
  */
 const saveQuery = () => {
-  // TODO: クエリ保存ダイアログを開く
-  console.log('Save query')
+  showSaveDialog.value = true
+}
+
+/**
+ * 保存済みクエリを開く
+ */
+const openSavedQueries = () => {
+  showSavedQueriesSlideover.value = true
 }
 
 /**
@@ -195,6 +205,18 @@ const openHistory = () => {
         <UIcon name="i-heroicons-document-arrow-down" />
       </template>
       保存
+    </UButton>
+
+    <UButton
+      variant="ghost"
+      color="gray"
+      size="sm"
+      @click="openSavedQueries"
+    >
+      <template #leading>
+        <UIcon name="i-heroicons-folder-open" />
+      </template>
+      開く
     </UButton>
 
     <UButton
@@ -263,6 +285,14 @@ const openHistory = () => {
       :countdown-seconds="safetyConfig.countdownSeconds"
       @confirm="handleConfirm"
       @cancel="handleCancel"
+    />
+
+    <SaveQueryDialog
+      v-model:open="showSaveDialog"
+    />
+
+    <SavedQuerySlideover
+      v-model:open="showSavedQueriesSlideover"
     />
   </nav>
 </template>

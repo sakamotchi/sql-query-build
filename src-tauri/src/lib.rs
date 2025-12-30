@@ -13,6 +13,7 @@ use crypto::{
     SecurityProviderManager,
 };
 use services::query_executor::{ConnectionPoolManager, QueryCancellationManager};
+use services::query_storage::QueryStorage;
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -101,6 +102,10 @@ pub fn run() {
     let data_storage = Arc::new(
         FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage"),
     );
+    let saved_queries_storage = Arc::new(
+        FileStorage::new(path_manager.saved_queries_dir())
+            .expect("Failed to initialize saved queries FileStorage"),
+    );
     let file_storage_for_commands =
         FileStorage::new(path_manager.data_dir()).expect("Failed to initialize FileStorage");
     let security_storage = Arc::new(
@@ -150,6 +155,9 @@ pub fn run() {
     let connection_pool_manager = ConnectionPoolManager::new();
     let query_cancellation_manager = QueryCancellationManager::new();
 
+    // QueryStorageを初期化
+    let query_storage = Arc::new(QueryStorage::new(Arc::clone(&saved_queries_storage)));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -159,6 +167,7 @@ pub fn run() {
         .manage(connection_service)
         .manage(connection_pool_manager)
         .manage(query_cancellation_manager)
+        .manage(query_storage)
         .manage(Arc::clone(&security_config_storage))
         .manage(security_provider_manager)
         .manage(Arc::clone(&provider_switcher))
@@ -223,6 +232,11 @@ pub fn run() {
             commands::safety::get_safety_settings,
             commands::safety::update_environment_safety,
             commands::safety::reset_safety_settings,
+            commands::query_storage_commands::save_query,
+            commands::query_storage_commands::load_query,
+            commands::query_storage_commands::delete_query,
+            commands::query_storage_commands::list_saved_queries,
+            commands::query_storage_commands::search_saved_queries,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
