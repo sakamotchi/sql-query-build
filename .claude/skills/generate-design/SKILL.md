@@ -12,13 +12,15 @@ description: 開発作業の設計書（design.md）を生成します。この�
 ## 使用シーン
 
 - 要件定義書を元に設計を開始するとき
+- パフォーマンス改善作業の最適化設計を開始するとき
 - 既存の開発作業ディレクトリに設計書を追加するとき
 - 設計書を再生成するとき
 
 ## 必要な情報
 
 - **ディレクトリパス**: 設計書を配置する `docs/working/{YYYYMMDD}_{要件名}/` のパス
-- **要件名**: 英語のケバブケース（例：`query-execution`, `export-csv`）
+- **要件名**: 英語のケバブケース（例：`query-execution`, `export-csv`, `optimize-rendering`）
+- **作業タイプ** (オプション): `"feature"` (新規機能開発) または `"performance"` (パフォーマンス改善)
 
 ## 前提条件
 
@@ -27,13 +29,21 @@ description: 開発作業の設計書（design.md）を生成します。この�
 
 ## 実行手順
 
-### 1. ディレクトリパスの確認
+### 1. ディレクトリパスと作業タイプの確認
 
-ユーザーから開発作業ディレクトリパスを取得します。
+ユーザーまたは親スキルから以下を取得します：
+- 開発作業ディレクトリパス
+- 作業タイプ（指定がない場合は `"feature"` をデフォルトとする）
 
-### 2. design.md の生成
+### 2. テンプレートの選択
 
-[template.md](template.md) のテンプレートを使用して、`design.md` を生成します。
+作業タイプに応じてテンプレートを選択します：
+- `work_type = "feature"`: 新規機能開発用テンプレート
+- `work_type = "performance"`: パフォーマンス改善用テンプレート
+
+### 3. design.md の生成
+
+[template.md](template.md) または [template-performance.md](template-performance.md) のテンプレートを使用して、`design.md` を生成します。
 
 **重要**: Nuxt UI v4 の記法を使用してください。
 - `UFormField` を使用（`UFormGroup` は使用禁止）

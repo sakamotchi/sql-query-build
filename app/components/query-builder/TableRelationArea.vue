@@ -1,6 +1,6 @@
 ```vue
 <script setup lang="ts">
-import { computed, defineEmits, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import { useTableSelection } from '@/composables/useTableSelection'
 import TableCard from './table/TableCard.vue'

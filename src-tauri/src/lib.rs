@@ -18,7 +18,7 @@ use services::query_storage::QueryStorage;
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
-use tauri::State;
+use tauri::{Manager, State, WindowEvent};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -167,6 +167,15 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .on_window_event(|window, event| {
+            if matches!(event, WindowEvent::Destroyed) {
+                let windows = window.app_handle().webview_windows();
+                if windows.len() <= 1 {
+                    let connection_service = window.state::<ConnectionService>();
+                    connection_service.clear_password_cache();
+                }
+            }
+        })
         .manage(WindowManager::new())
         .manage(file_storage_for_commands)
         .manage(master_key_manager_commands)

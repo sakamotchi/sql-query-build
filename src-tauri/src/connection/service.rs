@@ -1,6 +1,6 @@
 use crate::connection::storage::ConnectionStorage;
 use crate::connection::{ConnectionConfig, ConnectionError, ConnectionInfo};
-use crate::crypto::{decrypt_string, CredentialStorage, MasterKeyManager};
+use crate::crypto::{decrypt_string, CredentialStorage, DecryptedPasswordCache, MasterKeyManager};
 use std::sync::Arc;
 
 /// 接続情報のビジネスロジックを管理するサービス
@@ -8,6 +8,7 @@ pub struct ConnectionService {
     storage: Arc<ConnectionStorage>,
     credential_storage: Arc<CredentialStorage>,
     master_key_manager: Arc<MasterKeyManager>,
+    password_cache: DecryptedPasswordCache,
 }
 
 impl ConnectionService {
@@ -21,6 +22,7 @@ impl ConnectionService {
             storage,
             credential_storage,
             master_key_manager,
+            password_cache: DecryptedPasswordCache::default(),
         }
     }
 
@@ -47,22 +49,30 @@ impl ConnectionService {
         let mut password: Option<String> = None;
 
         if include_password_decrypted {
-            password = self
-                .credential_storage
-                .get_password(&connection.id)
-                .await
-                .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+            password = self.password_cache.get(id);
 
             if password.is_none() {
-                if let Some(encrypted) = legacy_password {
-                    if let Ok(decrypted) = self.decrypt_legacy_password(&encrypted).await {
-                        // 取得できた場合は新ストレージに保存を試みる（失敗しても致命的ではない）
-                        let _ = self
-                            .credential_storage
-                            .save(&connection.id, Some(&decrypted), None, None)
-                            .await;
-                        password = Some(decrypted);
+                password = self
+                    .credential_storage
+                    .get_password(&connection.id)
+                    .await
+                    .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
+
+                if password.is_none() {
+                    if let Some(encrypted) = legacy_password {
+                        if let Ok(decrypted) = self.decrypt_legacy_password(&encrypted).await {
+                            // 取得できた場合は新ストレージに保存を試みる（失敗しても致命的ではない）
+                            let _ = self
+                                .credential_storage
+                                .save(&connection.id, Some(&decrypted), None, None)
+                                .await;
+                            password = Some(decrypted);
+                        }
                     }
+                }
+
+                if let Some(ref pwd) = password {
+                    self.password_cache.set(id, pwd);
                 }
             }
         }
@@ -113,18 +123,25 @@ impl ConnectionService {
                 .map_err(|e| ConnectionError::StorageError(e.to_string()))?;
         }
 
+        self.password_cache.invalidate(&updated.id);
         Ok(updated)
     }
 
     /// 接続情報を削除
     pub async fn delete(&self, id: &str) -> Result<(), ConnectionError> {
         let _ = self.credential_storage.delete(id).await;
+        self.password_cache.invalidate(id);
         self.storage.delete(id)
     }
 
     /// 最終使用日時を更新
     pub fn mark_as_used(&self, id: &str) -> Result<(), ConnectionError> {
         self.storage.update_last_used(id)
+    }
+
+    /// キャッシュを全てクリア
+    pub fn clear_password_cache(&self) {
+        self.password_cache.clear();
     }
 
     /// 接続情報からパスワードを取り除き、取り出した値を返す

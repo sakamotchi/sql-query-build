@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 15 for benchmarking
+  postgres-benchmark:
+    image: postgres:15
+    container_name: sql-editor-postgres-benchmark
+    environment:
+      POSTGRES_USER: benchmark
+      POSTGRES_PASSWORD: benchmark
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"  # ホスト:5433 → コンテナ:5432
+    volumes:
+      - postgres-benchmark-data:/var/lib/postgresql/data
+      - ./postgresql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U benchmark"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL 8.0 for benchmarking
+  mysql-benchmark:
+    image: mysql:8.0
+    container_name: sql-editor-mysql-benchmark
+    environment:
+      MYSQL_ROOT_PASSWORD: benchmark
+      MYSQL_DATABASE: benchmark_small
+      MYSQL_USER: benchmark
+      MYSQL_PASSWORD: benchmark
+    ports:
+      - "3307:3306"  # ホスト:3307 → コンテナ:3306
+    volumes:
+      - mysql-benchmark-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pbenchmark"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  postgres-benchmark-data:
+    name: sql-editor-postgres-benchmark
+  mysql-benchmark-data:
+    name: sql-editor-mysql-benchmark

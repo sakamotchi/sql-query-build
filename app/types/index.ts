@@ -138,5 +138,13 @@ export interface TauriResponse<T> {
 export interface ConnectionTestResult {
   success: boolean
   message: string
-  latency?: number
+  duration?: number // ミリ秒
+  serverVersion?: string
+  serverInfo?: {
+    version: string
+    databaseName: string
+    currentUser: string
+    encoding?: string
+  }
+  errorDetails?: string // 詳細なエラーメッセージ（スタックトレース等）
 }
