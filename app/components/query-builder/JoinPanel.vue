@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineExpose } from 'vue'
+import { ref, computed } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import JoinConfigDialog from './dialog/JoinConfigDialog.vue'
 import type { JoinClause, JoinCondition } from '@/types/query-model'

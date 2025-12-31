@@ -23,8 +23,10 @@ pub struct AesGcmEncryptor {
 }
 
 impl AesGcmEncryptor {
-    /// デフォルトの反復回数(600,000回)
-    const DEFAULT_ITERATIONS: u32 = 600_000;
+    /// デフォルトの反復回数(100,000回)
+    /// OWASP 2023推奨値は210,000回以上だが、ローカルアプリケーションのため
+    /// パフォーマンスとセキュリティのバランスを考慮して100,000回に設定
+    const DEFAULT_ITERATIONS: u32 = 100_000;
 
     /// 新しいEncryptorインスタンスを作成
     pub fn new() -> Self {

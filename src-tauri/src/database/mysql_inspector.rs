@@ -38,13 +38,13 @@ impl MysqlInspector {
     ) -> Result<Option<PrimaryKey>, String> {
         let query = r#"
             SELECT
-                constraint_name,
-                GROUP_CONCAT(column_name ORDER BY ordinal_position SEPARATOR ',') as columns
+                CAST(CONSTRAINT_NAME AS CHAR) as constraint_name,
+                CAST(GROUP_CONCAT(COLUMN_NAME ORDER BY ORDINAL_POSITION SEPARATOR ',') AS CHAR) as columns
             FROM information_schema.key_column_usage
-            WHERE constraint_name = 'PRIMARY'
-              AND table_schema = ?
-              AND table_name = ?
-            GROUP BY constraint_name
+            WHERE CONSTRAINT_NAME = 'PRIMARY'
+              AND TABLE_SCHEMA = ?
+              AND TABLE_NAME = ?
+            GROUP BY CONSTRAINT_NAME
         "#;
 
         let row = sqlx::query(query)
@@ -73,16 +73,16 @@ impl DatabaseInspector for MysqlInspector {
     async fn get_schemas(&self) -> Result<Vec<Schema>, String> {
         let query = r#"
             SELECT
-                schema_name,
+                CAST(SCHEMA_NAME AS CHAR) as name,
                 CASE
-                    WHEN schema_name IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+                    WHEN SCHEMA_NAME IN ('mysql', 'information_schema', 'performance_schema', 'sys')
                     THEN 1
                     ELSE 0
                 END as is_system
             FROM information_schema.schemata
             ORDER BY
-                CASE WHEN schema_name = ? THEN 0 ELSE 1 END,
-                schema_name
+                CASE WHEN SCHEMA_NAME = ? THEN 0 ELSE 1 END,
+                SCHEMA_NAME
         "#;
 
         let rows = sqlx::query(query)
@@ -93,7 +93,7 @@ impl DatabaseInspector for MysqlInspector {
 
         let mut schemas = Vec::new();
         for row in rows {
-            let name: String = row.get("schema_name");
+            let name: String = row.get("name");
             let is_system_int: i32 = row.get("is_system");
             let is_system = is_system_int != 0;
 
@@ -114,13 +114,13 @@ impl DatabaseInspector for MysqlInspector {
     async fn get_tables(&self, schema: &str) -> Result<Vec<Table>, String> {
         let query = r#"
             SELECT
-                t.table_name,
-                t.table_comment as comment,
-                t.table_rows as estimated_rows
+                CAST(t.TABLE_NAME AS CHAR) as table_name,
+                CAST(t.TABLE_COMMENT AS CHAR) as comment,
+                CAST(t.TABLE_ROWS AS SIGNED) as estimated_rows
             FROM information_schema.tables t
-            WHERE t.table_schema = ?
-              AND t.table_type = 'BASE TABLE'
-            ORDER BY t.table_name
+            WHERE t.TABLE_SCHEMA = ?
+              AND t.TABLE_TYPE = 'BASE TABLE'
+            ORDER BY t.TABLE_NAME
         "#;
 
         let rows = sqlx::query(query)
@@ -164,12 +164,12 @@ impl DatabaseInspector for MysqlInspector {
     async fn get_views(&self, schema: &str) -> Result<Vec<View>, String> {
         let query = r#"
             SELECT
-                table_name,
-                '' as comment,
-                view_definition as definition
+                CAST(TABLE_NAME AS CHAR) as table_name,
+                CAST('' AS CHAR) as comment,
+                CAST(VIEW_DEFINITION AS CHAR) as definition
             FROM information_schema.views
-            WHERE table_schema = ?
-            ORDER BY table_name
+            WHERE TABLE_SCHEMA = ?
+            ORDER BY TABLE_NAME
         "#;
 
         let rows = sqlx::query(query)
@@ -200,21 +200,21 @@ impl DatabaseInspector for MysqlInspector {
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<Column>, String> {
         let query = r#"
             SELECT
-                column_name,
-                data_type,
-                column_type as display_type,
-                is_nullable = 'YES' as nullable,
-                column_default,
-                column_key = 'PRI' as is_primary_key,
-                column_key = 'MUL' as is_foreign_key,
-                column_key = 'UNI' as is_unique,
-                extra LIKE '%auto_increment%' as is_auto_increment,
-                ordinal_position,
-                column_comment as comment
+                CAST(COLUMN_NAME AS CHAR) as column_name,
+                CAST(DATA_TYPE AS CHAR) as data_type,
+                CAST(COLUMN_TYPE AS CHAR) as display_type,
+                IS_NULLABLE = 'YES' as nullable,
+                CAST(COLUMN_DEFAULT AS CHAR) as column_default,
+                COLUMN_KEY = 'PRI' as is_primary_key,
+                COLUMN_KEY = 'MUL' as is_foreign_key,
+                COLUMN_KEY = 'UNI' as is_unique,
+                EXTRA LIKE '%auto_increment%' as is_auto_increment,
+                CAST(ORDINAL_POSITION AS SIGNED) as ordinal_position,
+                CAST(COLUMN_COMMENT AS CHAR) as comment
             FROM information_schema.columns
-            WHERE table_schema = ?
-              AND table_name = ?
-            ORDER BY ordinal_position
+            WHERE TABLE_SCHEMA = ?
+              AND TABLE_NAME = ?
+            ORDER BY ORDINAL_POSITION
         "#;
 
         let rows = sqlx::query(query)
@@ -260,16 +260,16 @@ impl DatabaseInspector for MysqlInspector {
     async fn get_indexes(&self, schema: &str, table: &str) -> Result<Vec<Index>, String> {
         let query = r#"
             SELECT
-                index_name,
-                non_unique = 0 as is_unique,
-                index_name = 'PRIMARY' as is_primary,
-                index_type,
-                GROUP_CONCAT(column_name ORDER BY seq_in_index SEPARATOR ',') as columns
+                CAST(INDEX_NAME AS CHAR) as index_name,
+                NON_UNIQUE = 0 as is_unique,
+                INDEX_NAME = 'PRIMARY' as is_primary,
+                CAST(INDEX_TYPE AS CHAR) as index_type,
+                CAST(GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX SEPARATOR ',') AS CHAR) as columns
             FROM information_schema.statistics
-            WHERE table_schema = ?
-              AND table_name = ?
-            GROUP BY index_name, non_unique, index_type
-            ORDER BY index_name
+            WHERE TABLE_SCHEMA = ?
+              AND TABLE_NAME = ?
+            GROUP BY INDEX_NAME, NON_UNIQUE, INDEX_TYPE
+            ORDER BY INDEX_NAME
         "#;
 
         let rows = sqlx::query(query)
@@ -303,16 +303,16 @@ impl DatabaseInspector for MysqlInspector {
     async fn get_foreign_keys(&self, schema: &str, table: &str) -> Result<Vec<ForeignKey>, String> {
         let query = r#"
             SELECT
-                constraint_name,
-                GROUP_CONCAT(DISTINCT column_name ORDER BY ordinal_position SEPARATOR ',') as columns,
-                referenced_table_schema,
-                referenced_table_name,
-                GROUP_CONCAT(DISTINCT referenced_column_name ORDER BY ordinal_position SEPARATOR ',') as referenced_columns
+                CAST(CONSTRAINT_NAME AS CHAR) as constraint_name,
+                CAST(GROUP_CONCAT(DISTINCT COLUMN_NAME ORDER BY ORDINAL_POSITION SEPARATOR ',') AS CHAR) as columns,
+                CAST(REFERENCED_TABLE_SCHEMA AS CHAR) as referenced_table_schema,
+                CAST(REFERENCED_TABLE_NAME AS CHAR) as referenced_table_name,
+                CAST(GROUP_CONCAT(DISTINCT REFERENCED_COLUMN_NAME ORDER BY ORDINAL_POSITION SEPARATOR ',') AS CHAR) as referenced_columns
             FROM information_schema.key_column_usage
-            WHERE table_schema = ?
-              AND table_name = ?
-              AND referenced_table_name IS NOT NULL
-            GROUP BY constraint_name, referenced_table_schema, referenced_table_name
+            WHERE TABLE_SCHEMA = ?
+              AND TABLE_NAME = ?
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+            GROUP BY CONSTRAINT_NAME, REFERENCED_TABLE_SCHEMA, REFERENCED_TABLE_NAME
         "#;
 
         let rows = sqlx::query(query)
@@ -352,15 +352,15 @@ impl DatabaseInspector for MysqlInspector {
     ) -> Result<Vec<ForeignKeyReference>, String> {
         let query = r#"
             SELECT
-                table_schema as source_schema,
-                table_name as source_table,
-                GROUP_CONCAT(DISTINCT column_name ORDER BY ordinal_position SEPARATOR ',') as source_columns,
-                GROUP_CONCAT(DISTINCT referenced_column_name ORDER BY ordinal_position SEPARATOR ',') as target_columns,
-                constraint_name
+                CAST(TABLE_SCHEMA AS CHAR) as source_schema,
+                CAST(TABLE_NAME AS CHAR) as source_table,
+                CAST(GROUP_CONCAT(DISTINCT COLUMN_NAME ORDER BY ORDINAL_POSITION SEPARATOR ',') AS CHAR) as source_columns,
+                CAST(GROUP_CONCAT(DISTINCT REFERENCED_COLUMN_NAME ORDER BY ORDINAL_POSITION SEPARATOR ',') AS CHAR) as target_columns,
+                CAST(CONSTRAINT_NAME AS CHAR) as constraint_name
             FROM information_schema.key_column_usage
-            WHERE referenced_table_schema = ?
-              AND referenced_table_name = ?
-            GROUP BY table_schema, table_name, constraint_name
+            WHERE REFERENCED_TABLE_SCHEMA = ?
+              AND REFERENCED_TABLE_NAME = ?
+            GROUP BY TABLE_SCHEMA, TABLE_NAME, CONSTRAINT_NAME
         "#;
 
         let rows = sqlx::query(query)

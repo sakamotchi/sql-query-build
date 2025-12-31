@@ -4,6 +4,7 @@ use crate::services::database_inspector::{DatabaseInspector, TableForeignKey};
 use async_trait::async_trait;
 use sqlx::postgres::PgPool;
 use sqlx::Row;
+use std::collections::HashMap;
 
 pub struct PostgresqlInspector {
     pool: PgPool,
@@ -31,13 +32,254 @@ impl PostgresqlInspector {
         })
     }
 
-    async fn get_primary_key(
+    /// スキーマ全体のカラム情報を一括取得
+    async fn get_all_columns_in_schema(
         &self,
         schema: &str,
-        table: &str,
-    ) -> Result<Option<PrimaryKey>, String> {
+    ) -> Result<HashMap<String, Vec<Column>>, String> {
         let query = r#"
             SELECT
+                c.table_name,
+                c.column_name,
+                c.data_type,
+                CASE
+                    WHEN c.character_maximum_length IS NOT NULL
+                    THEN c.data_type || '(' || c.character_maximum_length || ')'
+                    WHEN c.numeric_precision IS NOT NULL AND c.numeric_scale IS NOT NULL
+                    THEN c.data_type || '(' || c.numeric_precision || ',' || c.numeric_scale || ')'
+                    ELSE c.data_type
+                END as display_type,
+                c.is_nullable = 'YES' as nullable,
+                c.column_default,
+                EXISTS (
+                    SELECT 1 FROM information_schema.key_column_usage kcu
+                    JOIN information_schema.table_constraints tc
+                      ON kcu.constraint_name = tc.constraint_name
+                     AND kcu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'PRIMARY KEY'
+                      AND kcu.table_schema = c.table_schema
+                      AND kcu.table_name = c.table_name
+                      AND kcu.column_name = c.column_name
+                ) as is_primary_key,
+                EXISTS (
+                    SELECT 1 FROM information_schema.key_column_usage kcu
+                    JOIN information_schema.table_constraints tc
+                      ON kcu.constraint_name = tc.constraint_name
+                     AND kcu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                      AND kcu.table_schema = c.table_schema
+                      AND kcu.table_name = c.table_name
+                      AND kcu.column_name = c.column_name
+                ) as is_foreign_key,
+                EXISTS (
+                    SELECT 1 FROM information_schema.key_column_usage kcu
+                    JOIN information_schema.table_constraints tc
+                      ON kcu.constraint_name = tc.constraint_name
+                     AND kcu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'UNIQUE'
+                      AND kcu.table_schema = c.table_schema
+                      AND kcu.table_name = c.table_name
+                      AND kcu.column_name = c.column_name
+                ) as is_unique,
+                COALESCE(c.column_default LIKE '%nextval%', false) as is_auto_increment,
+                c.ordinal_position,
+                col_description(
+                    (quote_ident(c.table_schema) || '.' || quote_ident(c.table_name))::regclass,
+                    c.ordinal_position
+                ) as comment
+            FROM information_schema.columns c
+            WHERE c.table_schema = $1
+            ORDER BY c.table_name, c.ordinal_position
+        "#;
+
+        let rows = sqlx::query(query)
+            .bind(schema)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get all columns: {}", e))?;
+
+        let mut columns_map: HashMap<String, Vec<Column>> = HashMap::new();
+        for row in rows {
+            let table_name: String = row.get("table_name");
+            let column = Column {
+                name: row.get("column_name"),
+                data_type: row.get("data_type"),
+                display_type: row.get("display_type"),
+                nullable: row.get("nullable"),
+                default_value: row.get("column_default"),
+                is_primary_key: row.get("is_primary_key"),
+                is_foreign_key: row.get("is_foreign_key"),
+                is_unique: row.get("is_unique"),
+                is_auto_increment: row.get("is_auto_increment"),
+                ordinal_position: row.get("ordinal_position"),
+                comment: row.get("comment"),
+            };
+
+            columns_map.entry(table_name).or_insert_with(Vec::new).push(column);
+        }
+
+        Ok(columns_map)
+    }
+
+    /// スキーマ全体のインデックス情報を一括取得
+    async fn get_all_indexes_in_schema(
+        &self,
+        schema: &str,
+    ) -> Result<HashMap<String, Vec<Index>>, String> {
+        let query = r#"
+            SELECT
+                t.relname::TEXT as table_name,
+                i.relname::TEXT as index_name,
+                ix.indisunique as is_unique,
+                ix.indisprimary as is_primary,
+                am.amname::TEXT as index_type,
+                array_agg(a.attname::TEXT ORDER BY array_position(ix.indkey, a.attnum)) as columns
+            FROM pg_index ix
+            JOIN pg_class t ON t.oid = ix.indrelid
+            JOIN pg_class i ON i.oid = ix.indexrelid
+            JOIN pg_namespace n ON n.oid = t.relnamespace
+            JOIN pg_am am ON am.oid = i.relam
+            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+            WHERE n.nspname = $1
+            GROUP BY t.relname, i.relname, ix.indisunique, ix.indisprimary, am.amname
+            ORDER BY t.relname, i.relname
+        "#;
+
+        let rows = sqlx::query(query)
+            .bind(schema)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get all indexes: {}", e))?;
+
+        let mut indexes_map: HashMap<String, Vec<Index>> = HashMap::new();
+        for row in rows {
+            let table_name: String = row.get("table_name");
+            let index = Index {
+                name: row.get("index_name"),
+                is_unique: row.get("is_unique"),
+                is_primary: row.get("is_primary"),
+                columns: row.get("columns"),
+                index_type: row.get("index_type"),
+            };
+
+            indexes_map.entry(table_name).or_insert_with(Vec::new).push(index);
+        }
+
+        Ok(indexes_map)
+    }
+
+    /// スキーマ全体の外部キー情報を一括取得
+    async fn get_all_foreign_keys_in_schema(
+        &self,
+        schema: &str,
+    ) -> Result<HashMap<String, Vec<ForeignKey>>, String> {
+        let query = r#"
+            SELECT
+                tc.table_name::TEXT,
+                tc.constraint_name::TEXT,
+                array_agg(kcu.column_name::TEXT ORDER BY kcu.ordinal_position) as columns,
+                ccu.table_schema::TEXT as referenced_schema,
+                ccu.table_name::TEXT as referenced_table,
+                array_agg(ccu.column_name::TEXT ORDER BY kcu.ordinal_position) as referenced_columns,
+                rc.delete_rule::TEXT as on_delete,
+                rc.update_rule::TEXT as on_update
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+              ON tc.constraint_name = kcu.constraint_name
+             AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage ccu
+              ON tc.constraint_name = ccu.constraint_name
+             AND tc.table_schema = ccu.table_schema
+            JOIN information_schema.referential_constraints rc
+              ON tc.constraint_name = rc.constraint_name
+             AND tc.table_schema = rc.constraint_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+              AND tc.table_schema = $1
+            GROUP BY tc.table_name, tc.constraint_name, ccu.table_schema, ccu.table_name,
+                     rc.delete_rule, rc.update_rule
+        "#;
+
+        let rows = sqlx::query(query)
+            .bind(schema)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get all foreign keys: {}", e))?;
+
+        let mut fks_map: HashMap<String, Vec<ForeignKey>> = HashMap::new();
+        for row in rows {
+            let table_name: String = row.get("table_name");
+            let fk = ForeignKey {
+                name: row.get("constraint_name"),
+                columns: row.get("columns"),
+                referenced_schema: row.get("referenced_schema"),
+                referenced_table: row.get("referenced_table"),
+                referenced_columns: row.get("referenced_columns"),
+                on_delete: row.get("on_delete"),
+                on_update: row.get("on_update"),
+            };
+
+            fks_map.entry(table_name).or_insert_with(Vec::new).push(fk);
+        }
+
+        Ok(fks_map)
+    }
+
+    /// スキーマ全体の外部キー参照情報を一括取得
+    async fn get_all_foreign_key_references_in_schema(
+        &self,
+        schema: &str,
+    ) -> Result<HashMap<String, Vec<ForeignKeyReference>>, String> {
+        let query = r#"
+            SELECT
+                ccu.table_name::TEXT as target_table,
+                tc.table_schema::TEXT as source_schema,
+                tc.table_name::TEXT as source_table,
+                array_agg(kcu.column_name::TEXT ORDER BY kcu.ordinal_position) as source_columns,
+                array_agg(ccu.column_name::TEXT ORDER BY kcu.ordinal_position) as target_columns,
+                tc.constraint_name::TEXT
+            FROM information_schema.table_constraints tc
+            JOIN information_schema.key_column_usage kcu
+              ON tc.constraint_name = kcu.constraint_name
+             AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage ccu
+              ON tc.constraint_name = ccu.constraint_name
+             AND tc.table_schema = ccu.table_schema
+            WHERE tc.constraint_type = 'FOREIGN KEY'
+              AND ccu.table_schema = $1
+            GROUP BY ccu.table_name, tc.table_schema, tc.table_name, tc.constraint_name
+        "#;
+
+        let rows = sqlx::query(query)
+            .bind(schema)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get all foreign key references: {}", e))?;
+
+        let mut refs_map: HashMap<String, Vec<ForeignKeyReference>> = HashMap::new();
+        for row in rows {
+            let target_table: String = row.get("target_table");
+            let fk_ref = ForeignKeyReference {
+                source_schema: row.get("source_schema"),
+                source_table: row.get("source_table"),
+                source_columns: row.get("source_columns"),
+                target_columns: row.get("target_columns"),
+                constraint_name: row.get("constraint_name"),
+            };
+
+            refs_map.entry(target_table).or_insert_with(Vec::new).push(fk_ref);
+        }
+
+        Ok(refs_map)
+    }
+
+    /// スキーマ全体のプライマリキー情報を一括取得
+    async fn get_all_primary_keys_in_schema(
+        &self,
+        schema: &str,
+    ) -> Result<HashMap<String, PrimaryKey>, String> {
+        let query = r#"
+            SELECT
+                tc.table_name::TEXT,
                 tc.constraint_name::TEXT,
                 array_agg(kcu.column_name::TEXT ORDER BY kcu.ordinal_position) as columns
             FROM information_schema.table_constraints tc
@@ -46,25 +288,27 @@ impl PostgresqlInspector {
              AND tc.table_schema = kcu.table_schema
             WHERE tc.constraint_type = 'PRIMARY KEY'
               AND tc.table_schema = $1
-              AND tc.table_name = $2
-            GROUP BY tc.constraint_name
+            GROUP BY tc.table_name, tc.constraint_name
         "#;
 
-        let row = sqlx::query(query)
+        let rows = sqlx::query(query)
             .bind(schema)
-            .bind(table)
-            .fetch_optional(&self.pool)
+            .fetch_all(&self.pool)
             .await
-            .map_err(|e| format!("Failed to get primary key: {}", e))?;
+            .map_err(|e| format!("Failed to get all primary keys: {}", e))?;
 
-        if let Some(row) = row {
-            Ok(Some(PrimaryKey {
+        let mut pks_map: HashMap<String, PrimaryKey> = HashMap::new();
+        for row in rows {
+            let table_name: String = row.get("table_name");
+            let pk = PrimaryKey {
                 name: row.get("constraint_name"),
                 columns: row.get("columns"),
-            }))
-        } else {
-            Ok(None)
+            };
+
+            pks_map.insert(table_name, pk);
         }
+
+        Ok(pks_map)
     }
 }
 
@@ -132,13 +376,20 @@ impl DatabaseInspector for PostgresqlInspector {
             .await
             .map_err(|e| format!("Failed to get tables: {}", e))?;
 
+        // スキーマ全体の情報を一括取得
+        let columns_map = self.get_all_columns_in_schema(schema).await?;
+        let indexes_map = self.get_all_indexes_in_schema(schema).await?;
+        let fks_map = self.get_all_foreign_keys_in_schema(schema).await?;
+        let refs_map = self.get_all_foreign_key_references_in_schema(schema).await?;
+        let pks_map = self.get_all_primary_keys_in_schema(schema).await?;
+
         let mut tables = Vec::new();
         for (name, comment, estimated_row_count) in rows {
-            let columns = self.get_columns(schema, &name).await?;
-            let indexes = self.get_indexes(schema, &name).await?;
-            let foreign_keys = self.get_foreign_keys(schema, &name).await?;
-            let referenced_by = self.get_foreign_key_references(schema, &name).await?;
-            let primary_key = self.get_primary_key(schema, &name).await?;
+            let columns = columns_map.get(&name).cloned().unwrap_or_default();
+            let indexes = indexes_map.get(&name).cloned().unwrap_or_default();
+            let foreign_keys = fks_map.get(&name).cloned().unwrap_or_default();
+            let referenced_by = refs_map.get(&name).cloned().unwrap_or_default();
+            let primary_key = pks_map.get(&name).cloned();
 
             tables.push(Table {
                 name,
@@ -177,9 +428,12 @@ impl DatabaseInspector for PostgresqlInspector {
             .await
             .map_err(|e| format!("Failed to get views: {}", e))?;
 
+        // ビュー用のカラム情報を一括取得
+        let columns_map = self.get_all_columns_in_schema(schema).await?;
+
         let mut views = Vec::new();
         for (name, comment, definition) in rows {
-            let columns = self.get_columns(schema, &name).await?;
+            let columns = columns_map.get(&name).cloned().unwrap_or_default();
 
             views.push(View {
                 name,
