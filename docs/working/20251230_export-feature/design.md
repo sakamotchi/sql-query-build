@@ -452,12 +452,12 @@ async function handleExport() {
 
       <div class="space-y-4">
         <!-- 形式選択 -->
-        <UFormGroup label="Format">
+        <UFormField label="Format" name="format">
           <URadioGroup
             v-model="selectedFormat"
-            :options="formatOptions"
+            :items="formatOptions"
           />
-        </UFormGroup>
+        </UFormField>
 
         <!-- 行数表示 -->
         <div class="text-sm text-gray-600 dark:text-gray-400">

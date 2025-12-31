@@ -15,6 +15,7 @@ import type {
   SelectColumn,
   LimitClause,
   OrderByItem,
+  JoinClause,
 } from '@/types/query-model'
 
 /**
@@ -28,6 +29,7 @@ export interface UIQueryState {
   orderByColumns: OrderByColumn[]
   limit: number | null
   offset: number | null
+  joins: JoinClause[]
 }
 
 /**
@@ -60,17 +62,17 @@ export function convertToQueryModel(
         alias: mainTable.alias,
       },
     },
-    joins: [], // UIにまだ設定がないので空
-    whereClause: convertWhereConditions(state.whereConditions, 'AND'), // デフォルトAND
+    joins: state.joins || [],
+    whereClause: convertWhereConditions(state.whereConditions, 'AND') || undefined,
     groupBy:
       state.groupByColumns.length > 0
         ? { columns: convertGroupByColumns(state.groupByColumns) }
-        : null,
-    having: null, // UIにまだ設定がない
+        : undefined,
+    having: undefined, // UIにまだ設定がない
     orderBy:
       state.orderByColumns.length > 0
         ? { items: convertOrderByColumns(state.orderByColumns) }
-        : null,
+        : undefined,
     limit: convertLimit(state.limit, state.offset),
     createdAt: undefined,
     updatedAt: undefined,

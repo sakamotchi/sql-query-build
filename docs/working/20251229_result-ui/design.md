@@ -445,7 +445,7 @@ function onPageSizeChange(size: number) {
       <span>表示:</span>
       <USelect
         :model-value="pageSize"
-        :options="pageSizeOptions.map(n => ({ value: n, label: `${n}件` }))"
+        :items="pageSizeOptions.map(n => ({ value: n, label: `${n}件` }))"
         size="xs"
         class="w-20"
         @update:model-value="onPageSizeChange"

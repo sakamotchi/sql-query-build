@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import SelectTab from './select/SelectTab.vue'
 import WhereTab from './where/WhereTab.vue'
 import GroupByTab from './group-by/GroupByTab.vue'
 import OrderByTab from './order-by/OrderByTab.vue'
 import LimitTab from './limit/LimitTab.vue'
+import JoinPanel from './JoinPanel.vue'
 
 // タブアイテム
 const items = [
@@ -12,6 +13,11 @@ const items = [
     key: 'select',
     label: 'SELECT',
     value: 'select',
+  },
+  {
+    key: 'join',
+    label: 'JOIN',
+    value: 'join',
   },
   {
     key: 'where',
@@ -52,6 +58,10 @@ const selectedTab = ref('select')
     <div class="flex-1 overflow-auto p-4">
       <div v-if="selectedTab === 'select'" class="h-full">
         <SelectTab />
+      </div>
+
+      <div v-else-if="selectedTab === 'join'" class="h-full">
+        <JoinPanel />
       </div>
 
       <div v-else-if="selectedTab === 'where'" class="h-full">

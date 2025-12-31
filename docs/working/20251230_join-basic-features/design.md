@@ -10,12 +10,16 @@
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ QueryBuilder.vue                                        │
-│  ├─ TableSelectionPanel.vue                            │
-│  │   ├─ SelectedTableCard.vue (既存)                   │
-│  │   ├─ JoinList.vue (新規)                            │
-│  │   └─ "Add JOIN" ボタン                               │
-│  └─ JoinConfigDialog.vue (新規)                        │
-│       └─ JoinConditionRow.vue (新規) x N               │
+│  ├─ TabNavigation (既存: SELECT, WHERE, GROUP BY...)   │
+│  │   └─ JOINタブ (新規)                                 │
+│  └─ JoinPanel.vue (新規) - タブコンテンツ               │
+│       └─ JOIN一覧リスト + [新規JOIN]ボタン              │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ↓
+┌─────────────────────────────────────────────────────────┐
+│ JoinConfigDialog.vue (新規) - ダイアログ                │
+│  └─ JoinConditionRow.vue (既存) x N                    │
 └─────────────────────────────────────────────────────────┘
                          │
                          ↓
@@ -45,152 +49,246 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
+**設計方針変更**:
+- 当初は2カラムレイアウト（一覧＋設定パネル）を計画していたが、狭いウィンドウ幅での表示問題を考慮して**リスト表示＋ダイアログ**方式に変更
+- JOINタブ: JOIN一覧のリスト表示のみ（狭い幅でも問題なし）
+- JOIN追加・編集: 専用ダイアログで広々と編集可能
+- 既存のJoinConditionRow.vueコンポーネントを再利用
+
 ---
 
 ## 2. コンポーネント設計
 
-### 2.1 JoinConfigDialog.vue
+### 2.1 JoinPanel.vue
 
-**責務**: JOIN設定のモーダルダイアログ
+**責務**: JOINタブのメインコンテンツ - JOIN一覧の表示とダイアログ制御
+
+**UI構成**:
+```
+┌──────────────────────────────────────┐
+│ JOINタブ                              │
+├──────────────────────────────────────┤
+│ ┌──────────────────────────────────┐ │
+│ │ [+ 新規JOIN]                     │ │
+│ └──────────────────────────────────┘ │
+│                                      │
+│ ┌──────────────────────────────────┐ │
+│ │ INNER JOIN users (u)        [編] │ │
+│ │ ON orders.user_id = u.id    [×] │ │
+│ └──────────────────────────────────┘ │
+│ ┌──────────────────────────────────┐ │
+│ │ LEFT JOIN products (p)      [編] │ │
+│ │ ON orders.product_id = p.id [×] │ │
+│ └──────────────────────────────────┘ │
+│                                      │
+│ (空状態時)                           │
+│ 「JOINを追加してください」           │
+└──────────────────────────────────────┘
+```
+
+**実装例**:
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useQueryBuilderStore } from '~/stores/query-builder'
+import JoinConfigDialog from '../dialog/JoinConfigDialog.vue'
+import type { JoinClause, JoinCondition } from '~/types/query-model'
+
+const store = useQueryBuilderStore()
+
+// ダイアログ状態
+const isDialogOpen = ref(false)
+const editingJoin = ref<JoinClause | undefined>(undefined)
+
+// テーブルが2つ以上選択されているかチェック
+const hasEnoughTables = computed(() => store.selectedTables.length >= 2)
+
+// JOIN追加ダイアログを開く
+const handleAddJoin = () => {
+  if (!hasEnoughTables.value) return
+  editingJoin.value = undefined
+  isDialogOpen.value = true
+}
+
+// JOIN編集ダイアログを開く
+const handleEditJoin = (join: JoinClause) => {
+  editingJoin.value = join
+  isDialogOpen.value = true
+}
+
+// JOIN削除
+const handleRemoveJoin = (id: string) => {
+  store.removeJoin(id)
+}
+
+// JOINを保存（追加または更新）
+const handleSaveJoin = (join: JoinClause | Omit<JoinClause, 'id'>) => {
+  if ('id' in join) {
+    // 更新
+    const { id, ...updates } = join
+    store.updateJoin(id, updates)
+  } else {
+    // 追加
+    store.addJoin(join)
+  }
+}
+
+// JOIN条件をフォーマットして表示
+const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
+  if (conditions.length === 0) return '(条件なし)'
+  return conditions
+    .map(c => `${c.left.tableAlias}.${c.left.columnName} ${c.operator} ${c.right.tableAlias}.${c.right.columnName}`)
+    .join(` ${logic} `)
+}
+</script>
+
+<template>
+  <div class="h-full overflow-hidden">
+    <!-- テーブルが不足している場合 -->
+    <div v-if="!hasEnoughTables" class="flex flex-col items-center justify-center h-full p-6 text-center">
+      <UIcon name="i-heroicons-link-slash" class="text-5xl text-gray-300 dark:text-gray-600" />
+      <p class="text-gray-500 dark:text-gray-400 mt-4">JOINを設定するには2つ以上のテーブルが必要です</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+        左パネルからテーブルを追加してください
+      </p>
+    </div>
+
+    <!-- JOIN一覧 -->
+    <div v-else class="h-full overflow-y-auto p-4">
+      <div class="space-y-3">
+        <!-- 新規JOINボタン -->
+        <UButton
+          icon="i-heroicons-plus"
+          size="sm"
+          color="primary"
+          variant="soft"
+          block
+          label="新規JOIN"
+          @click="handleAddJoin"
+        />
+
+        <!-- 空状態 -->
+        <div v-if="store.joins.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
+          <UIcon name="i-heroicons-link" class="text-4xl text-gray-300 dark:text-gray-600 mb-3" />
+          <p class="text-sm text-gray-500 dark:text-gray-400">JOINが設定されていません</p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            上のボタンからJOINを追加してください
+          </p>
+        </div>
+
+        <!-- JOIN一覧 -->
+        <UCard
+          v-for="join in store.joins"
+          :key="join.id"
+          :ui="{ body: { padding: 'p-3' } }"
+          class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        >
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm">
+                {{ join.type }} JOIN {{ join.table.name }} ({{ join.table.alias }})
+              </div>
+              <div class="text-xs text-gray-500 mt-1 truncate">
+                ON {{ formatConditions(join.conditions, join.conditionLogic) }}
+              </div>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <UButton
+                icon="i-heroicons-pencil"
+                size="xs"
+                color="gray"
+                variant="ghost"
+                @click="handleEditJoin(join)"
+              />
+              <UButton
+                icon="i-heroicons-x-mark"
+                size="xs"
+                color="red"
+                variant="ghost"
+                @click="handleRemoveJoin(join.id)"
+              />
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </div>
+
+    <!-- JOIN設定ダイアログ -->
+    <JoinConfigDialog
+      v-model="isDialogOpen"
+      :join="editingJoin"
+      @save="handleSaveJoin"
+    />
+  </div>
+</template>
+```
+
+---
+
+### 2.2 JoinConfigDialog.vue
+
+**責務**: JOIN設定ダイアログ - JOIN種別、テーブル、ON条件を設定
 
 **Props**:
 ```typescript
 interface Props {
-  modelValue: boolean  // ダイアログの開閉状態
-  join?: JoinClause    // 編集対象のJOIN（新規作成時はundefined）
+  join?: JoinClause  // 編集時は既存JOIN、追加時はundefined
 }
 ```
 
 **Emits**:
 ```typescript
 interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'save', join: JoinClause): void
+  (e: 'save', join: JoinClause | Omit<JoinClause, 'id'>): void
 }
-```
-
-**State**:
-```typescript
-const state = reactive({
-  joinType: 'INNER' as JoinClause['type'],
-  selectedTable: null as SelectedTable | null,
-  tableAlias: '',
-  conditions: [] as JoinCondition[],
-  conditionLogic: 'AND' as 'AND' | 'OR',
-})
 ```
 
 **UI構成**:
 ```
 ┌─────────────────────────────────────────┐
-│ JOIN設定                          [×]   │
+│ JOINの追加/編集                    [×]  │
 ├─────────────────────────────────────────┤
-│ JOIN種別: [INNER ▼]                     │
 │                                         │
-│ 結合テーブル: [users ▼]                 │
-│ エイリアス: [u]                          │
+│ JOIN種別 *                              │
+│ [INNER ▼]                               │
 │                                         │
-│ ON条件:                                  │
+│ 結合テーブル *                          │
+│ [users ▼]                               │
+│                                         │
+│ エイリアス *                            │
+│ [u                ]                     │
+│                                         │
+│ ON条件 *                                │
 │ ┌─────────────────────────────────────┐ │
-│ │ orders.user_id = users.id      [×] │ │
+│ │ [orders ▼].[ user_id ▼]         │ │
+│ │ [= ▼]                                │ │
+│ │ [users  ▼].[id       ▼]     [×] │ │
 │ └─────────────────────────────────────┘ │
-│ [+ 条件を追加]                           │
+│ [+ 条件を追加]                          │
 │                                         │
-│ 条件の結合: ○ AND  ○ OR                  │
+│ 条件の結合                              │
+│ ○ AND  ○ OR                             │
 │                                         │
-│              [キャンセル]  [保存]        │
+├─────────────────────────────────────────┤
+│              [キャンセル] [保存]        │
 └─────────────────────────────────────────┘
 ```
 
-**実装例**:
-```vue
-<template>
-  <UModal v-model="isOpen" title="JOIN設定">
-    <div class="space-y-4 p-4">
-      <!-- JOIN種別 -->
-      <UFormGroup label="JOIN種別">
-        <USelectMenu
-          v-model="state.joinType"
-          :options="joinTypes"
-        />
-      </UFormGroup>
-
-      <!-- 結合テーブル -->
-      <UFormGroup label="結合テーブル">
-        <USelectMenu
-          v-model="state.selectedTable"
-          :options="availableTables"
-          option-attribute="name"
-        />
-      </UFormGroup>
-
-      <!-- エイリアス -->
-      <UFormGroup label="エイリアス">
-        <UInput v-model="state.tableAlias" />
-      </UFormGroup>
-
-      <!-- CROSS JOIN以外の場合のみON条件を表示 -->
-      <template v-if="state.joinType !== 'CROSS'">
-        <!-- ON条件 -->
-        <UFormGroup label="ON条件">
-          <div class="space-y-2">
-            <JoinConditionRow
-              v-for="(condition, index) in state.conditions"
-              :key="index"
-              :condition="condition"
-              :available-tables="allTables"
-              @update="updateCondition(index, $event)"
-              @remove="removeCondition(index)"
-            />
-            <UButton
-              icon="i-heroicons-plus"
-              color="gray"
-              variant="soft"
-              @click="addCondition"
-            >
-              条件を追加
-            </UButton>
-          </div>
-        </UFormGroup>
-
-        <!-- 条件の結合方法 -->
-        <UFormGroup label="条件の結合">
-          <URadioGroup
-            v-model="state.conditionLogic"
-            :options="[
-              { label: 'AND', value: 'AND' },
-              { label: 'OR', value: 'OR' }
-            ]"
-          />
-        </UFormGroup>
-      </template>
-    </div>
-
-    <template #footer>
-      <div class="flex justify-end gap-2">
-        <UButton color="gray" variant="ghost" @click="cancel">
-          キャンセル
-        </UButton>
-        <UButton color="primary" @click="save">
-          保存
-        </UButton>
-      </div>
-    </template>
-  </UModal>
-</template>
-```
+**実装**: 既存の [app/components/query-builder/dialog/JoinConfigDialog.vue](app/components/query-builder/dialog/JoinConfigDialog.vue) の実装を参考にする（削除済みなので復元が必要）
 
 ---
 
-### 2.2 JoinConditionRow.vue
+### 2.3 JoinConditionRow.vue
 
 **責務**: JOIN条件の1行を表示・編集
+
+**実装**: 既存の[JoinConditionRow.vue](app/components/query-builder/dialog/JoinConditionRow.vue:1-175)を使用（USelectベース、Nuxt UI v4対応済み）
 
 **Props**:
 ```typescript
 interface Props {
   condition: JoinCondition
-  availableTables: SelectedTable[]  // 選択可能なテーブル一覧
+  availableTables: SelectedTable[]
 }
 ```
 
@@ -209,132 +307,7 @@ interface Emits {
 └───────────────────────────────────────────────────────┘
 ```
 
-**実装例**:
-```vue
-<template>
-  <div class="flex items-center gap-2">
-    <!-- 左側テーブル -->
-    <USelectMenu
-      :model-value="condition.left.tableAlias"
-      :options="tableOptions"
-      @update:model-value="updateLeftTable"
-    />
-    <span class="text-gray-500">.</span>
-
-    <!-- 左側カラム -->
-    <USelectMenu
-      :model-value="condition.left.columnName"
-      :options="leftColumnOptions"
-      @update:model-value="updateLeftColumn"
-    />
-
-    <!-- 演算子 -->
-    <USelectMenu
-      :model-value="condition.operator"
-      :options="operatorOptions"
-      @update:model-value="updateOperator"
-    />
-
-    <!-- 右側テーブル -->
-    <USelectMenu
-      :model-value="condition.right.tableAlias"
-      :options="tableOptions"
-      @update:model-value="updateRightTable"
-    />
-    <span class="text-gray-500">.</span>
-
-    <!-- 右側カラム -->
-    <USelectMenu
-      :model-value="condition.right.columnName"
-      :options="rightColumnOptions"
-      @update:model-value="updateRightColumn"
-    />
-
-    <!-- 削除ボタン -->
-    <UButton
-      icon="i-heroicons-x-mark"
-      color="red"
-      variant="ghost"
-      size="xs"
-      @click="$emit('remove')"
-    />
-  </div>
-</template>
-```
-
 ---
-
-### 2.3 JoinList.vue
-
-**責務**: 設定済みJOINの一覧表示（TableSelectionPanel内に配置）
-
-**UI構成**:
-```
-┌─────────────────────────────────────┐
-│ JOIN                                │
-├─────────────────────────────────────┤
-│ ┌─────────────────────────────────┐ │
-│ │ INNER JOIN users (u)       [×] │ │
-│ │   ON orders.user_id = u.id     │ │
-│ └─────────────────────────────────┘ │
-│ ┌─────────────────────────────────┐ │
-│ │ LEFT JOIN products (p)     [×] │ │
-│ │   ON orders.product_id = p.id  │ │
-│ └─────────────────────────────────┘ │
-│                                     │
-│ [+ JOINを追加]                       │
-└─────────────────────────────────────┘
-```
-
-**実装例**:
-```vue
-<template>
-  <div class="space-y-2">
-    <div class="flex items-center justify-between">
-      <h3 class="font-semibold text-sm">JOIN</h3>
-      <UButton
-        icon="i-heroicons-plus"
-        size="xs"
-        color="primary"
-        variant="soft"
-        @click="$emit('add-join')"
-      >
-        追加
-      </UButton>
-    </div>
-
-    <div class="space-y-2">
-      <UCard
-        v-for="join in joins"
-        :key="join.id"
-        class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-        @click="$emit('edit-join', join)"
-      >
-        <div class="flex items-start justify-between">
-          <div class="flex-1">
-            <div class="font-medium text-sm">
-              {{ join.type }} JOIN {{ join.table.name }} ({{ join.table.alias }})
-            </div>
-            <div class="text-xs text-gray-500 mt-1">
-              ON {{ formatConditions(join.conditions, join.conditionLogic) }}
-            </div>
-          </div>
-          <UButton
-            icon="i-heroicons-x-mark"
-            size="xs"
-            color="red"
-            variant="ghost"
-            @click.stop="$emit('remove-join', join.id)"
-          />
-        </div>
-      </UCard>
-    </div>
-  </div>
-</template>
-```
-
----
-
 ## 3. ストア設計（query-builder.ts）
 
 ### 3.1 追加する状態

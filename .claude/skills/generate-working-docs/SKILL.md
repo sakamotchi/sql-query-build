@@ -65,3 +65,51 @@ mkdir -p docs/working/{YYYYMMDD}_{要件名}
 
 - `CLAUDE.md` - 開発作業ドキュメントの構成ルール
 - `docs/` - 永続化ドキュメント群
+
+## 技術仕様の注意事項
+
+### Nuxt UI v4 コンポーネント記法
+
+**重要**: このプロジェクトは Nuxt UI v4 を使用しています。ドキュメント内のコード例では必ず以下の記法を使用してください。
+
+#### v3 → v4 移行対応表
+
+| v3（使用禁止） | v4（使用必須） | 説明 |
+|---------------|---------------|------|
+| `UFormGroup` | `UFormField` | フォームフィールドラッパー |
+| `options` 属性 | `items` 属性 | USelect, USelectMenu等の選択肢 |
+| `v-model` | `v-model` | 同じだが、itemsとの組み合わせに注意 |
+
+#### 正しい記法例（v4）
+
+```vue
+<template>
+  <!-- ✅ 正しい: UFormField + items -->
+  <UFormField label="データベース" name="database">
+    <USelect v-model="selected" :items="databases" />
+  </UFormField>
+
+  <!-- ✅ 正しい: USelectMenu + items -->
+  <USelectMenu v-model="selected" :items="options" />
+</template>
+```
+
+#### 誤った記法例（v3）
+
+```vue
+<template>
+  <!-- ❌ 間違い: UFormGroup（v3） -->
+  <UFormGroup label="データベース">
+    <USelect v-model="selected" :options="databases" />
+  </UFormGroup>
+
+  <!-- ❌ 間違い: options 属性（v3） -->
+  <USelectMenu v-model="selected" :options="options" />
+</template>
+```
+
+### ドキュメント生成時のルール
+
+1. **コード例には必ず Nuxt UI v4 の記法を使用する**
+2. **v3 の記法（UFormGroup, options 属性）は絶対に使用しない**
+3. **既存の `CLAUDE.md` に記載された技術スタック情報を参照する**

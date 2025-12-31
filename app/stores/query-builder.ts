@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
+import type { JoinClause } from '@/types/query-model'
 import type { QueryAnalysisResult } from '@/types/query-analysis'
 import { queryApi } from '@/api/query'
 import { convertToQueryModel } from '@/utils/query-converter'
@@ -19,6 +20,8 @@ interface QueryBuilderState {
   whereConditions: Array<WhereCondition | ConditionGroup>
   /** GROUP BYカラム一覧 */
   groupByColumns: GroupByColumn[]
+  /** JOIN設定 */
+  joins: JoinClause[]
   /** ORDER BYカラム一覧 */
   orderByColumns: OrderByColumn[]
   /** 現在のクエリモデル */
@@ -61,6 +64,7 @@ export interface SerializableQueryState {
   selectedColumns: SelectedColumn[]
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
+  joins: JoinClause[]
   orderByColumns: OrderByColumn[]
   limit: number | null
   offset: number | null
@@ -74,6 +78,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     draggingTable: null,
     whereConditions: [],
     groupByColumns: [],
+    joins: [],
     orderByColumns: [],
     query: null,
     generatedSql: '',
@@ -90,7 +95,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     sqlGenerationError: null,
     smartQuote: true, // デフォルトで有効
     analysisResult: null,
-    
+
     // クエリ実行結果初期値
     queryResult: null,
     currentPage: 1,
@@ -329,6 +334,42 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * JOINを追加
+     */
+    addJoin(join: Omit<JoinClause, 'id'>) {
+      const newJoin: JoinClause = {
+        ...join,
+        id: crypto.randomUUID(),
+      }
+      this.joins.push(newJoin)
+      this.regenerateSql()
+    },
+
+    /**
+     * JOINを更新
+     */
+    updateJoin(id: string, updates: Partial<Omit<JoinClause, 'id'>>) {
+      const index = this.joins.findIndex((j) => j.id === id)
+      if (index !== -1) {
+        const current = this.joins[index]
+        const updated = {
+          ...current,
+          ...updates,
+        } as JoinClause
+        this.joins[index] = updated
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * JOINを削除
+     */
+    removeJoin(id: string) {
+      this.joins = this.joins.filter((j) => j.id !== id)
+      this.regenerateSql()
+    },
+
+    /**
      * グループのロジック変更
      */
     updateGroupLogic(groupId: string, logic: 'AND' | 'OR') {
@@ -413,7 +454,18 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      * 関連するJOINを削除
      */
     removeRelatedJoins(_tableId: string) {
-      // TODO: JOIN機能実装時に詳細化
+      // 選択されなくなったテーブル（エイリアス）を参照するJOINを削除
+      const currentAliases = new Set(this.selectedTables.map(t => t.alias))
+
+      // Remove any JOIN where the joined table (target) is no longer selected
+      this.joins = this.joins.filter(j => currentAliases.has(j.table.alias))
+
+      // Remove conditions referencing removed tables
+      this.joins.forEach(join => {
+        join.conditions = join.conditions.filter(cond =>
+           currentAliases.has(cond.left.tableAlias) && currentAliases.has(cond.right.tableAlias)
+        )
+      })
     },
 
     /**
@@ -670,6 +722,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         selectedColumns: JSON.parse(JSON.stringify(this.selectedColumns)),
         whereConditions: JSON.parse(JSON.stringify(this.whereConditions)),
         groupByColumns: JSON.parse(JSON.stringify(this.groupByColumns)),
+        joins: JSON.parse(JSON.stringify(this.joins)),
         orderByColumns: JSON.parse(JSON.stringify(this.orderByColumns)),
         limit: this.limit,
         offset: this.offset,
@@ -687,6 +740,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.selectedColumns = state.selectedColumns || []
       this.whereConditions = state.whereConditions || []
       this.groupByColumns = state.groupByColumns || []
+      this.joins = state.joins || []
       this.orderByColumns = state.orderByColumns || []
       this.limit = state.limit || null
       this.offset = state.offset || null

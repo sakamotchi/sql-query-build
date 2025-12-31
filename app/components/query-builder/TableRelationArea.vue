@@ -5,19 +5,28 @@ import { useQueryBuilderStore } from '@/stores/query-builder'
 import { useTableSelection } from '@/composables/useTableSelection'
 import TableCard from './table/TableCard.vue'
 import DropZone from './table/DropZone.vue'
+// import JoinList from './JoinList.vue' // Phase 6B: ビジュアル表現で使用予定
+// import JoinConfigDialog from './dialog/JoinConfigDialog.vue' // Phase 6B: ビジュアル表現で使用予定
 import type { Table } from '@/types/database-structure'
+// import type { JoinClause } from '@/types/query-model' // Phase 6B: ビジュアル表現で使用予定
 
 const queryBuilderStore = useQueryBuilderStore()
 const { addTable: addTableToStore } = useTableSelection()
 
 // 選択されたテーブル一覧
 const selectedTables = computed(() => queryBuilderStore.selectedTables)
+// const joins = computed(() => queryBuilderStore.joins) // Phase 6B: ビジュアル表現で使用予定
 
 // コンテナ要素への参照
 const containerRef = ref<HTMLElement | null>(null)
 
 // テーブルカードの位置
 const tablePositions = ref<Record<string, { x: number; y: number }>>({})
+
+// Phase 6B: ビジュアル表現で使用予定
+// JOIN dialog state
+// const isJoinDialogOpen = ref(false)
+// const editingJoin = ref<JoinClause | undefined>(undefined)
 
 /**
  * 新しく追加されたテーブルの位置を自動計算して設定する
@@ -105,6 +114,25 @@ const updateAlias = (tableId: string, alias: string) => {
 const handleTableMove = (tableId: string, x: number, y: number) => {
   tablePositions.value[tableId] = { x, y }
 }
+
+// Phase 6B: ビジュアル表現で使用予定
+// const openJoinDialog = (join?: JoinClause) => {
+//   editingJoin.value = join
+//   isJoinDialogOpen.value = true
+// }
+
+// const handleSaveJoin = (join: any) => {
+//   if (join.id) {
+//     const { id, ...updates } = join
+//     queryBuilderStore.updateJoin(id, updates)
+//   } else {
+//     queryBuilderStore.addJoin(join)
+//   }
+// }
+
+// const removeJoin = (id: string) => {
+//   queryBuilderStore.removeJoin(id)
+// }
 </script>
 
 <template>
@@ -139,6 +167,25 @@ const handleTableMove = (tableId: string, x: number, y: number) => {
         <UIcon name="i-heroicons-plus" class="w-3 h-3" />
         テーブルをドロップして追加
       </div>
+
+      <!-- Phase 6B: ビジュアル表現で使用予定 -->
+      <!-- JOIN List (Floating) -->
+      <!-- <div v-if="selectedTables.length > 0" class="absolute top-4 right-4 z-10 hidden md:block">
+        <JoinList
+          :joins="joins"
+          @add-join="openJoinDialog()"
+          @edit-join="openJoinDialog($event)"
+          @remove-join="removeJoin"
+        />
+      </div> -->
     </div>
+
+    <!-- Phase 6B: ビジュアル表現で使用予定 -->
+    <!-- JOIN Dialog -->
+    <!-- <JoinConfigDialog
+      v-model="isJoinDialogOpen"
+      :join="editingJoin"
+      @save="handleSaveJoin"
+    /> -->
   </div>
 </template>
