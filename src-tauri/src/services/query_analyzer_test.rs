@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::query_analyzer::QueryAnalyzer;
     use crate::models::query_analysis::{QueryType, RiskLevel};
+    use crate::services::query_analyzer::QueryAnalyzer;
 
     #[test]
     fn test_analyze_select() {
@@ -20,7 +20,8 @@ mod tests {
 
     #[test]
     fn test_analyze_update_with_where() {
-        let result = QueryAnalyzer::analyze("UPDATE users SET active = false WHERE id = 1", "postgresql");
+        let result =
+            QueryAnalyzer::analyze("UPDATE users SET active = false WHERE id = 1", "postgresql");
         assert_eq!(result.query_type, QueryType::Update);
         assert_eq!(result.risk_level, RiskLevel::Warning);
         assert!(result.has_where_clause);
@@ -56,7 +57,8 @@ mod tests {
 
     #[test]
     fn test_analyze_insert() {
-        let result = QueryAnalyzer::analyze("INSERT INTO users (name) VALUES ('test')", "postgresql");
+        let result =
+            QueryAnalyzer::analyze("INSERT INTO users (name) VALUES ('test')", "postgresql");
         assert_eq!(result.query_type, QueryType::Insert);
         assert_eq!(result.risk_level, RiskLevel::Warning);
     }
@@ -70,7 +72,10 @@ mod tests {
 
     #[test]
     fn test_analyze_alter_table() {
-        let result = QueryAnalyzer::analyze("ALTER TABLE users ADD COLUMN email VARCHAR(255)", "postgresql");
+        let result = QueryAnalyzer::analyze(
+            "ALTER TABLE users ADD COLUMN email VARCHAR(255)",
+            "postgresql",
+        );
         assert_eq!(result.query_type, QueryType::Alter);
         assert_eq!(result.risk_level, RiskLevel::Warning);
     }

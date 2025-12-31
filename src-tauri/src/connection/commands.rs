@@ -36,7 +36,10 @@ pub async fn get_connection(
 
     if let Some(ref conn) = connection {
         if let crate::connection::ConnectionConfig::Network(ref network) = conn.connection {
-            println!("[get_connection] Password present: {}", network.encrypted_password.is_some());
+            println!(
+                "[get_connection] Password present: {}",
+                network.encrypted_password.is_some()
+            );
             if let Some(ref pwd) = network.encrypted_password {
                 println!("[get_connection] Password length: {}", pwd.len());
             }

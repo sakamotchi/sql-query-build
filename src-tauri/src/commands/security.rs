@@ -14,10 +14,7 @@ use crate::crypto::security_provider::{
 pub async fn get_security_config(
     storage: State<'_, Arc<SecurityConfigStorage>>,
 ) -> Result<SecurityConfig, String> {
-    storage
-        .load()
-        .await
-        .map_err(|e| e.to_string())
+    storage.load().await.map_err(|e| e.to_string())
 }
 
 /// プロバイダーを変更
@@ -131,7 +128,10 @@ pub async fn switch_security_provider(
     new_password_confirm: Option<String>,
 ) -> Result<SwitchResult, String> {
     let current_provider = switcher.current_provider_type().await;
-    println!("[switch_security_provider] Switching from {:?} to {:?}", current_provider, target_provider);
+    println!(
+        "[switch_security_provider] Switching from {:?} to {:?}",
+        current_provider, target_provider
+    );
 
     let current_auth = match current_provider {
         SecurityProviderType::Simple => UnlockParams::Simple,

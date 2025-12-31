@@ -33,7 +33,10 @@ impl ConnectionStorage {
     }
 
     /// 接続情報を作成
-    pub fn create(&self, mut connection: ConnectionInfo) -> Result<ConnectionInfo, ConnectionError> {
+    pub fn create(
+        &self,
+        mut connection: ConnectionInfo,
+    ) -> Result<ConnectionInfo, ConnectionError> {
         let mut collection = self.load_collection()?;
 
         // IDが空の場合は新しいUUIDを生成

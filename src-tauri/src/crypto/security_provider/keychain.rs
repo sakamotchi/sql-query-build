@@ -65,9 +65,7 @@ impl KeychainProvider {
             MasterKeyError::AccessDenied => {
                 SecurityProviderError::KeychainError("Access denied".to_string())
             }
-            MasterKeyError::Base64Error(e) => {
-                SecurityProviderError::EncryptionError(e.to_string())
-            }
+            MasterKeyError::Base64Error(e) => SecurityProviderError::EncryptionError(e.to_string()),
         }
     }
 

@@ -201,6 +201,7 @@ pub fn run() {
             commands::database_structure::get_schemas,
             commands::database_structure::get_tables,
             commands::database_structure::get_columns,
+            commands::join_suggestions::get_join_suggestions,
             commands::query::generate_sql,
             commands::query::generate_sql_formatted,
             commands::query::execute_query,

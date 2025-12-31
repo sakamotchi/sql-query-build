@@ -1,9 +1,9 @@
+use crate::connection::{ConnectionConfig, ConnectionInfo};
+use crate::models::database_structure::*;
+use crate::services::database_inspector::{DatabaseInspector, TableForeignKey};
 use async_trait::async_trait;
 use sqlx::postgres::PgPool;
 use sqlx::Row;
-use crate::connection::{ConnectionConfig, ConnectionInfo};
-use crate::models::database_structure::*;
-use crate::services::database_inspector::DatabaseInspector;
 
 pub struct PostgresqlInspector {
     pool: PgPool,
@@ -31,7 +31,11 @@ impl PostgresqlInspector {
         })
     }
 
-    async fn get_primary_key(&self, schema: &str, table: &str) -> Result<Option<PrimaryKey>, String> {
+    async fn get_primary_key(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Option<PrimaryKey>, String> {
         let query = r#"
             SELECT
                 tc.constraint_name::TEXT,
@@ -254,20 +258,18 @@ impl DatabaseInspector for PostgresqlInspector {
 
         let columns = rows
             .iter()
-            .map(|row| {
-                Column {
-                    name: row.get("column_name"),
-                    data_type: row.get("data_type"),
-                    display_type: row.get("display_type"),
-                    nullable: row.get("nullable"),
-                    default_value: row.get("column_default"),
-                    is_primary_key: row.get("is_primary_key"),
-                    is_foreign_key: row.get("is_foreign_key"),
-                    is_unique: row.get("is_unique"),
-                    is_auto_increment: row.get("is_auto_increment"),
-                    ordinal_position: row.get("ordinal_position"),
-                    comment: row.get("comment"),
-                }
+            .map(|row| Column {
+                name: row.get("column_name"),
+                data_type: row.get("data_type"),
+                display_type: row.get("display_type"),
+                nullable: row.get("nullable"),
+                default_value: row.get("column_default"),
+                is_primary_key: row.get("is_primary_key"),
+                is_foreign_key: row.get("is_foreign_key"),
+                is_unique: row.get("is_unique"),
+                is_auto_increment: row.get("is_auto_increment"),
+                ordinal_position: row.get("ordinal_position"),
+                comment: row.get("comment"),
             })
             .collect();
 
@@ -303,14 +305,12 @@ impl DatabaseInspector for PostgresqlInspector {
 
         let indexes = rows
             .iter()
-            .map(|row| {
-                Index {
-                    name: row.get("index_name"),
-                    is_unique: row.get("is_unique"),
-                    is_primary: row.get("is_primary"),
-                    columns: row.get("columns"),
-                    index_type: row.get("index_type"),
-                }
+            .map(|row| Index {
+                name: row.get("index_name"),
+                is_unique: row.get("is_unique"),
+                is_primary: row.get("is_primary"),
+                columns: row.get("columns"),
+                index_type: row.get("index_type"),
             })
             .collect();
 
@@ -353,16 +353,14 @@ impl DatabaseInspector for PostgresqlInspector {
 
         let foreign_keys = rows
             .iter()
-            .map(|row| {
-                ForeignKey {
-                    name: row.get("constraint_name"),
-                    columns: row.get("columns"),
-                    referenced_schema: row.get("referenced_schema"),
-                    referenced_table: row.get("referenced_table"),
-                    referenced_columns: row.get("referenced_columns"),
-                    on_delete: row.get("on_delete"),
-                    on_update: row.get("on_update"),
-                }
+            .map(|row| ForeignKey {
+                name: row.get("constraint_name"),
+                columns: row.get("columns"),
+                referenced_schema: row.get("referenced_schema"),
+                referenced_table: row.get("referenced_table"),
+                referenced_columns: row.get("referenced_columns"),
+                on_delete: row.get("on_delete"),
+                on_update: row.get("on_update"),
             })
             .collect();
 
@@ -403,18 +401,38 @@ impl DatabaseInspector for PostgresqlInspector {
 
         let references = rows
             .iter()
-            .map(|row| {
-                ForeignKeyReference {
-                    source_schema: row.get("source_schema"),
-                    source_table: row.get("source_table"),
-                    source_columns: row.get("source_columns"),
-                    target_columns: row.get("target_columns"),
-                    constraint_name: row.get("constraint_name"),
-                }
+            .map(|row| ForeignKeyReference {
+                source_schema: row.get("source_schema"),
+                source_table: row.get("source_table"),
+                source_columns: row.get("source_columns"),
+                target_columns: row.get("target_columns"),
+                constraint_name: row.get("constraint_name"),
             })
             .collect();
 
         Ok(references)
+    }
+
+    async fn get_all_foreign_keys(
+        &self,
+        schema: Option<&str>,
+    ) -> Result<Vec<TableForeignKey>, String> {
+        let schema_name = schema.unwrap_or("public");
+        let tables = self.get_tables(schema_name).await?;
+
+        let mut all_fks = Vec::new();
+        for table in tables {
+            let table_name = table.name.clone();
+            for fk in table.foreign_keys {
+                all_fks.push(TableForeignKey {
+                    schema: schema_name.to_string(),
+                    table: table_name.clone(),
+                    foreign_key: fk,
+                });
+            }
+        }
+
+        Ok(all_fks)
     }
 
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String> {

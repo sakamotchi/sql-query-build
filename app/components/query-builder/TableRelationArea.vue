@@ -1,12 +1,11 @@
 ```vue
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
+import { computed, defineEmits, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import { useTableSelection } from '@/composables/useTableSelection'
 import TableCard from './table/TableCard.vue'
 import DropZone from './table/DropZone.vue'
 import RelationLine from './RelationLine.vue'
-import JoinConfigDialog from './dialog/JoinConfigDialog.vue'
 import type { Table } from '@/types/database-structure'
 import type { JoinClause } from '@/types/query-model'
 
@@ -33,9 +32,10 @@ const panStart = ref({ x: 0, y: 0 })
 const pointerStart = ref({ x: 0, y: 0 })
 const isSpacePressed = ref(false)
 
-const isJoinDialogOpen = ref(false)
-const editingJoin = ref<JoinClause | undefined>(undefined)
 const activeTableAlias = ref<string | null>(null)
+const emit = defineEmits<{
+  (e: 'open-join-dialog', payload?: { join?: JoinClause }): void
+}>()
 
 const clampZoom = (value: number) => Math.min(200, Math.max(50, value))
 
@@ -141,25 +141,6 @@ const updateAlias = (tableId: string, alias: string) => {
 
 const handleTableMove = (tableId: string, x: number, y: number) => {
   queryBuilderStore.updateTablePosition(tableId, x, y)
-}
-
-const openJoinDialog = (join?: JoinClause) => {
-  editingJoin.value = join
-  isJoinDialogOpen.value = true
-}
-
-const handleSaveJoin = (join: JoinClause | Omit<JoinClause, 'id'>) => {
-  if ('id' in join) {
-    const { id, ...updates } = join
-    queryBuilderStore.updateJoin(id, updates)
-  } else {
-    queryBuilderStore.addJoin(join)
-  }
-  editingJoin.value = undefined
-}
-
-const removeJoin = (id: string) => {
-  queryBuilderStore.removeJoin(id)
 }
 
 const handleZoomIn = () => {
@@ -334,7 +315,7 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
         label="JOIN追加"
         size="sm"
         color="primary"
-        @click="openJoinDialog()"
+        @click="emit('open-join-dialog')"
       />
       <UButton
         icon="i-heroicons-magnifying-glass-plus"
@@ -386,7 +367,7 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
               :is-active="line.isActive"
               :is-dimmed="line.isDimmed"
               class="cursor-pointer"
-              @click="openJoinDialog(line.join)"
+              @click="emit('open-join-dialog', { join: line.join })"
             />
           </g>
         </svg>
@@ -421,11 +402,5 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
       </div>
     </div>
 
-    <!-- JOIN Dialog -->
-    <JoinConfigDialog
-      v-model="isJoinDialogOpen"
-      :join="editingJoin"
-      @save="handleSaveJoin"
-    />
   </div>
 </template>

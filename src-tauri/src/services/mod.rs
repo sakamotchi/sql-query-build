@@ -1,5 +1,6 @@
 pub mod database_inspector;
 pub mod exporter;
+pub mod join_suggestion_engine;
 pub mod query_analyzer;
 pub mod query_executor;
 pub mod query_history;

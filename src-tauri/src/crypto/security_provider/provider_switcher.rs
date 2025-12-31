@@ -396,10 +396,7 @@ mod tests {
             })
             .await;
 
-        assert!(matches!(
-            result,
-            Err(SwitchError::InitializationFailed(_))
-        ));
+        assert!(matches!(result, Err(SwitchError::InitializationFailed(_))));
         assert_eq!(
             provider_manager.current_provider_type().await,
             SecurityProviderType::Simple

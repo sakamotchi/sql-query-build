@@ -1,6 +1,6 @@
-use crate::models::query::*;
 use super::dialect::Dialect;
 use super::reserved_words;
+use crate::models::query::*;
 
 /// 引用符のスタイル
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

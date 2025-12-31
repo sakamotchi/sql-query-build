@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import JoinConditionRow from './JoinConditionRow.vue'
+import JoinSuggestionList from '../join/JoinSuggestionList.vue'
 import type { JoinClause, JoinCondition, SelectedTable } from '@/types/query-model'
+import type { JoinSuggestion } from '@/types/join-suggestion'
 
 interface Props {
   join?: JoinClause  // 編集時は既存JOIN、追加時はundefined
@@ -15,6 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useQueryBuilderStore()
+const { joinSuggestions, isLoadingJoinSuggestions } = storeToRefs(store)
 
 // ダイアログの開閉状態
 const isOpen = defineModel<boolean>({ required: true })
@@ -28,13 +32,19 @@ interface FormState {
   conditionLogic: 'AND' | 'OR'
 }
 
-const state = ref<FormState>({
-  type: 'INNER',
-  selectedTable: null,
-  tableAlias: '',
-  conditions: [],
-  conditionLogic: 'AND'
-})
+const initialState = (): FormState => {
+  const firstAvailableTable = store.selectedTables[1] // FROMテーブル以外の最初のテーブル
+  return {
+    type: 'INNER',
+    selectedTable: firstAvailableTable || null,
+    tableAlias: firstAvailableTable?.alias || '',
+    conditions: [],
+    conditionLogic: 'AND'
+  }
+}
+
+const state = ref<FormState>(initialState())
+const suppressSuggestionFetch = ref(false)
 
 // 編集モードかどうか
 const isEdit = computed(() => !!props.join)
@@ -62,7 +72,6 @@ const tableOptions = computed(() =>
 // propsが変更されたときにフォームを初期化
 watch(() => props.join, (join) => {
   if (join) {
-    // 編集モード
     const selectedTable = store.selectedTables.find(t => t.alias === join.table.alias)
     state.value = {
       type: join.type,
@@ -72,17 +81,59 @@ watch(() => props.join, (join) => {
       conditionLogic: join.conditionLogic
     }
   } else {
-    // 新規作成モード
-    const firstAvailableTable = store.selectedTables[1]  // FROMテーブル以外の最初のテーブル
-    state.value = {
-      type: 'INNER',
-      selectedTable: firstAvailableTable || null,
-      tableAlias: firstAvailableTable?.alias || '',
-      conditions: [],
-      conditionLogic: 'AND'
-    }
+    state.value = initialState()
   }
 }, { immediate: true })
+
+// テーブル選択やJOIN種別変更時に提案を取得
+watch(
+  () => [isOpen.value, state.value.selectedTable, state.value.type],
+  async ([open, selectedTable, joinType]) => {
+    if (suppressSuggestionFetch.value) {
+      return
+    }
+    if (!open) {
+      store.joinSuggestions = []
+      return
+    }
+    if (!selectedTable || joinType === 'CROSS') {
+      store.joinSuggestions = []
+      return
+    }
+    if (store.selectedTables.length < 2) {
+      store.joinSuggestions = []
+      return
+    }
+
+    const fromTable = store.selectedTables[0]
+    if (!fromTable) return
+
+    await store.fetchJoinSuggestions(fromTable.name, selectedTable.name)
+  },
+  { immediate: true }
+)
+
+// ダイアログ開閉でフォーム状態をリセット（同じ操作の再オープンで古い条件を残さない）
+watch(isOpen, (open) => {
+  if (open) {
+    // 最新のprops.joinに合わせて初期化
+    if (props.join) {
+      const selectedTable = store.selectedTables.find(t => t.alias === props.join!.table.alias)
+      state.value = {
+        type: props.join.type,
+        selectedTable: selectedTable || null,
+        tableAlias: props.join.table.alias,
+        conditions: [...props.join.conditions],
+        conditionLogic: props.join.conditionLogic
+      }
+    } else {
+      state.value = initialState()
+    }
+  } else {
+    state.value = initialState()
+    store.joinSuggestions = []
+  }
+})
 
 // テーブル選択時
 const handleTableChange = (alias: string) => {
@@ -164,6 +215,23 @@ const isValid = computed(() => {
   }
   return true
 })
+
+// 提案を適用
+const applySuggestion = (suggestion: JoinSuggestion) => {
+  try {
+    suppressSuggestionFetch.value = true
+    const joinData = store.applyJoinSuggestion(suggestion)
+    state.value.type = joinData.type
+    state.value.conditions = [...state.value.conditions, ...joinData.conditions]
+  } catch (error) {
+    console.error('Failed to apply join suggestion:', error)
+  } finally {
+    // すぐに再フェッチさせない
+    setTimeout(() => {
+      suppressSuggestionFetch.value = false
+    }, 0)
+  }
+}
 </script>
 
 <template>
@@ -243,6 +311,18 @@ const isValid = computed(() => {
               ]"
             />
           </UFormField>
+
+          <!-- 提案セクション（ON条件の下に配置） -->
+          <div
+            v-if="state.selectedTable"
+            class="border-t border-gray-200 dark:border-gray-700 pt-4"
+          >
+            <JoinSuggestionList
+              :suggestions="joinSuggestions"
+              :loading="isLoadingJoinSuggestions"
+              @apply="applySuggestion"
+            />
+          </div>
         </template>
       </div>
     </template>

@@ -1,7 +1,7 @@
-use tauri::State;
 use crate::connection::{ConnectionConfig, ConnectionService};
 use crate::models::database_structure::*;
 use crate::services::database_inspector::DatabaseInspectorFactory;
+use tauri::State;
 
 /// データベース構造を取得
 #[tauri::command]

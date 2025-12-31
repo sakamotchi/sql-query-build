@@ -27,9 +27,7 @@ impl ConnectionService {
     /// すべての接続情報を取得（パスワードは含めない）
     pub fn get_all(&self) -> Result<Vec<ConnectionInfo>, ConnectionError> {
         let mut connections = self.storage.get_all()?;
-        connections
-            .iter_mut()
-            .for_each(Self::strip_password_field);
+        connections.iter_mut().for_each(Self::strip_password_field);
         Ok(connections)
     }
 
@@ -153,7 +151,10 @@ impl ConnectionService {
     }
 
     /// 旧形式の暗号化パスワードを復号化（MasterKeyManager利用）
-    async fn decrypt_legacy_password(&self, encrypted_password: &str) -> Result<String, ConnectionError> {
+    async fn decrypt_legacy_password(
+        &self,
+        encrypted_password: &str,
+    ) -> Result<String, ConnectionError> {
         if !self.master_key_manager.is_initialized() {
             return Err(ConnectionError::EncryptionError(
                 "Master key is not initialized".to_string(),
@@ -193,16 +194,17 @@ mod tests {
                 Arc::clone(&config_storage),
                 Arc::clone(&security_storage),
             )
-                .await
-                .unwrap(),
+            .await
+            .unwrap(),
         );
 
-        let credential_storage =
-            Arc::new(CredentialStorage::new(Arc::clone(&data_storage), provider_manager));
+        let credential_storage = Arc::new(CredentialStorage::new(
+            Arc::clone(&data_storage),
+            provider_manager,
+        ));
         let storage = Arc::new(ConnectionStorage::new(Arc::clone(&data_storage)));
         let master_key_manager = Arc::new(MasterKeyManager::new());
-        let service =
-            ConnectionService::new(storage, credential_storage, master_key_manager);
+        let service = ConnectionService::new(storage, credential_storage, master_key_manager);
         (service, temp_dir)
     }
 

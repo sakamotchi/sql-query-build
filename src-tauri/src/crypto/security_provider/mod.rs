@@ -1,25 +1,29 @@
-pub mod error;
 pub mod config;
+pub mod credential_storage;
+pub mod error;
 pub mod keychain;
 pub mod manager;
 pub mod master_password;
 pub mod password_validator;
-pub mod credential_storage;
 pub mod provider_switcher;
 pub mod simple;
 mod simple_key;
 pub mod traits;
 pub mod types;
 
+pub use config::{
+    ProviderSpecificConfig, SecurityConfig, SecurityConfigError, SecurityConfigStorage,
+};
+pub use credential_storage::{
+    CredentialCollection, CredentialEntry, CredentialError, CredentialStorage,
+};
 pub use error::{SecurityProviderError, SecurityProviderResult};
-pub use config::{ProviderSpecificConfig, SecurityConfig, SecurityConfigError, SecurityConfigStorage};
 pub use keychain::KeychainProvider;
 pub use manager::SecurityProviderManager;
 pub use master_password::MasterPasswordProvider;
 pub use password_validator::{
     PasswordRequirements, PasswordStrength, PasswordValidationResult, PasswordValidator,
 };
-pub use credential_storage::{CredentialCollection, CredentialEntry, CredentialError, CredentialStorage};
 pub use provider_switcher::{ProviderSwitcher, SwitchError, SwitchParams, SwitchResult};
 pub use simple::SimpleProvider;
 pub use traits::SecurityProvider;

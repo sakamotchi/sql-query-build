@@ -1,9 +1,9 @@
+use crate::connection::{ConnectionConfig, ConnectionInfo};
+use crate::models::database_structure::*;
+use crate::services::database_inspector::{DatabaseInspector, TableForeignKey};
 use async_trait::async_trait;
 use sqlx::sqlite::SqlitePool;
 use sqlx::Row;
-use crate::connection::{ConnectionConfig, ConnectionInfo};
-use crate::models::database_structure::*;
-use crate::services::database_inspector::DatabaseInspector;
 
 pub struct SqliteInspector {
     pool: SqlitePool,
@@ -21,9 +21,7 @@ impl SqliteInspector {
             .map_err(|e| format!("Failed to connect: {}", e))?;
 
         let database_name = match &connection.connection {
-            ConnectionConfig::File(cfg) => {
-                cfg.file_path.clone()
-            }
+            ConnectionConfig::File(cfg) => cfg.file_path.clone(),
             _ => return Err("Invalid connection config for SQLite".to_string()),
         };
 
@@ -33,7 +31,11 @@ impl SqliteInspector {
         })
     }
 
-    async fn get_primary_key(&self, _schema: &str, table: &str) -> Result<Option<PrimaryKey>, String> {
+    async fn get_primary_key(
+        &self,
+        _schema: &str,
+        table: &str,
+    ) -> Result<Option<PrimaryKey>, String> {
         let query = format!("PRAGMA table_info({})", table);
 
         let rows = sqlx::query(&query)
@@ -173,8 +175,8 @@ impl DatabaseInspector for SqliteInspector {
                     nullable: notnull == 0,
                     default_value,
                     is_primary_key: pk > 0,
-                    is_foreign_key: false, // 外部キー情報は別途取得
-                    is_unique: false,      // インデックス情報から判定が必要
+                    is_foreign_key: false,    // 外部キー情報は別途取得
+                    is_unique: false,         // インデックス情報から判定が必要
                     is_auto_increment: false, // AUTOINCREMENT判定が必要
                     ordinal_position: (idx + 1) as i32,
                     comment: None,
@@ -206,10 +208,7 @@ impl DatabaseInspector for SqliteInspector {
                 .await
                 .map_err(|e| format!("Failed to get index columns: {}", e))?;
 
-            let columns: Vec<String> = column_rows
-                .iter()
-                .map(|r| r.get("name"))
-                .collect();
+            let columns: Vec<String> = column_rows.iter().map(|r| r.get("name")).collect();
 
             indexes.push(Index {
                 name: index_name,
@@ -223,7 +222,11 @@ impl DatabaseInspector for SqliteInspector {
         Ok(indexes)
     }
 
-    async fn get_foreign_keys(&self, _schema: &str, table: &str) -> Result<Vec<ForeignKey>, String> {
+    async fn get_foreign_keys(
+        &self,
+        _schema: &str,
+        table: &str,
+    ) -> Result<Vec<ForeignKey>, String> {
         let query = format!("PRAGMA foreign_key_list({})", table);
 
         let rows = sqlx::query(&query)
@@ -232,7 +235,8 @@ impl DatabaseInspector for SqliteInspector {
             .map_err(|e| format!("Failed to get foreign keys: {}", e))?;
 
         // SQLiteの外部キーは複合キーの場合、複数行で返される
-        let mut fk_map: std::collections::HashMap<i32, ForeignKey> = std::collections::HashMap::new();
+        let mut fk_map: std::collections::HashMap<i32, ForeignKey> =
+            std::collections::HashMap::new();
 
         for row in rows {
             let id: i32 = row.get("id");
@@ -288,7 +292,8 @@ impl DatabaseInspector for SqliteInspector {
                 .await
                 .map_err(|e| format!("Failed to get foreign keys for references: {}", e))?;
 
-            let mut fk_map: std::collections::HashMap<i32, (Vec<String>, Vec<String>)> = std::collections::HashMap::new();
+            let mut fk_map: std::collections::HashMap<i32, (Vec<String>, Vec<String>)> =
+                std::collections::HashMap::new();
 
             for fk_row in fk_rows {
                 let referenced_table: String = fk_row.get("table");
@@ -300,7 +305,8 @@ impl DatabaseInspector for SqliteInspector {
                 let from_col: String = fk_row.get("from");
                 let to_col: String = fk_row.get("to");
 
-                let (source_cols, target_cols) = fk_map.entry(id).or_insert_with(|| (Vec::new(), Vec::new()));
+                let (source_cols, target_cols) =
+                    fk_map.entry(id).or_insert_with(|| (Vec::new(), Vec::new()));
                 source_cols.push(from_col);
                 target_cols.push(to_col);
             }
@@ -317,6 +323,28 @@ impl DatabaseInspector for SqliteInspector {
         }
 
         Ok(references)
+    }
+
+    async fn get_all_foreign_keys(
+        &self,
+        _schema: Option<&str>,
+    ) -> Result<Vec<TableForeignKey>, String> {
+        let schema_name = "main";
+        let tables = self.get_tables(schema_name).await?;
+
+        let mut all_fks = Vec::new();
+        for table in tables {
+            let table_name = table.name.clone();
+            for fk in table.foreign_keys {
+                all_fks.push(TableForeignKey {
+                    schema: schema_name.to_string(),
+                    table: table_name.clone(),
+                    foreign_key: fk,
+                });
+            }
+        }
+
+        Ok(all_fks)
     }
 
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String> {

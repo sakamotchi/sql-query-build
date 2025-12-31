@@ -116,7 +116,10 @@ impl CredentialStorage {
     }
 
     /// 接続IDに対応する認証情報を取得
-    pub async fn get(&self, connection_id: &str) -> Result<Option<CredentialEntry>, CredentialError> {
+    pub async fn get(
+        &self,
+        connection_id: &str,
+    ) -> Result<Option<CredentialEntry>, CredentialError> {
         let mut collection = self.load_collection().await?;
 
         let entry = match collection.credentials.get(connection_id) {
@@ -139,7 +142,10 @@ impl CredentialStorage {
     }
 
     /// パスワードのみを取得
-    pub async fn get_password(&self, connection_id: &str) -> Result<Option<String>, CredentialError> {
+    pub async fn get_password(
+        &self,
+        connection_id: &str,
+    ) -> Result<Option<String>, CredentialError> {
         let entry = self.get(connection_id).await?;
         Ok(entry.and_then(|e| e.password))
     }
@@ -280,7 +286,10 @@ impl CredentialStorage {
             return Ok(collection.clone());
         }
 
-        let collection = match self.file_storage.read::<CredentialCollection>(&self.storage_key) {
+        let collection = match self
+            .file_storage
+            .read::<CredentialCollection>(&self.storage_key)
+        {
             Ok(c) => c,
             Err(crate::storage::StorageError::NotFound(_)) => CredentialCollection::new(),
             Err(e) => return Err(CredentialError::StorageError(e.to_string())),
@@ -292,7 +301,10 @@ impl CredentialStorage {
     }
 
     /// コレクションを保存
-    async fn save_collection(&self, collection: &CredentialCollection) -> Result<(), CredentialError> {
+    async fn save_collection(
+        &self,
+        collection: &CredentialCollection,
+    ) -> Result<(), CredentialError> {
         self.file_storage
             .write(&self.storage_key, collection)
             .map_err(|e| CredentialError::StorageError(e.to_string()))?;
@@ -360,16 +372,15 @@ mod tests {
 
         let file_storage = Arc::new(FileStorage::new(data_dir).unwrap());
         let security_storage = Arc::new(FileStorage::new(settings_dir).unwrap());
-        let config_storage =
-            Arc::new(SecurityConfigStorage::new(Arc::clone(&security_storage)));
+        let config_storage = Arc::new(SecurityConfigStorage::new(Arc::clone(&security_storage)));
 
         let provider_manager = Arc::new(
             SecurityProviderManager::new(
                 Arc::clone(&config_storage),
                 Arc::clone(&security_storage),
             )
-                .await
-                .unwrap(),
+            .await
+            .unwrap(),
         );
 
         let storage = CredentialStorage::new(file_storage, provider_manager);

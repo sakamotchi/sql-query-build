@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, defineExpose } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import JoinConfigDialog from './dialog/JoinConfigDialog.vue'
 import type { JoinClause, JoinCondition } from '@/types/query-model'
@@ -9,15 +9,49 @@ const store = useQueryBuilderStore()
 // ダイアログ状態
 const isDialogOpen = ref(false)
 const editingJoin = ref<JoinClause | undefined>(undefined)
+const isSmartJoinLoading = ref(false)
 
 // テーブルが2つ以上選択されているかチェック
 const hasEnoughTables = computed(() => store.selectedTables.length >= 2)
+const smartJoinBusy = computed(() => isSmartJoinLoading.value || store.isLoadingJoinSuggestions)
 
 // JOIN追加ダイアログを開く
 const handleAddJoin = () => {
   if (!hasEnoughTables.value) return
   editingJoin.value = undefined
   isDialogOpen.value = true
+}
+
+// スマートJOIN追加
+const handleSmartJoin = async () => {
+  if (!hasEnoughTables.value || smartJoinBusy.value) return
+
+  const fromTable = store.selectedTables[0]
+  const toTable =
+    store.selectedTables.slice(1).find(
+      (table) => !store.joins.some((join) => join.table.alias === table.alias)
+    ) || store.selectedTables[1]
+
+  if (!fromTable || !toTable) return
+
+  if (store.joins.some((join) => join.table.alias === toTable.alias)) {
+    isDialogOpen.value = true
+    return
+  }
+
+  isSmartJoinLoading.value = true
+
+  await store.fetchJoinSuggestions(fromTable.name, toTable.name)
+
+  const [bestSuggestion] = store.joinSuggestions
+  if (bestSuggestion) {
+    const joinData = store.applyJoinSuggestion(bestSuggestion)
+    store.addJoin(joinData)
+  } else {
+    isDialogOpen.value = true
+  }
+
+  isSmartJoinLoading.value = false
 }
 
 // JOIN編集ダイアログを開く
@@ -43,6 +77,11 @@ const handleSaveJoin = (join: JoinClause | Omit<JoinClause, 'id'>) => {
   }
 }
 
+defineExpose({
+  openAddJoin: handleAddJoin,
+  openEditJoin: handleEditJoin,
+})
+
 // JOIN条件をフォーマットして表示
 const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
   if (conditions.length === 0) return '(条件なし)'
@@ -67,15 +106,28 @@ const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
     <div v-else class="h-full overflow-y-auto p-4">
       <div class="space-y-3">
         <!-- 新規JOINボタン -->
-        <UButton
-          icon="i-heroicons-plus"
-          size="sm"
-          color="primary"
-          variant="soft"
-          block
-          label="新規JOIN"
-          @click="handleAddJoin"
-        />
+        <div class="flex gap-2">
+          <UButton
+            icon="i-heroicons-plus"
+            size="sm"
+            color="primary"
+            variant="soft"
+            class="flex-1"
+            label="新規JOIN"
+            @click="handleAddJoin"
+          />
+          <UButton
+            icon="i-heroicons-sparkles"
+            size="sm"
+            color="primary"
+            variant="outline"
+            class="flex-1"
+            label="スマートJOIN追加"
+            :loading="smartJoinBusy"
+            :disabled="smartJoinBusy"
+            @click="handleSmartJoin"
+          />
+        </div>
 
         <!-- 空状態 -->
         <div v-if="store.joins.length === 0" class="flex flex-col items-center justify-center py-12 text-center">

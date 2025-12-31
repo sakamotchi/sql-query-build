@@ -1,6 +1,14 @@
-use async_trait::async_trait;
-use crate::models::database_structure::*;
 use crate::connection::ConnectionInfo;
+use crate::models::database_structure::*;
+use async_trait::async_trait;
+
+/// テーブルに紐づく外部キー情報
+#[derive(Debug, Clone)]
+pub struct TableForeignKey {
+    pub schema: String,
+    pub table: String,
+    pub foreign_key: ForeignKey,
+}
 
 /// データベース構造取得のトレイト
 #[async_trait]
@@ -30,6 +38,12 @@ pub trait DatabaseInspector: Send + Sync {
         table: &str,
     ) -> Result<Vec<ForeignKeyReference>, String>;
 
+    /// スキーマ全体の外部キーを取得
+    async fn get_all_foreign_keys(
+        &self,
+        schema: Option<&str>,
+    ) -> Result<Vec<TableForeignKey>, String>;
+
     /// データベース構造全体を取得
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String>;
 }
@@ -38,11 +52,16 @@ pub trait DatabaseInspector: Send + Sync {
 pub struct DatabaseInspectorFactory;
 
 impl DatabaseInspectorFactory {
-    pub async fn create(connection: &ConnectionInfo, password: Option<&str>) -> Result<Box<dyn DatabaseInspector>, String> {
+    pub async fn create(
+        connection: &ConnectionInfo,
+        password: Option<&str>,
+    ) -> Result<Box<dyn DatabaseInspector>, String> {
         match connection.database_type {
             crate::connection::DatabaseType::PostgreSQL => {
                 use crate::database::postgresql_inspector::PostgresqlInspector;
-                Ok(Box::new(PostgresqlInspector::new(connection, password).await?))
+                Ok(Box::new(
+                    PostgresqlInspector::new(connection, password).await?,
+                ))
             }
             crate::connection::DatabaseType::MySQL => {
                 use crate::database::mysql_inspector::MysqlInspector;

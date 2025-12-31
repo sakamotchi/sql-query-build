@@ -1,4 +1,5 @@
 pub mod database_structure;
+pub mod join_suggestion;
 pub mod query;
 pub mod window;
 

@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
 import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
-import type { JoinClause } from '@/types/query-model'
+import type { JoinClause, JoinCondition as JoinConditionModel } from '@/types/query-model'
 import type { QueryAnalysisResult } from '@/types/query-analysis'
 import { queryApi } from '@/api/query'
+import { joinSuggestionsApi } from '@/api/join-suggestions'
 import { convertToQueryModel } from '@/utils/query-converter'
 import { useConnectionStore } from '@/stores/connection'
 import { useWindowStore } from '@/stores/window'
 import type { Table } from '@/types/database-structure'
 import type { QueryExecuteResult, QueryExecuteError, QueryResultRow } from '@/types/query-result'
+import type { JoinSuggestion } from '@/types/join-suggestion'
 
 interface QueryBuilderState {
   /** 選択されたテーブル一覧（テーブルカード用） */
@@ -49,6 +51,11 @@ interface QueryBuilderState {
 
   /** クエリ解析結果 */
   analysisResult: QueryAnalysisResult | null
+
+  /** JOIN提案 */
+  joinSuggestions: JoinSuggestion[]
+  /** JOIN提案のローディング状態 */
+  isLoadingJoinSuggestions: boolean
 
   // クエリ実行結果関連
   /** クエリ実行結果 */
@@ -99,6 +106,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     sqlGenerationError: null,
     smartQuote: true, // デフォルトで有効
     analysisResult: null,
+    joinSuggestions: [],
+    isLoadingJoinSuggestions: false,
 
     // クエリ実行結果初期値
     queryResult: null,
@@ -382,6 +391,117 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * JOIN提案を取得
+     */
+    async fetchJoinSuggestions(fromTable: string, toTable: string) {
+      if (!fromTable || !toTable) {
+        this.joinSuggestions = []
+        return
+      }
+
+      const connectionStore = useConnectionStore()
+      const windowStore = useWindowStore()
+      const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+
+      if (!connectionId) {
+        console.warn('No active connection for join suggestions')
+        this.joinSuggestions = []
+        return
+      }
+
+      const schema =
+        this.selectedTables.find((t) => t.name === fromTable || t.alias === fromTable)?.schema ||
+        this.selectedTables.find((t) => t.name === toTable || t.alias === toTable)?.schema ||
+        'public'
+
+      this.isLoadingJoinSuggestions = true
+
+      try {
+        this.joinSuggestions = await joinSuggestionsApi.getJoinSuggestions(
+          connectionId,
+          fromTable,
+          toTable,
+          schema
+        )
+      } catch (error) {
+        console.error('Failed to fetch join suggestions:', error)
+        this.joinSuggestions = []
+      } finally {
+        this.isLoadingJoinSuggestions = false
+      }
+    },
+
+    /**
+     * JOIN提案をJoinClause形式に変換
+     */
+    applyJoinSuggestion(suggestion: JoinSuggestion): Omit<JoinClause, 'id'> {
+      const resolveAlias = (tableName: string) => {
+        const table = this.selectedTables.find(
+          (t) => t.alias === tableName || t.name === tableName
+        )
+        return table?.alias || tableName
+      }
+
+      const resolveSchema = (tableName: string) => {
+        const table = this.selectedTables.find(
+          (t) => t.alias === tableName || t.name === tableName
+        )
+        return table?.schema
+      }
+
+      const normalizeJoinType = (joinType: string): JoinClause['type'] => {
+        const upper = joinType.toUpperCase()
+        if (upper.startsWith('LEFT')) return 'LEFT'
+        if (upper.startsWith('RIGHT')) return 'RIGHT'
+        if (upper.startsWith('FULL')) return 'FULL'
+        if (upper.startsWith('CROSS')) return 'CROSS'
+        return 'INNER'
+      }
+
+      const conditions: JoinConditionModel[] = suggestion.conditions.map((cond) => {
+        const [leftTableRaw, ...leftRest] = cond.leftColumn.split('.')
+        const [rightTableRaw, ...rightRest] = cond.rightColumn.split('.')
+
+        const leftAlias = resolveAlias(leftTableRaw)
+        const rightAlias = resolveAlias(rightTableRaw)
+
+        return {
+          left: {
+            tableAlias: leftAlias,
+            columnName: leftRest.join('.') || leftTableRaw,
+          },
+          operator: (cond.operator as JoinConditionModel['operator']) || '=',
+          right: {
+            tableAlias: rightAlias,
+            columnName: rightRest.join('.') || rightTableRaw,
+          },
+        }
+      })
+
+      const targetTable =
+        this.selectedTables.find(
+          (t) => t.name === suggestion.toTable || t.alias === suggestion.toTable
+        ) || null
+
+      const targetSchema =
+        targetTable?.schema ||
+        resolveSchema(suggestion.fromTable) ||
+        this.selectedTables[0]?.schema ||
+        'public'
+
+      return {
+        type: normalizeJoinType(suggestion.joinType),
+        table: {
+          schema: targetSchema,
+          name: targetTable?.name || suggestion.toTable,
+          alias: targetTable?.alias || resolveAlias(suggestion.toTable),
+        },
+        conditions,
+        conditionLogic: 'AND',
+      }
+    },
+
+    /**
      * グループのロジック変更
      */
     updateGroupLogic(groupId: string, logic: 'AND' | 'OR') {
@@ -591,6 +711,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.limit = null
       this.offset = null
       this.analysisResult = null
+      this.joinSuggestions = []
+      this.isLoadingJoinSuggestions = false
     },
 
     /**

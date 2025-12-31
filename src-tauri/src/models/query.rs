@@ -76,9 +76,9 @@ pub enum SelectColumn {
     },
     /// すべてのカラム (table.*)
     #[serde(rename = "all")]
-    All { 
+    All {
         #[serde(rename = "tableAlias")]
-        table_alias: String 
+        table_alias: String,
     },
 }
 
@@ -206,13 +206,9 @@ pub struct WhereConditionColumn {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum WhereValue {
     #[serde(rename = "literal")]
-    Literal {
-        value: LiteralValue,
-    },
+    Literal { value: LiteralValue },
     #[serde(rename = "list")]
-    List {
-        values: Vec<LiteralValue>,
-    },
+    List { values: Vec<LiteralValue> },
     #[serde(rename = "range")]
     Range {
         from: LiteralValue,
@@ -224,9 +220,7 @@ pub enum WhereValue {
         column_name: String,
     },
     #[serde(rename = "subquery")]
-    Subquery {
-        query: Box<QueryModel>,
-    },
+    Subquery { query: Box<QueryModel> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

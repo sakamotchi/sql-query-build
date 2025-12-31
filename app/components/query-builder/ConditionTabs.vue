@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import SelectTab from './select/SelectTab.vue'
 import WhereTab from './where/WhereTab.vue'
 import GroupByTab from './group-by/GroupByTab.vue'
 import OrderByTab from './order-by/OrderByTab.vue'
 import LimitTab from './limit/LimitTab.vue'
 import JoinPanel from './JoinPanel.vue'
+import type { JoinClause } from '@/types/query-model'
 
 // タブアイテム
 const items = [
@@ -43,6 +44,27 @@ const items = [
 
 // 選択中のタブ
 const selectedTab = ref('select')
+const joinPanelRef = ref<InstanceType<typeof JoinPanel> | null>(null)
+
+const openJoinTab = () => {
+  selectedTab.value = 'join'
+}
+
+const openJoinAddDialog = () => {
+  openJoinTab()
+  nextTick(() => joinPanelRef.value?.openAddJoin())
+}
+
+const openJoinEditDialog = (join: JoinClause) => {
+  openJoinTab()
+  nextTick(() => joinPanelRef.value?.openEditJoin(join))
+}
+
+defineExpose({
+  openJoinTab,
+  openJoinAddDialog,
+  openJoinEditDialog,
+})
 </script>
 
 <template>
@@ -61,7 +83,7 @@ const selectedTab = ref('select')
       </div>
 
       <div v-else-if="selectedTab === 'join'" class="h-full">
-        <JoinPanel />
+        <JoinPanel ref="joinPanelRef" />
       </div>
 
       <div v-else-if="selectedTab === 'where'" class="h-full">

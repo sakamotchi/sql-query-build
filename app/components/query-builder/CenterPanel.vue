@@ -2,10 +2,12 @@
 import { ref } from 'vue'
 import TableRelationArea from './TableRelationArea.vue'
 import ConditionTabs from './ConditionTabs.vue'
+import type { JoinClause } from '@/types/query-model'
 
 // 上下パネルの分割比率
 const splitRatio = ref(50) // 50%
 const isDragging = ref(false)
+const conditionTabsRef = ref<InstanceType<typeof ConditionTabs> | null>(null)
 
 /**
  * 分割ドラッグ開始
@@ -39,6 +41,14 @@ const stopDrag = () => {
   document.removeEventListener('mousemove', handleDrag)
   document.removeEventListener('mouseup', stopDrag)
 }
+
+const handleOpenJoinDialog = (payload?: { join?: JoinClause }) => {
+  if (payload?.join) {
+    conditionTabsRef.value?.openJoinEditDialog(payload.join)
+  } else {
+    conditionTabsRef.value?.openJoinAddDialog()
+  }
+}
 </script>
 
 <template>
@@ -48,7 +58,7 @@ const stopDrag = () => {
       class="min-h-[100px] overflow-hidden"
       :style="{ height: `${splitRatio}%` }"
     >
-      <TableRelationArea />
+      <TableRelationArea @open-join-dialog="handleOpenJoinDialog" />
     </div>
 
     <!-- 分割ハンドル -->
@@ -68,7 +78,7 @@ const stopDrag = () => {
       class="overflow-hidden min-h-[100px]"
       :style="{ height: `${100 - splitRatio}%` }"
     >
-      <ConditionTabs />
+      <ConditionTabs ref="conditionTabsRef" />
     </div>
   </div>
 </template>
