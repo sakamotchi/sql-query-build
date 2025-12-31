@@ -176,24 +176,9 @@ const handleZoomReset = () => {
   panY.value = 0
 }
 
+// ピンチ/ホイールでのズームを無効化し、ボタン操作のみ許可
 const handleWheel = (event: WheelEvent) => {
   event.preventDefault()
-  const delta = event.deltaY < 0 ? 10 : -10
-  const nextZoom = clampZoom(zoom.value + delta)
-
-  const currentScale = zoom.value / 100
-  const nextScale = nextZoom / 100
-  const canvasRect = canvasRef.value?.getBoundingClientRect()
-
-  if (canvasRect) {
-    const offsetX = event.clientX - canvasRect.left
-    const offsetY = event.clientY - canvasRect.top
-
-    panX.value = offsetX - ((offsetX - panX.value) * (nextScale / currentScale))
-    panY.value = offsetY - ((offsetY - panY.value) * (nextScale / currentScale))
-  }
-
-  zoom.value = nextZoom
 }
 
 const handlePanStart = (event: MouseEvent) => {

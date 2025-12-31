@@ -90,8 +90,9 @@ const handleMouseMove = (e: MouseEvent) => {
   const y = (e.clientY - parentRect.top) / scale.value - dragOffset.value.y
 
   // 範囲制限
-  const maxX = parentRect.width / scale.value - cardRef.value.offsetWidth
-  const maxY = parentRect.height / scale.value - cardRef.value.offsetHeight
+  // 表示領域の2倍まで動かせるように範囲を拡張
+  const maxX = (parentRect.width / scale.value) * 2 - cardRef.value.offsetWidth
+  const maxY = (parentRect.height / scale.value) * 2 - cardRef.value.offsetHeight
 
   emit(
     'move',
