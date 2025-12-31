@@ -41,17 +41,25 @@ description: 開発作業ドキュメントを自動生成します。YYYYMMDD_�
 mkdir -p docs/working/{YYYYMMDD}_{要件名}
 ```
 
-### 3. ファイル生成
+### 3. サブスキルの順次実行
 
-[templates.md](templates.md) のテンプレートを使用して、以下の4ファイルを生成します：
+以下のサブスキルを**順次**実行します（並列実行禁止）：
 
-- `requirements.md` - 要件定義書テンプレート
-- `design.md` - 設計書テンプレート
-- `tasklist.md` - タスクリストテンプレート
-- `testing.md` - テスト手順書テンプレート
+1. `generate-requirements` - 要件定義書生成
+   - ディレクトリパスと要件名を渡す
+2. `generate-design` - 設計書生成
+   - ディレクトリパスと要件名を渡す
+   - requirements.md を参照して設計を作成
+3. `generate-tasklist` - タスクリスト生成
+   - ディレクトリパスと要件名を渡す
+   - requirements.md と design.md を参照してタスクを作成
+4. `generate-testing` - テスト手順書生成
+   - ディレクトリパスと要件名を渡す
+   - requirements.md、design.md、tasklist.md を参照してテスト手順を作成
+
+**重要**: 各スキルは前のスキルの成果物に依存するため、必ず順次実行してください。
 
 **注意**: `task_{タスクID}.md` は初期生成せず、開発中に必要に応じて作成します。
-タスクの詳細を記載する必要がある場合、[templates.md](templates.md) の `task_{タスクID}.md` テンプレートを使用してください。
 
 ### 4. 完了報告
 
@@ -60,6 +68,13 @@ mkdir -p docs/working/{YYYYMMDD}_{要件名}
 ## 使用例
 
 詳細は [examples.md](examples.md) を参照してください。
+
+## 関連スキル
+
+- `generate-requirements` - 要件定義書生成スキル
+- `generate-design` - 設計書生成スキル
+- `generate-tasklist` - タスクリスト生成スキル
+- `generate-testing` - テスト手順書生成スキル
 
 ## 関連ドキュメント
 
