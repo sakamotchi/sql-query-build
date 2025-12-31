@@ -25,6 +25,7 @@ const errors = reactive<Record<string, string>>({})
 const testing = ref(false)
 const saving = ref(false)
 const testResult = ref<ConnectionTestResult | null>(null)
+const showTestResultDialog = ref(false)
 const useCustomColor = ref(false)
 const showPassword = ref(false)
 const loadingConnection = ref(false)
@@ -97,11 +98,15 @@ const testConnection = async () => {
   try {
     const result = await connectionStore.testConnection(form)
     testResult.value = result
+    showTestResultDialog.value = true
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '接続テストに失敗しました'
     testResult.value = {
       success: false,
-      message: error instanceof Error ? error.message : '接続テストに失敗しました'
+      message: errorMessage,
+      errorDetails: error instanceof Error ? error.stack : undefined
     }
+    showTestResultDialog.value = true
   } finally {
     testing.value = false
   }
@@ -284,14 +289,12 @@ watch(() => form.type, (newType) => {
           </div>
         </div>
       </UCard>
-
-      <div v-if="testResult" class="mt-2">
-        <UAlert
-          :color="testResult.success ? 'green' : 'red'"
-          :title="testResult.success ? '接続テスト成功' : '接続テスト失敗'"
-          :description="testResult.message"
-        />
-      </div>
     </main>
+
+    <!-- 接続テスト結果ダイアログ -->
+    <ConnectionTestResultDialog
+      v-model:open="showTestResultDialog"
+      :result="testResult"
+    />
   </div>
 </template>
