@@ -1,4 +1,6 @@
-use crate::connection::{ConnectionConfig, ConnectionInfo, DatabaseType, NetworkConfig, FileConfig};
+use crate::connection::{
+    ConnectionConfig, ConnectionInfo, DatabaseType, FileConfig, NetworkConfig,
+};
 
 #[test]
 fn test_inspector_factory_requires_valid_connection_type() {
@@ -200,7 +202,9 @@ fn test_connection_string_building() {
         }),
     );
 
-    let conn_str = mysql_conn.build_connection_string(Some("password")).unwrap();
+    let conn_str = mysql_conn
+        .build_connection_string(Some("password"))
+        .unwrap();
     assert!(conn_str.contains("mysql://"));
     assert!(conn_str.contains("localhost:3306"));
 
@@ -236,7 +240,10 @@ fn test_password_handling() {
 
     if let ConnectionConfig::Network(cfg) = &conn_with_password.connection {
         assert!(cfg.encrypted_password.is_some());
-        assert_eq!(cfg.encrypted_password.as_ref().unwrap(), "encrypted_pass_123");
+        assert_eq!(
+            cfg.encrypted_password.as_ref().unwrap(),
+            "encrypted_pass_123"
+        );
     }
 
     let conn_without_password = ConnectionInfo::new(

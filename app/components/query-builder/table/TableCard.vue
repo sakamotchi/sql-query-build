@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import TableCardHeader from './TableCardHeader.vue'
 import TableCardColumn from './TableCardColumn.vue'
 import type { SelectedTable } from '@/types/query'
@@ -8,6 +8,7 @@ import type { Column } from '@/types/database-structure'
 const props = defineProps<{
   table: SelectedTable
   position?: { x: number; y: number }
+  zoom?: number
 }>()
 
 const emit = defineEmits<{
@@ -15,11 +16,13 @@ const emit = defineEmits<{
   (e: 'update-alias', tableId: string, alias: string): void
   (e: 'move', tableId: string, x: number, y: number): void
   (e: 'select-column', column: Column): void
+  (e: 'focus', payload: { id: string; alias: string }): void
 }>()
 
 const cardRef = ref<HTMLElement | null>(null)
 const isDragging = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
+const scale = computed(() => (props.zoom ?? 100) / 100)
 
 // カード位置
 const cardStyle = computed(() => {
@@ -31,7 +34,8 @@ const cardStyle = computed(() => {
 })
 
 // 展開状態
-const isExpanded = ref(true)
+// 初期表示は折りたたみ（列を省略）
+const isExpanded = ref(false)
 
 // 表示するカラム数（折りたたみ時）
 const maxCollapsedColumns = 5
@@ -54,6 +58,7 @@ const remainingColumnCount = computed(() => {
  * ドラッグ開始
  */
 const handleMouseDown = (e: MouseEvent) => {
+  if (e.button !== 0) return
   // ヘッダー内の操作要素はドラッグ対象外
   if ((e.target as HTMLElement).closest('.no-drag')) return
 
@@ -62,8 +67,8 @@ const handleMouseDown = (e: MouseEvent) => {
   if (cardRef.value) {
     const rect = cardRef.value.getBoundingClientRect()
     dragOffset.value = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: (e.clientX - rect.left) / scale.value,
+      y: (e.clientY - rect.top) / scale.value,
     }
   }
 
@@ -81,12 +86,13 @@ const handleMouseMove = (e: MouseEvent) => {
   if (!parent) return
 
   const parentRect = parent.getBoundingClientRect()
-  const x = e.clientX - parentRect.left - dragOffset.value.x
-  const y = e.clientY - parentRect.top - dragOffset.value.y
+  const x = (e.clientX - parentRect.left) / scale.value - dragOffset.value.x
+  const y = (e.clientY - parentRect.top) / scale.value - dragOffset.value.y
 
   // 範囲制限
-  const maxX = parent.clientWidth - cardRef.value.offsetWidth
-  const maxY = parent.clientHeight - cardRef.value.offsetHeight
+  // 表示領域の2倍まで動かせるように範囲を拡張
+  const maxX = (parentRect.width / scale.value) * 2 - cardRef.value.offsetWidth
+  const maxY = (parentRect.height / scale.value) * 2 - cardRef.value.offsetHeight
 
   emit(
     'move',
@@ -132,11 +138,20 @@ const toggleExpand = () => {
 const handleColumnClick = (column: Column) => {
   emit('select-column', column)
 }
+
+/**
+ * カードのフォーカス（クリック）を通知
+ */
+const handleFocus = () => {
+  if (isDragging.value) return
+  emit('focus', { id: props.table.id, alias: props.table.alias })
+}
 </script>
 
 <template>
   <div
     ref="cardRef"
+    data-draggable-card
     class="absolute min-w-[180px] max-w-[280px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md select-none z-10"
     :class="{
       'opacity-80 z-50 cursor-grabbing': isDragging,
@@ -144,6 +159,7 @@ const handleColumnClick = (column: Column) => {
     }"
     :style="cardStyle"
     @mousedown="handleMouseDown"
+    @click="handleFocus"
   >
     <!-- ヘッダー -->
     <TableCardHeader

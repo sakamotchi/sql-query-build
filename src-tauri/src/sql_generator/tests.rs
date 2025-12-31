@@ -283,11 +283,19 @@ mod join_tests {
 
         let sql = builder.build(&query).unwrap();
 
-        assert!(sql.contains("INNER JOIN"), "SQL should contain INNER JOIN: {}", sql);
+        assert!(
+            sql.contains("INNER JOIN"),
+            "SQL should contain INNER JOIN: {}",
+            sql
+        );
         assert!(sql.contains("orders"), "SQL should contain orders: {}", sql);
         assert!(sql.contains("ON"), "SQL should contain ON: {}", sql);
         assert!(sql.contains("u.id"), "SQL should contain u.id: {}", sql);
-        assert!(sql.contains("o.user_id"), "SQL should contain o.user_id: {}", sql);
+        assert!(
+            sql.contains("o.user_id"),
+            "SQL should contain o.user_id: {}",
+            sql
+        );
     }
 
     #[test]
@@ -369,6 +377,33 @@ mod join_tests {
 
         assert!(sql.contains("u.id = o.user_id"));
         assert!(sql.contains("AND"));
+        assert!(sql.contains("u.tenant_id = o.tenant_id"));
+    }
+
+    #[test]
+    fn test_multiple_join_conditions_or() {
+        let dialect = PostgresDialect;
+        let builder = SqlBuilder::new(&dialect).compact();
+        let mut query = create_query_with_join("INNER");
+        // Change logic to OR
+        query.joins[0].condition_logic = "OR".to_string();
+
+        query.joins[0].conditions.push(JoinCondition {
+            left: JoinConditionColumn {
+                table_alias: "u".to_string(),
+                column_name: "tenant_id".to_string(),
+            },
+            operator: "=".to_string(),
+            right: JoinConditionColumn {
+                table_alias: "o".to_string(),
+                column_name: "tenant_id".to_string(),
+            },
+        });
+
+        let sql = builder.build(&query).unwrap();
+
+        assert!(sql.contains("u.id = o.user_id"));
+        assert!(sql.contains(" OR "));
         assert!(sql.contains("u.tenant_id = o.tenant_id"));
     }
 }
@@ -1383,20 +1418,64 @@ mod complete_query_tests {
 
         // Verify all parts are present
         assert!(sql.contains("SELECT"), "SQL should contain SELECT: {}", sql);
-        assert!(sql.contains("u.department"), "SQL should contain u.department: {}", sql);
-        assert!(sql.contains("COUNT(*)"), "SQL should contain COUNT(*): {}", sql);
-        assert!(sql.contains("AVG(u.salary)"), "SQL should contain AVG(u.salary): {}", sql);
+        assert!(
+            sql.contains("u.department"),
+            "SQL should contain u.department: {}",
+            sql
+        );
+        assert!(
+            sql.contains("COUNT(*)"),
+            "SQL should contain COUNT(*): {}",
+            sql
+        );
+        assert!(
+            sql.contains("AVG(u.salary)"),
+            "SQL should contain AVG(u.salary): {}",
+            sql
+        );
         assert!(sql.contains("FROM"), "SQL should contain FROM: {}", sql);
         assert!(sql.contains("users"), "SQL should contain users: {}", sql);
-        assert!(sql.contains("LEFT JOIN"), "SQL should contain LEFT JOIN: {}", sql);
-        assert!(sql.contains("departments"), "SQL should contain departments: {}", sql);
+        assert!(
+            sql.contains("LEFT JOIN"),
+            "SQL should contain LEFT JOIN: {}",
+            sql
+        );
+        assert!(
+            sql.contains("departments"),
+            "SQL should contain departments: {}",
+            sql
+        );
         assert!(sql.contains("ON"), "SQL should contain ON: {}", sql);
-        assert!(sql.contains("u.department_id"), "SQL should contain u.department_id: {}", sql);
+        assert!(
+            sql.contains("u.department_id"),
+            "SQL should contain u.department_id: {}",
+            sql
+        );
         assert!(sql.contains("d.id"), "SQL should contain d.id: {}", sql);
-        assert!(sql.contains("WHERE u.is_active = TRUE"), "SQL should contain WHERE: {}", sql);
-        assert!(sql.contains("GROUP BY u.department"), "SQL should contain GROUP BY: {}", sql);
-        assert!(sql.contains("HAVING COUNT(*) > 5"), "SQL should contain HAVING: {}", sql);
-        assert!(sql.contains("ORDER BY u.department ASC"), "SQL should contain ORDER BY: {}", sql);
-        assert!(sql.contains("LIMIT 100 OFFSET 0"), "SQL should contain LIMIT: {}", sql);
+        assert!(
+            sql.contains("WHERE u.is_active = TRUE"),
+            "SQL should contain WHERE: {}",
+            sql
+        );
+        assert!(
+            sql.contains("GROUP BY u.department"),
+            "SQL should contain GROUP BY: {}",
+            sql
+        );
+        assert!(
+            sql.contains("HAVING COUNT(*) > 5"),
+            "SQL should contain HAVING: {}",
+            sql
+        );
+        assert!(
+            sql.contains("ORDER BY u.department ASC"),
+            "SQL should contain ORDER BY: {}",
+            sql
+        );
+        assert!(
+            sql.contains("LIMIT 100 OFFSET 0"),
+            "SQL should contain LIMIT: {}",
+            sql
+        );
     }
 }

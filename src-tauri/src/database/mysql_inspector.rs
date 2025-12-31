@@ -1,9 +1,9 @@
+use crate::connection::{ConnectionConfig, ConnectionInfo};
+use crate::models::database_structure::*;
+use crate::services::database_inspector::{DatabaseInspector, TableForeignKey};
 use async_trait::async_trait;
 use sqlx::mysql::MySqlPool;
 use sqlx::Row;
-use crate::connection::{ConnectionConfig, ConnectionInfo};
-use crate::models::database_structure::*;
-use crate::services::database_inspector::DatabaseInspector;
 
 pub struct MysqlInspector {
     pool: MySqlPool,
@@ -31,7 +31,11 @@ impl MysqlInspector {
         })
     }
 
-    async fn get_primary_key(&self, schema: &str, table: &str) -> Result<Option<PrimaryKey>, String> {
+    async fn get_primary_key(
+        &self,
+        schema: &str,
+        table: &str,
+    ) -> Result<Option<PrimaryKey>, String> {
         let query = r#"
             SELECT
                 constraint_name,
@@ -140,7 +144,11 @@ impl DatabaseInspector for MysqlInspector {
             tables.push(Table {
                 name,
                 schema: schema.to_string(),
-                comment: if comment.as_ref().map_or(true, |c| c.is_empty()) { None } else { comment },
+                comment: if comment.as_ref().map_or(true, |c| c.is_empty()) {
+                    None
+                } else {
+                    comment
+                },
                 estimated_row_count,
                 columns,
                 primary_key,
@@ -237,7 +245,11 @@ impl DatabaseInspector for MysqlInspector {
                     is_unique: is_unique_int != 0,
                     is_auto_increment: is_auto_int != 0,
                     ordinal_position: row.get("ordinal_position"),
-                    comment: if comment.is_empty() { None } else { Some(comment) },
+                    comment: if comment.is_empty() {
+                        None
+                    } else {
+                        Some(comment)
+                    },
                 }
             })
             .collect();
@@ -316,7 +328,8 @@ impl DatabaseInspector for MysqlInspector {
             let columns: Vec<String> = columns_str.split(',').map(|s| s.to_string()).collect();
 
             let ref_columns_str: String = row.get("referenced_columns");
-            let referenced_columns: Vec<String> = ref_columns_str.split(',').map(|s| s.to_string()).collect();
+            let referenced_columns: Vec<String> =
+                ref_columns_str.split(',').map(|s| s.to_string()).collect();
 
             foreign_keys.push(ForeignKey {
                 name: row.get("constraint_name"),
@@ -361,10 +374,16 @@ impl DatabaseInspector for MysqlInspector {
             .iter()
             .map(|row| {
                 let source_columns_str: String = row.get("source_columns");
-                let source_columns: Vec<String> = source_columns_str.split(',').map(|s| s.to_string()).collect();
+                let source_columns: Vec<String> = source_columns_str
+                    .split(',')
+                    .map(|s| s.to_string())
+                    .collect();
 
                 let target_columns_str: String = row.get("target_columns");
-                let target_columns: Vec<String> = target_columns_str.split(',').map(|s| s.to_string()).collect();
+                let target_columns: Vec<String> = target_columns_str
+                    .split(',')
+                    .map(|s| s.to_string())
+                    .collect();
 
                 ForeignKeyReference {
                     source_schema: row.get("source_schema"),
@@ -377,6 +396,28 @@ impl DatabaseInspector for MysqlInspector {
             .collect();
 
         Ok(references)
+    }
+
+    async fn get_all_foreign_keys(
+        &self,
+        schema: Option<&str>,
+    ) -> Result<Vec<TableForeignKey>, String> {
+        let schema_name = schema.unwrap_or(&self.database_name);
+        let tables = self.get_tables(schema_name).await?;
+
+        let mut all_fks = Vec::new();
+        for table in tables {
+            let table_name = table.name.clone();
+            for fk in table.foreign_keys {
+                all_fks.push(TableForeignKey {
+                    schema: schema_name.to_string(),
+                    table: table_name.clone(),
+                    foreign_key: fk,
+                });
+            }
+        }
+
+        Ok(all_fks)
     }
 
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String> {

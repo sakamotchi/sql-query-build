@@ -90,8 +90,8 @@ pub async fn update_settings(
     }
 
     // 保存
-    let value =
-        serde_json::to_value(&current).map_err(|e| format!("Failed to serialize settings: {}", e))?;
+    let value = serde_json::to_value(&current)
+        .map_err(|e| format!("Failed to serialize settings: {}", e))?;
     storage
         .write("app-settings", &value)
         .map_err(|e| e.to_string())?;
@@ -120,7 +120,10 @@ pub async fn get_security_settings(
 ) -> Result<SecuritySettings, String> {
     println!("[get_security_settings] Called");
     let config = config_storage.load().await.map_err(|e| e.to_string())?;
-    println!("[get_security_settings] Loaded config: provider_type={:?}, provider_config={:?}", config.provider_type, config.provider_config);
+    println!(
+        "[get_security_settings] Loaded config: provider_type={:?}, provider_config={:?}",
+        config.provider_type, config.provider_config
+    );
 
     // プロバイダー名を文字列に変換
     let provider = match config.provider_type {
@@ -132,7 +135,9 @@ pub async fn get_security_settings(
     // マスターパスワードが設定されているかチェック
     let master_password_set = matches!(
         config.provider_config,
-        ProviderSpecificConfig::MasterPassword { is_configured: true }
+        ProviderSpecificConfig::MasterPassword {
+            is_configured: true
+        }
     );
 
     let result = SecuritySettings {
@@ -140,7 +145,10 @@ pub async fn get_security_settings(
         level: "medium".to_string(), // TODO: SecurityConfigにlevelフィールドを追加する必要がある
         master_password_set,
     };
-    println!("[get_security_settings] Returning: provider={}, master_password_set={}", result.provider, result.master_password_set);
+    println!(
+        "[get_security_settings] Returning: provider={}, master_password_set={}",
+        result.provider, result.master_password_set
+    );
     Ok(result)
 }
 

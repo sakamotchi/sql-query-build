@@ -226,11 +226,7 @@ mod tests {
                     ],
                 },
                 QueryResultRow {
-                    values: vec![
-                        QueryValue::Int(3),
-                        QueryValue::Null,
-                        QueryValue::Bool(true),
-                    ],
+                    values: vec![QueryValue::Int(3), QueryValue::Null, QueryValue::Bool(true)],
                 },
             ],
             row_count: 3,
@@ -255,7 +251,10 @@ mod tests {
         let content = std::fs::read_to_string(&path).unwrap();
 
         // Check for UTF-8 BOM
-        assert!(content.starts_with('\u{FEFF}'), "CSV should start with UTF-8 BOM");
+        assert!(
+            content.starts_with('\u{FEFF}'),
+            "CSV should start with UTF-8 BOM"
+        );
 
         // Check headers
         assert!(content.contains("id,name,active"));

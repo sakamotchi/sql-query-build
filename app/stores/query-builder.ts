@@ -1,16 +1,21 @@
 import { defineStore } from 'pinia'
 import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
+import type { JoinClause, JoinCondition as JoinConditionModel } from '@/types/query-model'
 import type { QueryAnalysisResult } from '@/types/query-analysis'
 import { queryApi } from '@/api/query'
+import { joinSuggestionsApi } from '@/api/join-suggestions'
 import { convertToQueryModel } from '@/utils/query-converter'
 import { useConnectionStore } from '@/stores/connection'
 import { useWindowStore } from '@/stores/window'
 import type { Table } from '@/types/database-structure'
 import type { QueryExecuteResult, QueryExecuteError, QueryResultRow } from '@/types/query-result'
+import type { JoinSuggestion } from '@/types/join-suggestion'
 
 interface QueryBuilderState {
   /** 選択されたテーブル一覧（テーブルカード用） */
   selectedTables: SelectedTable[]
+  /** テーブルカードの位置 (エイリアスまたはID単位) */
+  tablePositions: Record<string, { x: number; y: number }>
   /** 選択されたカラム一覧（カラム選択UI用） */
   selectedColumns: SelectedColumn[]
   /** ドラッグ中のテーブル（ドラッグ&ドロップ用） */
@@ -19,6 +24,8 @@ interface QueryBuilderState {
   whereConditions: Array<WhereCondition | ConditionGroup>
   /** GROUP BYカラム一覧 */
   groupByColumns: GroupByColumn[]
+  /** JOIN設定 */
+  joins: JoinClause[]
   /** ORDER BYカラム一覧 */
   orderByColumns: OrderByColumn[]
   /** 現在のクエリモデル */
@@ -45,6 +52,11 @@ interface QueryBuilderState {
   /** クエリ解析結果 */
   analysisResult: QueryAnalysisResult | null
 
+  /** JOIN提案 */
+  joinSuggestions: JoinSuggestion[]
+  /** JOIN提案のローディング状態 */
+  isLoadingJoinSuggestions: boolean
+
   // クエリ実行結果関連
   /** クエリ実行結果 */
   queryResult: QueryExecuteResult | null
@@ -58,9 +70,11 @@ interface QueryBuilderState {
 
 export interface SerializableQueryState {
   selectedTables: SelectedTable[]
+  tablePositions?: Record<string, { x: number; y: number }>
   selectedColumns: SelectedColumn[]
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
+  joins: JoinClause[]
   orderByColumns: OrderByColumn[]
   limit: number | null
   offset: number | null
@@ -70,10 +84,12 @@ export interface SerializableQueryState {
 export const useQueryBuilderStore = defineStore('query-builder', {
   state: (): QueryBuilderState => ({
     selectedTables: [],
+    tablePositions: {},
     selectedColumns: [],
     draggingTable: null,
     whereConditions: [],
     groupByColumns: [],
+    joins: [],
     orderByColumns: [],
     query: null,
     generatedSql: '',
@@ -90,7 +106,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     sqlGenerationError: null,
     smartQuote: true, // デフォルトで有効
     analysisResult: null,
-    
+    joinSuggestions: [],
+    isLoadingJoinSuggestions: false,
+
     // クエリ実行結果初期値
     queryResult: null,
     currentPage: 1,
@@ -144,6 +162,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       const index = this.selectedTables.findIndex((t) => t.id === tableId)
       if (index !== -1) {
         this.selectedTables.splice(index, 1)
+        delete this.tablePositions[tableId]
         // 関連するJOINやカラム選択も削除
         this.removeRelatedJoins(tableId)
         this.removeRelatedColumns(tableId)
@@ -166,6 +185,13 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         table.alias = alias
         this.regenerateSql()
       }
+    },
+
+    /**
+     * テーブルカードの位置を更新
+     */
+    updateTablePosition(tableId: string, x: number, y: number) {
+      this.tablePositions[tableId] = { x, y }
     },
 
     /**
@@ -329,6 +355,153 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * JOINを追加
+     */
+    addJoin(join: Omit<JoinClause, 'id'>) {
+      const newJoin: JoinClause = {
+        ...join,
+        id: crypto.randomUUID(),
+      }
+      this.joins.push(newJoin)
+      this.regenerateSql()
+    },
+
+    /**
+     * JOINを更新
+     */
+    updateJoin(id: string, updates: Partial<Omit<JoinClause, 'id'>>) {
+      const index = this.joins.findIndex((j) => j.id === id)
+      if (index !== -1) {
+        const current = this.joins[index]
+        const updated = {
+          ...current,
+          ...updates,
+        } as JoinClause
+        this.joins[index] = updated
+        this.regenerateSql()
+      }
+    },
+
+    /**
+     * JOINを削除
+     */
+    removeJoin(id: string) {
+      this.joins = this.joins.filter((j) => j.id !== id)
+      this.regenerateSql()
+    },
+
+    /**
+     * JOIN提案を取得
+     */
+    async fetchJoinSuggestions(fromTable: string, toTable: string) {
+      if (!fromTable || !toTable) {
+        this.joinSuggestions = []
+        return
+      }
+
+      const connectionStore = useConnectionStore()
+      const windowStore = useWindowStore()
+      const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+
+      if (!connectionId) {
+        console.warn('No active connection for join suggestions')
+        this.joinSuggestions = []
+        return
+      }
+
+      const schema =
+        this.selectedTables.find((t) => t.name === fromTable || t.alias === fromTable)?.schema ||
+        this.selectedTables.find((t) => t.name === toTable || t.alias === toTable)?.schema ||
+        'public'
+
+      this.isLoadingJoinSuggestions = true
+
+      try {
+        this.joinSuggestions = await joinSuggestionsApi.getJoinSuggestions(
+          connectionId,
+          fromTable,
+          toTable,
+          schema
+        )
+      } catch (error) {
+        console.error('Failed to fetch join suggestions:', error)
+        this.joinSuggestions = []
+      } finally {
+        this.isLoadingJoinSuggestions = false
+      }
+    },
+
+    /**
+     * JOIN提案をJoinClause形式に変換
+     */
+    applyJoinSuggestion(suggestion: JoinSuggestion): Omit<JoinClause, 'id'> {
+      const resolveAlias = (tableName: string) => {
+        const table = this.selectedTables.find(
+          (t) => t.alias === tableName || t.name === tableName
+        )
+        return table?.alias || tableName
+      }
+
+      const resolveSchema = (tableName: string) => {
+        const table = this.selectedTables.find(
+          (t) => t.alias === tableName || t.name === tableName
+        )
+        return table?.schema
+      }
+
+      const normalizeJoinType = (joinType: string): JoinClause['type'] => {
+        const upper = joinType.toUpperCase()
+        if (upper.startsWith('LEFT')) return 'LEFT'
+        if (upper.startsWith('RIGHT')) return 'RIGHT'
+        if (upper.startsWith('FULL')) return 'FULL'
+        if (upper.startsWith('CROSS')) return 'CROSS'
+        return 'INNER'
+      }
+
+      const conditions: JoinConditionModel[] = suggestion.conditions.map((cond) => {
+        const [leftTableRaw, ...leftRest] = cond.leftColumn.split('.')
+        const [rightTableRaw, ...rightRest] = cond.rightColumn.split('.')
+
+        const leftAlias = resolveAlias(leftTableRaw)
+        const rightAlias = resolveAlias(rightTableRaw)
+
+        return {
+          left: {
+            tableAlias: leftAlias,
+            columnName: leftRest.join('.') || leftTableRaw,
+          },
+          operator: (cond.operator as JoinConditionModel['operator']) || '=',
+          right: {
+            tableAlias: rightAlias,
+            columnName: rightRest.join('.') || rightTableRaw,
+          },
+        }
+      })
+
+      const targetTable =
+        this.selectedTables.find(
+          (t) => t.name === suggestion.toTable || t.alias === suggestion.toTable
+        ) || null
+
+      const targetSchema =
+        targetTable?.schema ||
+        resolveSchema(suggestion.fromTable) ||
+        this.selectedTables[0]?.schema ||
+        'public'
+
+      return {
+        type: normalizeJoinType(suggestion.joinType),
+        table: {
+          schema: targetSchema,
+          name: targetTable?.name || suggestion.toTable,
+          alias: targetTable?.alias || resolveAlias(suggestion.toTable),
+        },
+        conditions,
+        conditionLogic: 'AND',
+      }
+    },
+
+    /**
      * グループのロジック変更
      */
     updateGroupLogic(groupId: string, logic: 'AND' | 'OR') {
@@ -413,7 +586,18 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      * 関連するJOINを削除
      */
     removeRelatedJoins(_tableId: string) {
-      // TODO: JOIN機能実装時に詳細化
+      // 選択されなくなったテーブル（エイリアス）を参照するJOINを削除
+      const currentAliases = new Set(this.selectedTables.map(t => t.alias))
+
+      // Remove any JOIN where the joined table (target) is no longer selected
+      this.joins = this.joins.filter(j => currentAliases.has(j.table.alias))
+
+      // Remove conditions referencing removed tables
+      this.joins.forEach(join => {
+        join.conditions = join.conditions.filter(cond =>
+           currentAliases.has(cond.left.tableAlias) && currentAliases.has(cond.right.tableAlias)
+        )
+      })
     },
 
     /**
@@ -517,7 +701,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     resetQuery() {
       this.selectedTables = []
+      this.tablePositions = {}
       this.selectedColumns = []
+      this.joins = []
       this.whereConditions = []
       this.query = null
       this.generatedSql = ''
@@ -525,6 +711,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.limit = null
       this.offset = null
       this.analysisResult = null
+      this.joinSuggestions = []
+      this.isLoadingJoinSuggestions = false
     },
 
     /**
@@ -662,14 +850,31 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * テーブル位置をまとめて設定
+     */
+    setTablePositions(positions: Record<string, { x: number; y: number }>) {
+      this.tablePositions = { ...positions }
+    },
+
+    /**
      * 保存可能な状態を取得
      */
     getSerializableState(): SerializableQueryState {
+      const positionsByAlias: Record<string, { x: number; y: number }> = {}
+      this.selectedTables.forEach((table) => {
+        const pos = this.tablePositions[table.id]
+        if (pos) {
+          positionsByAlias[table.alias] = { ...pos }
+        }
+      })
+
       return {
         selectedTables: JSON.parse(JSON.stringify(this.selectedTables)),
+        tablePositions: positionsByAlias,
         selectedColumns: JSON.parse(JSON.stringify(this.selectedColumns)),
         whereConditions: JSON.parse(JSON.stringify(this.whereConditions)),
         groupByColumns: JSON.parse(JSON.stringify(this.groupByColumns)),
+        joins: JSON.parse(JSON.stringify(this.joins)),
         orderByColumns: JSON.parse(JSON.stringify(this.orderByColumns)),
         limit: this.limit,
         offset: this.offset,
@@ -684,9 +889,24 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.resetQuery()
       
       this.selectedTables = state.selectedTables || []
+      const restoredPositions: Record<string, { x: number; y: number }> = {}
+
+      if (state.tablePositions) {
+        Object.entries(state.tablePositions).forEach(([key, position]) => {
+          const table = this.selectedTables.find(
+            (t) => t.alias === key || t.id === key
+          )
+          if (table && position) {
+            restoredPositions[table.id] = { ...position }
+          }
+        })
+      }
+
+      this.tablePositions = restoredPositions
       this.selectedColumns = state.selectedColumns || []
       this.whereConditions = state.whereConditions || []
       this.groupByColumns = state.groupByColumns || []
+      this.joins = state.joins || []
       this.orderByColumns = state.orderByColumns || []
       this.limit = state.limit || null
       this.offset = state.offset || null

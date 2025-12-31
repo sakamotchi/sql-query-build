@@ -15,6 +15,7 @@ import type {
   SelectColumn,
   LimitClause,
   OrderByItem,
+  JoinClause,
 } from '@/types/query-model'
 
 /**
@@ -26,8 +27,30 @@ export interface UIQueryState {
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
   orderByColumns: OrderByColumn[]
+  tablePositions?: Record<string, { x: number; y: number }>
   limit: number | null
   offset: number | null
+  joins: JoinClause[]
+}
+
+/**
+ * テーブル位置をエイリアス基準のマップに変換
+ */
+function buildTablePositions(state: UIQueryState) {
+  if (!state.tablePositions) return undefined
+
+  const positions: Record<string, { x: number; y: number }> = {}
+
+  state.selectedTables.forEach((table) => {
+    const fromId = state.tablePositions?.[table.id]
+    const fromAlias = state.tablePositions?.[table.alias]
+    const pos = fromId || fromAlias
+    if (pos) {
+      positions[table.alias] = { x: pos.x, y: pos.y }
+    }
+  })
+
+  return Object.keys(positions).length > 0 ? positions : undefined
 }
 
 /**
@@ -60,17 +83,18 @@ export function convertToQueryModel(
         alias: mainTable.alias,
       },
     },
-    joins: [], // UIにまだ設定がないので空
-    whereClause: convertWhereConditions(state.whereConditions, 'AND'), // デフォルトAND
+    joins: state.joins || [],
+    whereClause: convertWhereConditions(state.whereConditions, 'AND') || undefined,
     groupBy:
       state.groupByColumns.length > 0
         ? { columns: convertGroupByColumns(state.groupByColumns) }
-        : null,
-    having: null, // UIにまだ設定がない
+        : undefined,
+    having: undefined, // UIにまだ設定がない
     orderBy:
       state.orderByColumns.length > 0
         ? { items: convertOrderByColumns(state.orderByColumns) }
-        : null,
+        : undefined,
+    tablePositions: buildTablePositions(state),
     limit: convertLimit(state.limit, state.offset),
     createdAt: undefined,
     updatedAt: undefined,

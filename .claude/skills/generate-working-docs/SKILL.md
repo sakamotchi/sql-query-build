@@ -41,17 +41,25 @@ description: 開発作業ドキュメントを自動生成します。YYYYMMDD_�
 mkdir -p docs/working/{YYYYMMDD}_{要件名}
 ```
 
-### 3. ファイル生成
+### 3. サブスキルの順次実行
 
-[templates.md](templates.md) のテンプレートを使用して、以下の4ファイルを生成します：
+以下のサブスキルを**順次**実行します（並列実行禁止）：
 
-- `requirements.md` - 要件定義書テンプレート
-- `design.md` - 設計書テンプレート
-- `tasklist.md` - タスクリストテンプレート
-- `testing.md` - テスト手順書テンプレート
+1. `generate-requirements` - 要件定義書生成
+   - ディレクトリパスと要件名を渡す
+2. `generate-design` - 設計書生成
+   - ディレクトリパスと要件名を渡す
+   - requirements.md を参照して設計を作成
+3. `generate-tasklist` - タスクリスト生成
+   - ディレクトリパスと要件名を渡す
+   - requirements.md と design.md を参照してタスクを作成
+4. `generate-testing` - テスト手順書生成
+   - ディレクトリパスと要件名を渡す
+   - requirements.md、design.md、tasklist.md を参照してテスト手順を作成
+
+**重要**: 各スキルは前のスキルの成果物に依存するため、必ず順次実行してください。
 
 **注意**: `task_{タスクID}.md` は初期生成せず、開発中に必要に応じて作成します。
-タスクの詳細を記載する必要がある場合、[templates.md](templates.md) の `task_{タスクID}.md` テンプレートを使用してください。
 
 ### 4. 完了報告
 
@@ -61,7 +69,62 @@ mkdir -p docs/working/{YYYYMMDD}_{要件名}
 
 詳細は [examples.md](examples.md) を参照してください。
 
+## 関連スキル
+
+- `generate-requirements` - 要件定義書生成スキル
+- `generate-design` - 設計書生成スキル
+- `generate-tasklist` - タスクリスト生成スキル
+- `generate-testing` - テスト手順書生成スキル
+
 ## 関連ドキュメント
 
 - `CLAUDE.md` - 開発作業ドキュメントの構成ルール
 - `docs/` - 永続化ドキュメント群
+
+## 技術仕様の注意事項
+
+### Nuxt UI v4 コンポーネント記法
+
+**重要**: このプロジェクトは Nuxt UI v4 を使用しています。ドキュメント内のコード例では必ず以下の記法を使用してください。
+
+#### v3 → v4 移行対応表
+
+| v3（使用禁止） | v4（使用必須） | 説明 |
+|---------------|---------------|------|
+| `UFormGroup` | `UFormField` | フォームフィールドラッパー |
+| `options` 属性 | `items` 属性 | USelect, USelectMenu等の選択肢 |
+| `v-model` | `v-model` | 同じだが、itemsとの組み合わせに注意 |
+
+#### 正しい記法例（v4）
+
+```vue
+<template>
+  <!-- ✅ 正しい: UFormField + items -->
+  <UFormField label="データベース" name="database">
+    <USelect v-model="selected" :items="databases" />
+  </UFormField>
+
+  <!-- ✅ 正しい: USelectMenu + items -->
+  <USelectMenu v-model="selected" :items="options" />
+</template>
+```
+
+#### 誤った記法例（v3）
+
+```vue
+<template>
+  <!-- ❌ 間違い: UFormGroup（v3） -->
+  <UFormGroup label="データベース">
+    <USelect v-model="selected" :options="databases" />
+  </UFormGroup>
+
+  <!-- ❌ 間違い: options 属性（v3） -->
+  <USelectMenu v-model="selected" :options="options" />
+</template>
+```
+
+### ドキュメント生成時のルール
+
+1. **コード例には必ず Nuxt UI v4 の記法を使用する**
+2. **v3 の記法（UFormGroup, options 属性）は絶対に使用しない**
+3. **既存の `CLAUDE.md` に記載された技術スタック情報を参照する**

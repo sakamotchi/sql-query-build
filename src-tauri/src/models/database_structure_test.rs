@@ -23,28 +23,24 @@ fn test_schema_with_tables_and_views() {
     let schema = Schema {
         name: "public".to_string(),
         is_system: false,
-        tables: vec![
-            Table {
-                name: "users".to_string(),
-                schema: "public".to_string(),
-                comment: Some("User accounts table".to_string()),
-                estimated_row_count: Some(1000),
-                columns: vec![],
-                primary_key: None,
-                indexes: vec![],
-                foreign_keys: vec![],
-                referenced_by: vec![],
-            },
-        ],
-        views: vec![
-            View {
-                name: "active_users".to_string(),
-                schema: "public".to_string(),
-                comment: None,
-                columns: vec![],
-                definition: Some("SELECT * FROM users WHERE active = true".to_string()),
-            },
-        ],
+        tables: vec![Table {
+            name: "users".to_string(),
+            schema: "public".to_string(),
+            comment: Some("User accounts table".to_string()),
+            estimated_row_count: Some(1000),
+            columns: vec![],
+            primary_key: None,
+            indexes: vec![],
+            foreign_keys: vec![],
+            referenced_by: vec![],
+        }],
+        views: vec![View {
+            name: "active_users".to_string(),
+            schema: "public".to_string(),
+            comment: None,
+            columns: vec![],
+            definition: Some("SELECT * FROM users WHERE active = true".to_string()),
+        }],
     };
 
     assert_eq!(schema.tables.len(), 1);
@@ -191,15 +187,13 @@ fn test_table_with_full_metadata() {
             name: "users_pkey".to_string(),
             columns: vec!["id".to_string()],
         }),
-        indexes: vec![
-            Index {
-                name: "idx_users_email".to_string(),
-                is_unique: true,
-                is_primary: false,
-                columns: vec!["email".to_string()],
-                index_type: "btree".to_string(),
-            },
-        ],
+        indexes: vec![Index {
+            name: "idx_users_email".to_string(),
+            is_unique: true,
+            is_primary: false,
+            columns: vec!["email".to_string()],
+            index_type: "btree".to_string(),
+        }],
         foreign_keys: vec![],
         referenced_by: vec![],
     };
@@ -217,21 +211,19 @@ fn test_view_structure() {
         name: "active_users_view".to_string(),
         schema: "public".to_string(),
         comment: Some("View of active users only".to_string()),
-        columns: vec![
-            Column {
-                name: "id".to_string(),
-                data_type: "integer".to_string(),
-                display_type: "integer".to_string(),
-                nullable: false,
-                default_value: None,
-                is_primary_key: false,
-                is_foreign_key: false,
-                is_unique: false,
-                is_auto_increment: false,
-                ordinal_position: 1,
-                comment: None,
-            },
-        ],
+        columns: vec![Column {
+            name: "id".to_string(),
+            data_type: "integer".to_string(),
+            display_type: "integer".to_string(),
+            nullable: false,
+            default_value: None,
+            is_primary_key: false,
+            is_foreign_key: false,
+            is_unique: false,
+            is_auto_increment: false,
+            ordinal_position: 1,
+            comment: None,
+        }],
         definition: Some("SELECT id, email FROM users WHERE active = true".to_string()),
     };
 
@@ -250,19 +242,17 @@ fn test_complete_database_structure() {
             Schema {
                 name: "public".to_string(),
                 is_system: false,
-                tables: vec![
-                    Table {
-                        name: "users".to_string(),
-                        schema: "public".to_string(),
-                        comment: None,
-                        estimated_row_count: Some(100),
-                        columns: vec![],
-                        primary_key: None,
-                        indexes: vec![],
-                        foreign_keys: vec![],
-                        referenced_by: vec![],
-                    },
-                ],
+                tables: vec![Table {
+                    name: "users".to_string(),
+                    schema: "public".to_string(),
+                    comment: None,
+                    estimated_row_count: Some(100),
+                    columns: vec![],
+                    primary_key: None,
+                    indexes: vec![],
+                    foreign_keys: vec![],
+                    referenced_by: vec![],
+                }],
                 views: vec![],
             },
             Schema {

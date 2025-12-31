@@ -32,6 +32,9 @@ impl<'a> SqlBuilder<'a> {
             .collect::<Result<Vec<_>, String>>()?;
 
         let logic = &having.logic;
-        Ok(format!("HAVING {}", conditions.join(&format!(" {} ", logic))))
+        Ok(format!(
+            "HAVING {}",
+            conditions.join(&format!(" {} ", logic))
+        ))
     }
 }

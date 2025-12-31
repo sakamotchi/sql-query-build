@@ -4,7 +4,8 @@ use crate::sql_generator::builder::SqlBuilder;
 impl<'a> SqlBuilder<'a> {
     /// WHERE句を生成
     pub fn build_where(&self, where_clause: &WhereClause) -> Result<String, String> {
-        let conditions = self.build_where_conditions(&where_clause.conditions, &where_clause.logic)?;
+        let conditions =
+            self.build_where_conditions(&where_clause.conditions, &where_clause.logic)?;
         Ok(format!("WHERE {}", conditions))
     }
 
@@ -81,6 +82,4 @@ impl<'a> SqlBuilder<'a> {
             }
         }
     }
-
-
 }

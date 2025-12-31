@@ -1,7 +1,7 @@
 pub mod builder;
+pub mod clause;
 pub mod dialect;
 pub mod dialects;
-pub mod clause;
 pub mod reserved_words;
 // pub mod utils;
 
