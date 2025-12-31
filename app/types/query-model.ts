@@ -15,7 +15,7 @@ export interface QueryModel {
   /** FROM句 */
   from: FromClause
   /** JOIN句 */
-  joins: JoinClause[]
+ joins: JoinClause[]
   /** WHERE句 */
   whereClause?: WhereClause
   /** GROUP BY句 */
@@ -24,6 +24,10 @@ export interface QueryModel {
   having?: HavingClause
   /** ORDER BY句 */
   orderBy?: OrderByClause
+  /** キャンバス上のテーブル位置（エイリアスごと） */
+  tablePositions?: {
+    [tableAlias: string]: { x: number; y: number }
+  }
   /** LIMIT/OFFSET */
   limit: LimitClause | null
   /** 作成日時 */

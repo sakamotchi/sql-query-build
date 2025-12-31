@@ -12,6 +12,8 @@ import type { QueryExecuteResult, QueryExecuteError, QueryResultRow } from '@/ty
 interface QueryBuilderState {
   /** 選択されたテーブル一覧（テーブルカード用） */
   selectedTables: SelectedTable[]
+  /** テーブルカードの位置 (エイリアスまたはID単位) */
+  tablePositions: Record<string, { x: number; y: number }>
   /** 選択されたカラム一覧（カラム選択UI用） */
   selectedColumns: SelectedColumn[]
   /** ドラッグ中のテーブル（ドラッグ&ドロップ用） */
@@ -61,6 +63,7 @@ interface QueryBuilderState {
 
 export interface SerializableQueryState {
   selectedTables: SelectedTable[]
+  tablePositions?: Record<string, { x: number; y: number }>
   selectedColumns: SelectedColumn[]
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
@@ -74,6 +77,7 @@ export interface SerializableQueryState {
 export const useQueryBuilderStore = defineStore('query-builder', {
   state: (): QueryBuilderState => ({
     selectedTables: [],
+    tablePositions: {},
     selectedColumns: [],
     draggingTable: null,
     whereConditions: [],
@@ -149,6 +153,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       const index = this.selectedTables.findIndex((t) => t.id === tableId)
       if (index !== -1) {
         this.selectedTables.splice(index, 1)
+        delete this.tablePositions[tableId]
         // 関連するJOINやカラム選択も削除
         this.removeRelatedJoins(tableId)
         this.removeRelatedColumns(tableId)
@@ -171,6 +176,13 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         table.alias = alias
         this.regenerateSql()
       }
+    },
+
+    /**
+     * テーブルカードの位置を更新
+     */
+    updateTablePosition(tableId: string, x: number, y: number) {
+      this.tablePositions[tableId] = { x, y }
     },
 
     /**
@@ -569,7 +581,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     resetQuery() {
       this.selectedTables = []
+      this.tablePositions = {}
       this.selectedColumns = []
+      this.joins = []
       this.whereConditions = []
       this.query = null
       this.generatedSql = ''
@@ -714,11 +728,27 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     },
 
     /**
+     * テーブル位置をまとめて設定
+     */
+    setTablePositions(positions: Record<string, { x: number; y: number }>) {
+      this.tablePositions = { ...positions }
+    },
+
+    /**
      * 保存可能な状態を取得
      */
     getSerializableState(): SerializableQueryState {
+      const positionsByAlias: Record<string, { x: number; y: number }> = {}
+      this.selectedTables.forEach((table) => {
+        const pos = this.tablePositions[table.id]
+        if (pos) {
+          positionsByAlias[table.alias] = { ...pos }
+        }
+      })
+
       return {
         selectedTables: JSON.parse(JSON.stringify(this.selectedTables)),
+        tablePositions: positionsByAlias,
         selectedColumns: JSON.parse(JSON.stringify(this.selectedColumns)),
         whereConditions: JSON.parse(JSON.stringify(this.whereConditions)),
         groupByColumns: JSON.parse(JSON.stringify(this.groupByColumns)),
@@ -737,6 +767,20 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.resetQuery()
       
       this.selectedTables = state.selectedTables || []
+      const restoredPositions: Record<string, { x: number; y: number }> = {}
+
+      if (state.tablePositions) {
+        Object.entries(state.tablePositions).forEach(([key, position]) => {
+          const table = this.selectedTables.find(
+            (t) => t.alias === key || t.id === key
+          )
+          if (table && position) {
+            restoredPositions[table.id] = { ...position }
+          }
+        })
+      }
+
+      this.tablePositions = restoredPositions
       this.selectedColumns = state.selectedColumns || []
       this.whereConditions = state.whereConditions || []
       this.groupByColumns = state.groupByColumns || []
