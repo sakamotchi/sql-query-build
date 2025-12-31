@@ -56,22 +56,12 @@ export const useDatabaseStructureStore = defineStore('database-structure', {
     async fetchDatabaseStructure(connectionId: string): Promise<void> {
       if (this.loadingIds.has(connectionId)) return;
 
-      const start = performance.now();
-      console.log(`[PERF] fetchDatabaseStructure: start for connection_id=${connectionId}`);
-
       this.loadingIds.add(connectionId);
       delete this.errors[connectionId];
 
       try {
-        const apiStart = performance.now();
         const structure = await databaseStructureApi.getDatabaseStructure(connectionId);
-        const apiDuration = performance.now() - apiStart;
-        console.log(`[PERF]   - API call: ${apiDuration.toFixed(2)}ms`);
-
         this.structures[connectionId] = structure;
-
-        const totalDuration = performance.now() - start;
-        console.log(`[PERF] fetchDatabaseStructure: TOTAL ${totalDuration.toFixed(2)}ms`);
       } catch (error) {
         console.error('[database-structure store] fetchDatabaseStructure error:', error);
         let errorMessage: string;

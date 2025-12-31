@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
+use crate::connection::ConnectionService;
 use crate::crypto::security_provider::{
     InitializeParams, PasswordRequirements, PasswordValidationResult, PasswordValidator,
     ProviderSpecificConfig, ProviderSwitcher, SecurityConfig, SecurityConfigStorage,
@@ -22,6 +23,7 @@ pub async fn get_security_config(
 pub async fn change_security_provider(
     storage: State<'_, Arc<SecurityConfigStorage>>,
     manager: State<'_, Arc<SecurityProviderManager>>,
+    connection_service: State<'_, ConnectionService>,
     provider_type: SecurityProviderType,
 ) -> Result<(), String> {
     manager
@@ -32,7 +34,10 @@ pub async fn change_security_provider(
     storage
         .change_provider(provider_type)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    connection_service.clear_password_cache();
+    Ok(())
 }
 
 /// 現在のセキュリティプロバイダー情報を取得
@@ -122,6 +127,7 @@ pub async fn switch_security_provider(
     switcher: State<'_, Arc<ProviderSwitcher>>,
     storage: State<'_, Arc<SecurityConfigStorage>>,
     manager: State<'_, Arc<SecurityProviderManager>>,
+    connection_service: State<'_, ConnectionService>,
     target_provider: SecurityProviderType,
     current_password: Option<String>,
     new_password: Option<String>,
@@ -150,14 +156,17 @@ pub async fn switch_security_provider(
         SecurityProviderType::Keychain => InitializeParams::Keychain,
     };
 
-    let result = switcher
+    let switch_result = switcher
         .switch(SwitchParams {
             target_provider,
             current_auth,
             new_init,
         })
-        .await
-        .map_err(|e| e.to_string())?;
+        .await;
+
+    connection_service.clear_password_cache();
+
+    let result = switch_result.map_err(|e| e.to_string())?;
 
     println!("[switch_security_provider] Switch completed successfully");
 
@@ -225,6 +234,7 @@ pub async fn change_master_password(
     switcher: State<'_, Arc<ProviderSwitcher>>,
     storage: State<'_, Arc<SecurityConfigStorage>>,
     manager: State<'_, Arc<SecurityProviderManager>>,
+    connection_service: State<'_, ConnectionService>,
     current_password: String,
     new_password: String,
     new_password_confirm: String,
@@ -263,7 +273,7 @@ pub async fn change_master_password(
         })
         .await;
 
-    match result {
+    let final_result = match result {
         Ok(res) => {
             // 切り替え成功時、is_configuredをtrueに更新
             storage
@@ -296,7 +306,10 @@ pub async fn change_master_password(
 
             Err(err.to_string())
         }
-    }
+    };
+
+    connection_service.clear_password_cache();
+    final_result
 }
 
 /// セキュリティ設定を強制的にリセット（デバッグ用）
@@ -305,7 +318,10 @@ pub async fn change_master_password(
 pub async fn reset_security_config(
     storage: State<'_, Arc<SecurityConfigStorage>>,
     manager: State<'_, Arc<SecurityProviderManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
+    connection_service.clear_password_cache();
+
     // マスターパスワード設定をクリア（存在しない場合は無視）
     let _ = manager.clear_master_password_config().await;
 
