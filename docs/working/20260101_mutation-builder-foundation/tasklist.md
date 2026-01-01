@@ -86,9 +86,9 @@
   - [ ] ツールバー配置
   - [ ] 3ペインレイアウト（左・中央・右）
   - [ ] ResizablePanel使用
-- [ ] 左パネルにLeftPanel配置
-- [ ] 中央パネルにCenterPanel配置
-- [ ] 右パネルにRightPanel配置
+- [ ] 左パネルにMutationBuilderLeftPanel配置
+- [ ] 中央パネルにMutationBuilderCenterPanel配置
+- [ ] 右パネルにMutationBuilderRightPanel配置
 - [ ] レイアウト表示確認
 
 **完了条件**: 3ペインレイアウトが表示される
@@ -125,26 +125,81 @@
 
 ---
 
-### 8.1.6 トップページにナビゲーション追加
+### 8.1.6 windowApi拡張
+
+**ファイル**: `app/api/window.ts`（既存ファイル更新）
+
+- [ ] ファイル読み込み
+- [ ] `openMutationBuilder`メソッド追加
+  - [ ] パラメータ: connectionId, connectionName, environment
+  - [ ] invoke呼び出し: 'open_mutation_builder_window'
+  - [ ] 戻り値: Promise<WindowInfo>
+- [ ] TypeScript型エラーチェック
+
+**完了条件**: windowApiに`openMutationBuilder`メソッドが追加される
+
+---
+
+### 8.1.7 ConnectionCard更新
+
+**ファイル**: `app/components/connection/ConnectionCard.vue`（既存ファイル更新）
+
+- [ ] ファイル読み込み
+- [ ] emitsに`mutation`イベント追加
+- [ ] `handleMutation`ハンドラー追加
+- [ ] ボタンエリアを2列レイアウトに変更
+  - [ ] 1行目: データ参照 / データ変更
+  - [ ] 2行目: 編集 / 削除
+- [ ] 「接続」ボタンを「データ参照」に変更
+- [ ] 「データ変更」ボタン追加
+- [ ] カード表示確認
+
+**完了条件**: 接続カードに2つのボタンが表示される
+
+---
+
+### 8.1.8 index.vue更新（ランチャー画面）
 
 **ファイル**: `app/pages/index.vue`（既存ファイル更新）
 
 - [ ] ファイル読み込み
-- [ ] 「データ変更」カード追加
-  - [ ] title: 'データ変更'
-  - [ ] description: 'INSERT/UPDATE/DELETE文を構築・実行'
-  - [ ] icon: 'i-heroicons-pencil-square'
-  - [ ] to: '/mutation-builder'
-- [ ] カード表示確認
-- [ ] カードクリックで`/mutation-builder`に遷移確認
+- [ ] `handleMutation`ハンドラー追加
+  - [ ] 既存ウィンドウ検索ロジック
+  - [ ] 新規ウィンドウ起動ロジック
+  - [ ] トースト通知
+  - [ ] エラーハンドリング
+- [ ] ConnectionCardの`@mutation`イベントハンドリング追加
+- [ ] ConnectionListの`@mutation`イベントハンドリング追加
+- [ ] トップの「データ変更」カード削除（存在する場合）
+- [ ] 動作確認
 
-**完了条件**: トップページから`/mutation-builder`に遷移できる
+**完了条件**: 接続カードから「データ変更」を起動できる
 
 ---
 
-### 8.1.7 LeftPanel.vue作成
+### 8.1.9 Rustコマンド追加
 
-**ファイル**: `app/components/mutation-builder/LeftPanel.vue`
+**ファイル**: `src-tauri/src/commands/window.rs`（既存ファイル更新）
+
+- [ ] ファイル読み込み
+- [ ] `open_mutation_builder_window`コマンド追加
+  - [ ] パラメータ: app, connection_id, connection_name, environment
+  - [ ] ウィンドウラベル生成: `mutation-builder-{connection_id}`
+  - [ ] ウィンドウタイトル生成: `データ変更 - {connection_name} ({environment})`
+  - [ ] 既存ウィンドウチェック
+  - [ ] 新規ウィンドウ作成
+  - [ ] ウィンドウサイズ設定: 1400x900（最小1200x700）
+  - [ ] ウィンドウ情報返却
+- [ ] `src-tauri/src/main.rs`または`src-tauri/src/lib.rs`にコマンド登録
+- [ ] Rustビルドエラーチェック
+
+**完了条件**: Rustコマンドが追加され、ビルドが成功する
+
+---
+
+### 8.1.10 MutationBuilderLeftPanel.vue作成
+
+**ファイル**: `app/components/mutation-builder/MutationBuilderLeftPanel.vue`
 
 - [ ] ファイル作成
 - [ ] `<script setup>`セクション実装
@@ -162,9 +217,9 @@
 
 ---
 
-### 8.1.8 CenterPanel.vue作成
+### 8.1.11 MutationBuilderCenterPanel.vue作成
 
-**ファイル**: `app/components/mutation-builder/CenterPanel.vue`
+**ファイル**: `app/components/mutation-builder/MutationBuilderCenterPanel.vue`
 
 - [ ] ファイル作成
 - [ ] `<script setup>`セクション実装
@@ -187,9 +242,9 @@
 
 ---
 
-### 8.1.9 RightPanel.vue作成
+### 8.1.12 MutationBuilderRightPanel.vue作成
 
-**ファイル**: `app/components/mutation-builder/RightPanel.vue`
+**ファイル**: `app/components/mutation-builder/MutationBuilderRightPanel.vue`
 
 - [ ] ファイル作成
 - [ ] `<script setup>`セクション実装
@@ -208,8 +263,12 @@
 
 ---
 
-### 8.1.10 統合テスト・動作確認
+### 8.1.13 統合テスト・動作確認
 
+- [ ] ランチャー画面の接続カードに「データ参照」「データ変更」の2ボタンが表示される
+- [ ] 「データ変更」ボタンをクリックすると新しいウィンドウで`/mutation-builder`が開く
+- [ ] ウィンドウタイトルが「データ変更 - {接続名} ({環境})」形式で表示される
+- [ ] 同じ接続で既にmutation-builderが開いている場合はフォーカスされる
 - [ ] `/mutation-builder` にアクセスできる
 - [ ] INSERT/UPDATE/DELETEタブが表示される
 - [ ] タブをクリックすると切り替わる
@@ -218,8 +277,6 @@
 - [ ] 右パネルに選択テーブル名が表示される
 - [ ] 中央パネルにSQLプレビューエリアが表示される
 - [ ] UPDATE/DELETEタブでWHERE句なし警告が表示される
-- [ ] トップページに「データ変更」カードが表示される
-- [ ] 「データ変更」カードをクリックすると`/mutation-builder`に遷移する
 - [ ] ツールバーの「クエリビルダーへ」ボタンで`/query-builder`に遷移する
 - [ ] 既存の`/query-builder`が正常に動作する（影響がない）
 - [ ] TypeScript型エラーがない（`npm run typecheck`）
@@ -241,13 +298,16 @@
 | 8.1.3 | mutation-builder.vueページ作成 | 未着手 | - | - |
 | 8.1.4 | MutationBuilderLayout.vue作成 | 未着手 | - | - |
 | 8.1.5 | MutationBuilderToolbar.vue作成 | 未着手 | - | - |
-| 8.1.6 | トップページにナビゲーション追加 | 未着手 | - | - |
-| 8.1.7 | LeftPanel.vue作成 | 未着手 | - | - |
-| 8.1.8 | CenterPanel.vue作成 | 未着手 | - | - |
-| 8.1.9 | RightPanel.vue作成 | 未着手 | - | - |
-| 8.1.10 | 統合テスト・動作確認 | 未着手 | - | - |
+| 8.1.6 | windowApi拡張 | 未着手 | - | - |
+| 8.1.7 | ConnectionCard更新 | 未着手 | - | - |
+| 8.1.8 | index.vue更新 | 未着手 | - | - |
+| 8.1.9 | Rustコマンド追加 | 未着手 | - | - |
+| 8.1.10 | MutationBuilderLeftPanel.vue作成 | 未着手 | - | - |
+| 8.1.11 | MutationBuilderCenterPanel.vue作成 | 未着手 | - | - |
+| 8.1.12 | MutationBuilderRightPanel.vue作成 | 未着手 | - | - |
+| 8.1.13 | 統合テスト・動作確認 | 未着手 | - | - |
 
-**全体進捗**: 0/10 (0%)
+**全体進捗**: 0/13 (0%)
 
 ---
 

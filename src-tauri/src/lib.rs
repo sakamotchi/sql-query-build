@@ -234,6 +234,7 @@ pub fn run() {
             commands::settings::set_security_level,
             commands::window::get_window_environment,
             commands::window::open_query_builder_window,
+            commands::window::open_mutation_builder_window,
             commands::window::open_settings_window,
             commands::window::close_window,
             commands::window::focus_window,

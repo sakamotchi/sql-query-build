@@ -45,8 +45,8 @@ INSERT/UPDATE/DELETEクエリをGUIで構築する「データ変更クエリビ
    - INSERT/UPDATE/DELETE切り替えタブ（UButtonGroup）
    - アクションボタン（実行、保存、履歴）のプレースホルダー
 
-6. **ナビゲーション**:
-   - トップページ（index.vue）に「データ変更」メニュー追加
+6. **接続選択フロー統合**:
+   - トップページの接続カードに「データ変更」ボタン追加
 
 ### 含まれないもの
 
@@ -141,12 +141,33 @@ type MutationQueryModel = InsertQueryModel | UpdateQueryModel | DeleteQueryModel
   - 履歴ボタン（プレースホルダー、8.5で実装）
   - クエリビルダーへのリンクボタン
 
-#### FR-8.1.6: ナビゲーション追加
+#### FR-8.1.6: 接続選択フロー統合
 
-- ファイル: `app/pages/index.vue`
-- 「データ変更」メニューカードを追加
-- `/mutation-builder` へのリンク
-- アイコン: `i-heroicons-pencil-square`（または適切なアイコン）
+**目的**: 既存のquery-builderと同様に、接続選択からmutation-builderを起動できるようにする
+
+**変更ファイル**:
+
+1. **windowApi拡張** (`app/api/window.ts`)
+   - `openMutationBuilder(connectionId, connectionName, environment)` メソッド追加
+   - Rustバックエンドの `open_mutation_builder_window` コマンドを呼び出し
+   - 戻り値: `Promise<WindowInfo>`
+
+2. **ConnectionCard更新** (`app/components/connection/ConnectionCard.vue`)
+   - ボタンエリアを2列レイアウトに変更
+   - 「データ参照」ボタン（既存の「接続」ボタンを変更）
+   - 「データ変更」ボタン（新規追加）
+   - `@mutation` イベント追加
+   - レイアウト例:
+     ```
+     [データ参照] [データ変更]
+     [編集]     [削除]
+     ```
+
+3. **index.vue更新** (`app/pages/index.vue`)
+   - `handleMutation` ハンドラー追加
+   - ConnectionCardの `@mutation` イベントハンドリング
+   - 既存ウィンドウの検索・フォーカス処理（query-builderと同じロジック）
+   - 新規ウィンドウ起動処理
 
 ### 非機能要件
 
@@ -186,22 +207,41 @@ type MutationQueryModel = InsertQueryModel | UpdateQueryModel | DeleteQueryModel
 
 ## 成果物
 
+### フロントエンド
 1. `app/types/mutation-query.ts` - 型定義
 2. `app/stores/mutation-builder.ts` - Piniaストア
 3. `app/pages/mutation-builder.vue` - ページ
 4. `app/components/mutation-builder/MutationBuilderLayout.vue` - レイアウト
 5. `app/components/mutation-builder/MutationBuilderToolbar.vue` - ツールバー
-6. `app/pages/index.vue` - ナビゲーション追加（既存ファイル更新）
+6. `app/components/mutation-builder/MutationBuilderLeftPanel.vue` - 左パネル
+7. `app/components/mutation-builder/MutationBuilderCenterPanel.vue` - 中央パネル
+8. `app/components/mutation-builder/MutationBuilderRightPanel.vue` - 右パネル
+9. `app/api/window.ts` - windowApi拡張（既存ファイル更新）
+10. `app/components/connection/ConnectionCard.vue` - 接続カード更新（既存ファイル更新）
+11. `app/pages/index.vue` - ランチャー更新（既存ファイル更新）
+
+### バックエンド（Rust）
+12. `src-tauri/src/commands/window.rs` - `open_mutation_builder_window` コマンド追加
 
 ## 完了条件
 
+### 基本機能
+- [ ] ランチャー画面の接続カードに「データ参照」「データ変更」の2ボタンが表示される
+- [ ] 「データ変更」ボタンをクリックすると新しいウィンドウで `/mutation-builder` が開く
 - [ ] `/mutation-builder` ページにアクセスできる
 - [ ] INSERT/UPDATE/DELETEのタブ切り替えが動作する
 - [ ] 左パネルにDatabaseTreeが表示される
 - [ ] 中央パネルにSQLプレビューエリアが表示される
 - [ ] 右パネルが表示される（内容は空でも可）
-- [ ] トップページから「データ変更」メニューで遷移できる
+
+### ウィンドウ管理
+- [ ] 同じ接続で既に mutation-builder が開いている場合はフォーカスする
+- [ ] 新規ウィンドウのタイトルが「データ変更 - {接続名} ({環境})」形式で表示される
+- [ ] ウィンドウが正しく管理される（windowApi経由）
+
+### 既存機能への影響
 - [ ] 既存のquery-builderページが正常に動作する（影響がない）
+- [ ] 既存の「データ参照」ボタンが正常に動作する
 - [ ] TypeScript型エラーがない
 - [ ] npm run tauri:dev でアプリが起動する
 

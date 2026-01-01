@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { WindowInfo, WindowState } from '~/types'
+import type { WindowInfo, WindowState, WindowType } from '~/types'
 
 /**
  * ウィンドウAPI
@@ -14,6 +14,21 @@ export const windowApi = {
     environment: string,
   ): Promise<WindowInfo> {
     return invoke('open_query_builder_window', {
+      connectionId,
+      connectionName,
+      environment,
+    })
+  },
+
+  /**
+   * データ変更ビルダーウィンドウを開く
+   */
+  async openMutationBuilder(
+    connectionId: string,
+    connectionName: string,
+    environment: string,
+  ): Promise<WindowInfo> {
+    return invoke('open_mutation_builder_window', {
       connectionId,
       connectionName,
       environment,
@@ -51,8 +66,11 @@ export const windowApi = {
   /**
    * 接続IDでウィンドウを検索
    */
-  async findWindowByConnection(connectionId: string): Promise<WindowInfo | null> {
-    return invoke('find_window_by_connection', { connectionId })
+  async findWindowByConnection(
+    connectionId: string,
+    windowType?: WindowType,
+  ): Promise<WindowInfo | null> {
+    return invoke('find_window_by_connection', { connectionId, windowType })
   },
 
   /**

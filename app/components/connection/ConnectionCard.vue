@@ -9,6 +9,7 @@ const emit = defineEmits<{
   edit: [connection: Connection]
   delete: [connection: Connection]
   connect: [connection: Connection]
+  mutation: [connection: Connection]
 }>()
 
 const dbIcon = computed(() => {
@@ -23,6 +24,7 @@ const dbIcon = computed(() => {
 })
 
 const handleConnect = () => emit('connect', props.connection)
+const handleMutation = () => emit('mutation', props.connection)
 const handleEdit = () => emit('edit', props.connection)
 const handleDelete = () => emit('delete', props.connection)
 </script>
@@ -66,12 +68,19 @@ const handleDelete = () => emit('delete', props.connection)
         </div>
       </div>
 
-      <div class="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <UButton color="primary" size="sm" block @click="handleConnect">
-          接続
+      <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <UButton color="primary" size="sm" @click="handleConnect">
+          データ参照
         </UButton>
-        <UButton color="gray" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit" />
-        <UButton color="red" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete" />
+        <UButton color="primary" variant="outline" size="sm" @click="handleMutation">
+          データ変更
+        </UButton>
+        <UButton color="gray" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit">
+          編集
+        </UButton>
+        <UButton color="red" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete">
+          削除
+        </UButton>
       </div>
     </div>
   </UCard>

@@ -9,6 +9,8 @@ pub enum WindowType {
     Launcher,
     /// クエリビルダーウィンドウ
     QueryBuilder,
+    /// データ変更ビルダーウィンドウ
+    MutationBuilder,
     /// 設定ウィンドウ
     Settings,
 }

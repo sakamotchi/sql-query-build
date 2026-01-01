@@ -18,9 +18,9 @@ app/
 │   └── mutation-builder/ (新規)
 │       ├── MutationBuilderLayout.vue
 │       ├── MutationBuilderToolbar.vue
-│       ├── LeftPanel.vue
-│       ├── CenterPanel.vue
-│       └── RightPanel.vue
+│       ├── MutationBuilderLeftPanel.vue
+│       ├── MutationBuilderCenterPanel.vue
+│       └── MutationBuilderRightPanel.vue
 ├── stores/
 │   ├── query-builder.ts (既存、変更なし)
 │   └── mutation-builder.ts (新規)
@@ -294,9 +294,9 @@ definePageMeta({
 <script setup lang="ts">
 import { ref } from 'vue'
 import MutationBuilderToolbar from './MutationBuilderToolbar.vue'
-import LeftPanel from './LeftPanel.vue'
-import CenterPanel from './CenterPanel.vue'
-import RightPanel from './RightPanel.vue'
+import MutationBuilderLeftPanel from './MutationBuilderLeftPanel.vue'
+import MutationBuilderCenterPanel from './MutationBuilderCenterPanel.vue'
+import MutationBuilderRightPanel from './MutationBuilderRightPanel.vue'
 import ResizablePanel from '@/components/query-builder/ResizablePanel.vue'
 
 // パネルサイズ
@@ -304,9 +304,6 @@ const leftPanelWidth = ref(250)
 const rightPanelWidth = ref(350)
 
 // パネル表示状態
-const isLeftPanelCollapsed = ref(false)
-const isRightPanelCollapsed = ref(false)
-
 // パネルサイズ制約
 const panelConstraints = {
   left: { min: 200, max: 400 },
@@ -326,50 +323,42 @@ const handleRightPanelResize = (width: number) => {
     Math.min(panelConstraints.right.max, width)
   )
 }
-
-const toggleLeftPanel = () => {
-  isLeftPanelCollapsed.value = !isLeftPanelCollapsed.value
-}
-
-const toggleRightPanel = () => {
-  isRightPanelCollapsed.value = !isRightPanelCollapsed.value
-}
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-gray-50 dark:bg-gray-950">
+  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
     <!-- ツールバー -->
-    <MutationBuilderToolbar />
+    <MutationBuilderToolbar class="flex-shrink-0" />
 
     <!-- メインコンテンツ（3ペイン） -->
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 min-h-0">
       <!-- 左パネル -->
       <ResizablePanel
-        v-if="!isLeftPanelCollapsed"
-        :width="leftPanelWidth"
-        :min-width="panelConstraints.left.min"
-        :max-width="panelConstraints.left.max"
-        position="left"
+        direction="right"
+        :initial-size="leftPanelWidth"
+        :min-size="panelConstraints.left.min"
+        :max-size="panelConstraints.left.max"
+        class="flex-shrink-0 border-r border-gray-200 dark:border-gray-800"
         @resize="handleLeftPanelResize"
       >
-        <LeftPanel />
+        <MutationBuilderLeftPanel />
       </ResizablePanel>
 
       <!-- 中央パネル -->
-      <div class="flex-1 overflow-hidden">
-        <CenterPanel />
+      <div class="flex-1 min-w-[400px] h-full">
+        <MutationBuilderCenterPanel />
       </div>
 
       <!-- 右パネル -->
       <ResizablePanel
-        v-if="!isRightPanelCollapsed"
-        :width="rightPanelWidth"
-        :min-width="panelConstraints.right.min"
-        :max-width="panelConstraints.right.max"
-        position="right"
+        direction="left"
+        :initial-size="rightPanelWidth"
+        :min-size="panelConstraints.right.min"
+        :max-size="panelConstraints.right.max"
+        class="flex-shrink-0 border-l border-gray-200 dark:border-gray-800"
         @resize="handleRightPanelResize"
       >
-        <RightPanel />
+        <MutationBuilderRightPanel />
       </ResizablePanel>
     </div>
   </div>
@@ -465,7 +454,7 @@ const handleHistory = () => {
       >
         履歴
       </UButton>
-      <UDivider orientation="vertical" class="h-6" />
+      <USeparator orientation="vertical" class="h-6" />
       <UButton
         icon="i-heroicons-arrow-left"
         color="gray"
@@ -481,7 +470,7 @@ const handleHistory = () => {
 
 ---
 
-### 6. 左パネル（LeftPanel.vue）
+### 6. 左パネル（MutationBuilderLeftPanel.vue）
 
 ```vue
 <script setup lang="ts">
@@ -501,7 +490,7 @@ const handleTableSelect = (tableName: string) => {
       <span class="text-sm font-medium">データベース</span>
     </div>
     <div class="flex-1 overflow-auto">
-      <DatabaseTree @table-select="handleTableSelect" />
+  <DatabaseTree @select-table="handleTableSelect" />
     </div>
   </div>
 </template>
@@ -509,7 +498,7 @@ const handleTableSelect = (tableName: string) => {
 
 ---
 
-### 7. 中央パネル（CenterPanel.vue）
+### 7. 中央パネル（MutationBuilderCenterPanel.vue）
 
 ```vue
 <script setup lang="ts">
@@ -579,7 +568,7 @@ const showWarning = computed(() => {
 
 ---
 
-### 8. 右パネル（RightPanel.vue）
+### 8. 右パネル（MutationBuilderRightPanel.vue）
 
 ```vue
 <script setup lang="ts">
@@ -623,20 +612,187 @@ const selectedTable = computed(() => store.selectedTable)
 
 ---
 
-### 9. ナビゲーション追加（index.vue更新）
+### 9. windowApi拡張（window.ts更新）
 
-既存の`app/pages/index.vue`に「データ変更」カードを追加します。
+`app/api/window.ts`に`openMutationBuilder`メソッドを追加します。
+
+```typescript
+/**
+ * データ変更ビルダーウィンドウを開く
+ */
+async openMutationBuilder(
+  connectionId: string,
+  connectionName: string,
+  environment: string,
+): Promise<WindowInfo> {
+  return invoke('open_mutation_builder_window', {
+    connectionId,
+    connectionName,
+    environment,
+  })
+}
+```
+
+---
+
+### 10. ConnectionCard更新（connection/ConnectionCard.vue更新）
+
+接続カードのボタンエリアを2列レイアウトに変更し、「データ変更」ボタンを追加します。
 
 ```vue
-<!-- 既存のカードに追加 -->
-<UCard
-  title="データ変更"
-  description="INSERT/UPDATE/DELETE文を構築・実行"
-  icon="i-heroicons-pencil-square"
-  to="/mutation-builder"
-  class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-/>
+<script setup lang="ts">
+import type { Connection } from '~/types'
+
+const props = defineProps<{
+  connection: Connection
+}>()
+
+const emit = defineEmits<{
+  edit: [connection: Connection]
+  delete: [connection: Connection]
+  connect: [connection: Connection]
+  mutation: [connection: Connection]  // 新規追加
+}>()
+
+// ... 既存のコード
+
+const handleConnect = () => emit('connect', props.connection)
+const handleMutation = () => emit('mutation', props.connection)  // 新規追加
+const handleEdit = () => emit('edit', props.connection)
+const handleDelete = () => emit('delete', props.connection)
+</script>
+
+<template>
+  <UCard class="relative hover:shadow-lg transition-shadow">
+    <!-- ... 既存のコンテンツ -->
+
+    <!-- ボタンエリアを2列レイアウトに変更 -->
+    <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <!-- 1行目: データ参照 / データ変更 -->
+      <UButton color="primary" size="sm" @click="handleConnect">
+        データ参照
+      </UButton>
+      <UButton color="primary" variant="outline" size="sm" @click="handleMutation">
+        データ変更
+      </UButton>
+
+      <!-- 2行目: 編集 / 削除 -->
+      <UButton color="gray" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit">
+        編集
+      </UButton>
+      <UButton color="red" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete">
+        削除
+      </UButton>
+    </div>
+  </UCard>
+</template>
 ```
+
+---
+
+### 11. index.vue更新（ランチャー画面更新）
+
+`app/pages/index.vue`に`handleMutation`ハンドラーを追加します。
+
+```vue
+<script setup lang="ts">
+// ... 既存のimport
+
+const handleConnect = async (connection: Connection) => {
+  try {
+    const existing = await windowApi.findWindowByConnection(connection.id)
+
+    if (existing) {
+      await windowApi.focusWindow(existing.label)
+      toast.add({
+        title: '既存のウィンドウにフォーカスしました',
+        description: `${connection.name} のウィンドウが既に開いています`,
+        color: 'primary',
+      })
+    } else {
+      await windowApi.openQueryBuilder(connection.id, connection.name, connection.environment)
+      toast.add({
+        title: 'クエリビルダーを起動しました',
+        description: `${connection.name} に接続しています`,
+        color: 'primary',
+      })
+    }
+  } catch (error) {
+    // ... エラーハンドリング
+  }
+}
+
+// 新規追加: データ変更ビルダーを開く
+const handleMutation = async (connection: Connection) => {
+  try {
+    // mutation-builder用のウィンドウを検索
+    const existing = await windowApi.findWindowByConnection(connection.id, 'mutation_builder')
+
+    if (existing) {
+      await windowApi.focusWindow(existing.label)
+      toast.add({
+        title: '既存のウィンドウにフォーカスしました',
+        description: `${connection.name} のデータ変更ウィンドウが既に開いています`,
+        color: 'primary',
+      })
+    } else {
+      await windowApi.openMutationBuilder(connection.id, connection.name, connection.environment)
+      toast.add({
+        title: 'データ変更ビルダーを起動しました',
+        description: `${connection.name} に接続しています`,
+        color: 'primary',
+      })
+    }
+  } catch (error) {
+    console.error('Failed to open mutation builder:', error)
+    toast.add({
+      title: 'ウィンドウの起動に失敗しました',
+      description: error instanceof Error ? error.message : '不明なエラーが発生しました',
+      color: 'red',
+    })
+  }
+}
+
+// ... 既存のコード
+</script>
+
+<template>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- ... 既存のコンテンツ -->
+
+    <section>
+      <!-- ... 既存のコード -->
+
+      <div v-else>
+        <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ConnectionCard
+            v-for="connection in filteredConnections"
+            :key="connection.id"
+            :connection="connection"
+            @connect="handleConnect"
+            @mutation="handleMutation"
+            @edit="handleEdit"
+            @delete="handleDelete"
+          />
+        </div>
+
+        <div v-else>
+          <ConnectionList
+            :connections="filteredConnections"
+            :loading="loading"
+            @connect="handleConnect"
+            @mutation="handleMutation"
+            @edit="handleEdit"
+            @delete="handleDelete"
+          />
+        </div>
+      </div>
+    </section>
+  </div>
+</template>
+```
+
+**NOTE**: トップに独立して配置していた「データ変更」カードは削除します。
 
 ---
 
@@ -711,18 +867,65 @@ describe('useMutationBuilderStore', () => {
 
 ---
 
+### 12. Rustバックエンド（commands/window.rs更新）
+
+`src-tauri/src/commands/window.rs`に`open_mutation_builder_window`コマンドを追加します。
+
+```rust
+#[command]
+pub async fn open_mutation_builder_window(
+    app_handle: AppHandle,
+    window_manager: State<'_, WindowManager>,
+    connection_id: String,
+    connection_name: String,
+    environment: String,
+) -> Result<WindowInfo, String> {
+    let title = format!(
+        "データ変更 - {} ({})",
+        connection_name,
+        get_environment_label(&environment)
+    );
+
+    let options = WindowCreateOptions {
+        title,
+        window_type: WindowType::MutationBuilder,
+        connection_id: Some(connection_id),
+        environment: Some(environment),
+        width: Some(1400),
+        height: Some(900),
+        center: true,
+        restore_state: true,
+    };
+
+    window_manager.create_window(&app_handle, options)
+}
+```
+
+**NOTE**: この実装は既存の`open_query_builder_window`をベースにしています。
+
+---
+
 ## 実装順序
 
+### フロントエンド
 1. **型定義作成** (`mutation-query.ts`)
 2. **Piniaストア作成** (`mutation-builder.ts`)
 3. **ページ作成** (`mutation-builder.vue`)
 4. **レイアウト作成** (`MutationBuilderLayout.vue`)
 5. **ツールバー作成** (`MutationBuilderToolbar.vue`)
-6. **左パネル作成** (`LeftPanel.vue`)
-7. **中央パネル作成** (`CenterPanel.vue`)
-8. **右パネル作成** (`RightPanel.vue`)
-9. **ナビゲーション追加** (`index.vue`更新)
-10. **動作確認**
+6. **左パネル作成** (`MutationBuilderLeftPanel.vue`)
+7. **中央パネル作成** (`MutationBuilderCenterPanel.vue`)
+8. **右パネル作成** (`MutationBuilderRightPanel.vue`)
+9. **windowApi拡張** (`window.ts`更新)
+10. **ConnectionCard更新** (`connection/ConnectionCard.vue`更新)
+11. **index.vue更新** (`index.vue`更新、「データ変更」カード削除)
+
+### バックエンド
+12. **Rustコマンド追加** (`src-tauri/src/commands/window.rs`更新)
+13. **コマンド登録** (`src-tauri/src/main.rs`または`src-tauri/src/lib.rs`更新)
+
+### 動作確認
+14. **統合テスト**
 
 ---
 
@@ -745,8 +948,8 @@ describe('useMutationBuilderStore', () => {
 - [ ] 左パネルでテーブルをクリックすると選択される
 - [ ] 中央パネルにSQLプレビューエリアが表示される
 - [ ] 右パネルにテーブル選択状態が表示される
-- [ ] トップページに「データ変更」カードが表示される
-- [ ] 「データ変更」カードをクリックすると`/mutation-builder`に遷移する
+- [ ] 接続カードに「データ参照」「データ変更」ボタンが表示される
+- [ ] 「データ変更」ボタンで新しいウィンドウの`/mutation-builder`が開く
 - [ ] 既存の`/query-builder`が正常に動作する
 - [ ] TypeScript型エラーがない
 - [ ] `npm run tauri:dev`でアプリが起動する

@@ -71,7 +71,7 @@ export interface SecuritySettings {
 /**
  * ウィンドウの種類
  */
-export type WindowType = 'launcher' | 'query_builder' | 'settings'
+export type WindowType = 'launcher' | 'query_builder' | 'mutation_builder' | 'settings'
 
 /**
  * ウィンドウ情報インターフェース（Tauriから返却される）

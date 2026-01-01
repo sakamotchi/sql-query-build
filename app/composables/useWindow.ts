@@ -82,7 +82,7 @@ export function useWindow() {
   ): Promise<WindowInfo | null> => {
     try {
       // 既存ウィンドウを検索
-      const existing = await windowApi.findWindowByConnection(connectionId)
+      const existing = await windowApi.findWindowByConnection(connectionId, 'query_builder')
 
       if (existing) {
         // 既存ウィンドウにフォーカス
