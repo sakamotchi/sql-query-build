@@ -4,9 +4,9 @@
 
 | 状態 | 件数 |
 |------|------|
-| 完了 | 0 |
+| 完了 | 1 |
 | 進行中 | 0 |
-| 未着手 | 7 |
+| 未着手 | 8 |
 
 ## タスク一覧
 
@@ -18,13 +18,19 @@
 
 - [x] 要件定義書の作成
 - [x] 設計書の作成
+- [x] 設計変更（上下分割レイアウト）の反映
 - [ ] レビュー完了
 
 **対応するWBSタスク**: なし（準備作業）
 
+**設計変更（2026-01-01）**:
+- 3カラムレイアウト → 上下分割レイアウト
+- 左ツリー削除 → テーブルセレクトボックス（検索付き）
+- タブ切り替えによる入力形式選択（フォーム/表形式/INSERT SELECT）
+
 ---
 
-### T-2: InsertPanel.vue作成（8.2.1）
+### T-2: レイアウト変更（8.2.1）
 
 **状態**: 未着手
 **担当**: -
@@ -32,22 +38,22 @@
 **依存**: Phase 8.1完了（MutationBuilderLayout, mutation-builderストア）
 
 **作業内容**:
-- [ ] `app/components/mutation-builder/InsertPanel.vue` 作成
-- [ ] テーブル名表示部分の実装
-- [ ] 行管理ロジック（rows配列、createEmptyRow()、addRow()、removeRow()）
-- [ ] mutation-builderストアとの連携（watchで自動更新）
-- [ ] スタイリング（Nuxt UI v4準拠）
+- [ ] MutationBuilderLayout.vueを上下分割レイアウトに変更
+  - [ ] 3カラム構成を削除（左・中央・右パネル）
+  - [ ] 上下分割構成に変更（上: 入力パネル、下: SQLプレビュー）
+  - [ ] リサイズハンドル追加（上下の高さ調整可能）
+- [ ] MutationBuilderLeftPanel.vueを削除（またはコメントアウト）
+- [ ] MutationBuilderCenterPanel.vueを下パネルに移動
 
 **対応するWBSタスク**: 8.2.1
 
 **完了条件**:
-- InsertPanel.vueが存在し、基本的なレイアウトが表示される
-- 行の追加・削除機能が動作する
-- mutation-builderストアと連携し、queryModelが更新される
+- 上下分割レイアウトが表示される
+- リサイズハンドルで上下の高さを調整できる
 
 ---
 
-### T-3: ColumnInputField.vue作成（8.2.3の一部）
+### T-3: テーブルセレクトボックス（8.2.2）
 
 **状態**: 未着手
 **担当**: -
@@ -55,49 +61,101 @@
 **依存**: T-2完了
 
 **作業内容**:
+- [ ] `app/components/mutation-builder/TableSelector.vue` 作成
+- [ ] USelectMenuで全テーブル一覧を表示
+- [ ] 検索フィルター機能（テーブル名で絞り込み）
+- [ ] スキーマ名.テーブル名の表示形式
+- [ ] mutation-builderストアとの連携（setSelectedTable）
+- [ ] database-structureストアからテーブル一覧を取得
+
+**対応するWBSタスク**: 8.2.2
+
+**完了条件**:
+- テーブルセレクトボックスが表示される
+- 検索でテーブルを絞り込める
+- テーブル選択でストアが更新される
+
+---
+
+### T-4: 上パネル（タブUI）（8.2.3）
+
+**状態**: 未着手
+**担当**: -
+**期限**: -
+**依存**: T-3完了
+
+**作業内容**:
+- [ ] `app/components/mutation-builder/InsertInputPanel.vue` 作成
+- [ ] UTabsでタブ切り替えUI実装
+  - [ ] [フォーム形式] タブ（Phase 1で実装）
+  - [ ] [表形式] タブ（Phase 1では「未実装」表示のみ）
+  - [ ] [INSERT SELECT] タブ（Phase 1では非表示またはdisabled）
+- [ ] タブの状態管理（mutation-builderストア）
+
+**対応するWBSタスク**: 8.2.3
+
+**完了条件**:
+- タブUIが表示される
+- フォーム形式タブと表形式タブを切り替えできる
+- 表形式タブは「Phase 2で実装予定」と表示される
+
+---
+
+### T-5: フォーム形式入力（8.2.4）
+
+**状態**: 未着手
+**担当**: -
+**期限**: -
+**依存**: T-4完了
+
+**作業内容**:
+- [ ] `app/components/mutation-builder/FormInputTab.vue` 作成
+- [ ] `app/components/mutation-builder/InsertRowForm.vue` 作成
 - [ ] `app/components/mutation-builder/ColumnInputField.vue` 作成
-- [ ] カラム型に応じた入力コンポーネントの切り替えロジック
+- [ ] 行管理ロジック（rows配列、createEmptyRow()、addRow()、removeRow()）
+- [ ] カラム型に応じた入力コンポーネントの切り替え
   - [ ] UInput（テキスト、数値）
   - [ ] UCheckbox（BOOLEAN）
   - [ ] UTextarea（TEXT型）
 - [ ] NULLチェックボックスの実装
 - [ ] AUTO_INCREMENT/PRIMARY KEY判定ロジック
-- [ ] 入力無効化ロジック（isNull時、AUTO_INCREMENT時）
+- [ ] mutation-builderストアとの連携（watchで自動更新）
 - [ ] Nuxt UI v4記法の確認（UFormField、items属性）
 
-**対応するWBSタスク**: 8.2.3
+**対応するWBSタスク**: 8.2.4
 
 **完了条件**:
+- フォーム形式で入力フォームが表示される
+- 行の追加・削除機能が動作する
 - 各カラム型に応じた適切な入力UIが表示される
-- NULL許可カラムにはNULLチェックボックスが表示される
-- AUTO_INCREMENTカラムは入力無効化される
+- mutation-builderストアと連携し、queryModelが更新される
 
 ---
 
-### T-4: テーブル選択UI（8.2.2）とDatabaseTree連動
+### T-6: 下パネル（SQLプレビュー）（8.2.6）
 
 **状態**: 未着手
 **担当**: -
 **期限**: -
-**依存**: T-2完了
+**依存**: T-5完了
 
 **作業内容**:
-- [ ] MutationBuilderLayoutでDatabaseTreeを配置（Phase 8.1で実装済みの可能性あり）
-- [ ] DatabaseTreeのテーブルクリックイベントを`mutation-builderストア.setSelectedTable()`に接続
-- [ ] InsertPanel内でテーブル名を表示
-- [ ] テーブル選択時にカラム情報を取得（database-structureストア活用）
-- [ ] テーブル変更時の行データリセット処理
+- [ ] `app/components/mutation-builder/SqlPreviewPanel.vue` 作成
+- [ ] SQLシンタックスハイライト表示
+- [ ] クリップボードコピーボタン実装
+- [ ] mutation-builderストアから生成されたSQLを取得
+- [ ] 読み取り専用の表示
 
-**対応するWBSタスク**: 8.2.2
+**対応するWBSタスク**: 8.2.6
 
 **完了条件**:
-- DatabaseTreeでテーブルをクリックするとInsertPanelが更新される
-- 選択テーブルのカラム情報が表示される
-- テーブル変更時に入力データがリセットされる
+- 生成されたINSERT文がプレビュー表示される
+- コピーボタンでクリップボードにコピーできる
+- シンタックスハイライトが適用される
 
 ---
 
-### T-5: INSERT SQL生成エンジン（Rust）（8.2.5）
+### T-7: INSERT SQL生成エンジン（Rust）（8.2.7）
 
 **状態**: 未着手
 **担当**: -
@@ -118,7 +176,7 @@
   - [ ] NULL値を含むINSERT
   - [ ] 各データベース方言のテスト
 
-**対応するWBSタスク**: 8.2.5
+**対応するWBSタスク**: 8.2.7
 
 **完了条件**:
 - `generate_insert_sql()` がINSERT文を正しく生成する
@@ -127,12 +185,12 @@
 
 ---
 
-### T-6: Tauriコマンド実装とフロントエンド統合（8.2.6, 8.2.7）
+### T-8: Tauriコマンド実装とフロントエンド統合（8.2.8）
 
 **状態**: 未着手
 **担当**: -
 **期限**: -
-**依存**: T-5完了
+**依存**: T-7完了
 
 **作業内容**:
 - [ ] `src-tauri/src/commands/mutation_commands.rs` 作成
@@ -143,24 +201,24 @@
   - [ ] `generateInsertSql()`: Tauriコマンド呼び出し
   - [ ] `executeMutation()`: INSERT実行
   - [ ] エラーハンドリング
-- [ ] 中央パネルのSQLプレビュー表示（MutationBuilderLayoutで実装済みの可能性あり）
-- [ ] ツールバーの「実行」ボタンとの連携（Phase 8.1で実装済みの可能性あり）
+- [ ] ツールバーの「実行」ボタンとの連携
+- [ ] 実行結果の表示（影響行数、実行時間）
 
-**対応するWBSタスク**: 8.2.6, 8.2.7
+**対応するWBSタスク**: 8.2.8
 
 **完了条件**:
-- InsertPanelで入力した内容がINSERT文として生成される
-- 中央パネルにSQLプレビューが表示される
+- FormInputTabで入力した内容がINSERT文として生成される
+- 下パネルにSQLプレビューが表示される
 - 「実行」ボタンでINSERTが実行され、結果が表示される
 
 ---
 
-### T-7: クエリ保存・履歴連携と安全機能統合
+### T-9: クエリ保存・履歴連携と安全機能統合
 
 **状態**: 未着手
 **担当**: -
 **期限**: -
-**依存**: T-6完了
+**依存**: T-8完了
 
 **作業内容**:
 - [ ] SaveQueryDialogとの連携
@@ -186,17 +244,20 @@
 
 ---
 
-### T-8: テスト・ドキュメント
+### T-10: テスト・ドキュメント
 
 **状態**: 未着手
 **担当**: -
 **期限**: -
-**依存**: T-7完了
+**依存**: T-9完了
 
 **作業内容**:
 - [ ] ユニットテスト作成
-  - [ ] InsertPanel.vueのテスト（T-2で一部作成済み）
+  - [ ] TableSelector.vueのテスト
+  - [ ] InsertInputPanel.vueのテスト
+  - [ ] FormInputTab.vueのテスト
   - [ ] ColumnInputField.vueのテスト
+  - [ ] SqlPreviewPanel.vueのテスト
   - [ ] mutation-builderストアのテスト
 - [ ] 統合テスト
   - [ ] テーブル選択→カラム入力→SQL生成→実行のフロー
@@ -226,15 +287,23 @@
 ```
 T-1 (要件定義・設計)
  │
- ├─→ T-2 (InsertPanel.vue)
- │    ├─→ T-3 (ColumnInputField.vue)
- │    └─→ T-4 (テーブル選択UI)
+ ├─→ T-2 (レイアウト変更)
+ │    └─→ T-3 (テーブルセレクトボックス)
+ │         └─→ T-4 (上パネル・タブUI)
+ │              └─→ T-5 (フォーム形式入力)
+ │                   └─→ T-6 (下パネル・SQLプレビュー)
+ │                        └─→ T-8 (Tauriコマンド・統合)
+ │                             └─→ T-9 (保存・履歴・安全機能)
+ │                                  └─→ T-10 (テスト・ドキュメント)
  │
- └─→ T-5 (Rust SQL生成)
-      └─→ T-6 (Tauriコマンド・統合)
-           └─→ T-7 (保存・履歴・安全機能)
-                └─→ T-8 (テスト・ドキュメント)
+ └─→ T-7 (Rust SQL生成) ─────────────────→ T-8
 ```
+
+**新しい設計の特徴**:
+- T-2〜T-6: レイアウトとUI構築（順次実装）
+- T-7: Rust側SQL生成（並行作業可能）
+- T-8: フロントエンドとバックエンドの統合
+- T-9〜T-10: 機能統合とテスト
 
 ## 完了条件
 
