@@ -115,6 +115,19 @@ export const useSavedQueryStore = defineStore('saved-query', {
     },
 
     /**
+     * クエリの詳細を取得（バリデーション用）
+     */
+    async loadQuery(id: string) {
+      try {
+        return await queryStorageApi.loadQuery(id)
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : String(e)
+        console.error('Failed to load query:', e)
+        throw e
+      }
+    },
+
+    /**
      * クエリを読み込んでクエリビルダーにセット
      */
     async loadQueryToBuilder(id: string) {
@@ -122,32 +135,37 @@ export const useSavedQueryStore = defineStore('saved-query', {
       this.error = null
       try {
         const savedQuery = await queryStorageApi.loadQuery(id)
-        
-        // 接続IDのチェック（必要であれば警告や接続切り替えのロジックを入れる）
-        // 一旦はそのまま読み込むが、クエリビルダー側で接続IDを使って復元するロジックが必要かも
-        // query-builderストアに loadQuery アクションを追加するのが良さそうだが、
-        // ここでは queryBuilderStore.query にセットする。
-        // ただし queryBuilderStore は state を直接いじるよりアクション経由が望ましい。
-        // query-converter の逆変換 (QueryModel -> QueryBuilderState) が必要。
-        // 現在の実装には QueryModel -> QueryBuilderState の変換ロジックが恐らくない。
-        // 前回の実装内容を確認すると、convertToQueryModel はあるが逆はない。
-        
-        // ★重要: QueryModelからStateへの復元は難易度が高い。
-        // QueryModelは構造化されているので、それをUIのStateに戻す必要がある。
-        // ここでは一旦、queryBuilderStoreに `loadFromQueryModel` のようなアクションが必要になると想定し、
-        // 実装計画通りに `loadFromSavedQuery` をquery-builderストアに追加することを検討する。
-        // しかし、Task 4.1.5 では saved-query ストア実装となっている。
-        
-        // queryBuilderStoreにロードを委譲する形にする
-        if (savedQuery.query && typeof savedQuery.query === 'object' && 'mutationType' in savedQuery.query) {
-          const { useMutationBuilderStore } = await import('./mutation-builder')
-          const mutationBuilderStore = useMutationBuilderStore()
-          mutationBuilderStore.loadState(savedQuery.query as SerializableMutationState)
-        } else {
-          const queryBuilderStore = useQueryBuilderStore()
+        const queryBuilderStore = useQueryBuilderStore()
+
+        // SerializableQueryStateのみを渡す
+        if ('selectedTables' in savedQuery.query) {
           queryBuilderStore.loadState(savedQuery.query)
+        } else {
+          throw new Error('This query is not a SELECT query')
         }
-        
+
+        return savedQuery
+      } catch (e) {
+        this.error = e instanceof Error ? e.message : String(e)
+        console.error('Failed to load query:', e)
+        throw e
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * クエリを読み込んでMutationビルダーにセット
+     */
+    async loadQueryToMutationBuilder(id: string) {
+      this.isLoading = true
+      this.error = null
+      try {
+        const savedQuery = await queryStorageApi.loadQuery(id)
+        const { useMutationBuilderStore } = await import('./mutation-builder')
+        const mutationBuilderStore = useMutationBuilderStore()
+        mutationBuilderStore.loadState(savedQuery.query as SerializableMutationState)
+
         return savedQuery
       } catch (e) {
         this.error = e instanceof Error ? e.message : String(e)
