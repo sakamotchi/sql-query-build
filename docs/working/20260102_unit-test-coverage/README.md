@@ -72,11 +72,11 @@ open coverage/index.html
 ```bash
 # 例: Saved Query Store テストの実装
 # 1. ファイル作成
-touch app/stores/__tests__/saved-query.spec.ts
+touch tests/stores/saved-query.spec.ts
 
 # 2. テスト実装（design.mdを参照）
 # 3. テスト実行
-npm run test -- app/stores/__tests__/saved-query.spec.ts
+npm run test -- tests/stores/saved-query.spec.ts
 
 # 4. カバレッジ確認
 npm run test:coverage -- app/stores/saved-query.ts

@@ -37,19 +37,19 @@ it('テストケース名は日本語で明確に記述', () => {
 app/
   stores/
     example.ts
-    __tests__/
-      example.spec.ts
   composables/
     useExample.ts
+  components/
+    example/
+      Example.vue
 tests/
-  composables/
-    useExample.spec.ts
   stores/
     example.spec.ts
-app/components/
-  example/
-    Example.vue
-    Example.spec.ts  # コンポーネントと同じディレクトリ
+  composables/
+    useExample.spec.ts
+  components/
+    example/
+      Example.spec.ts
 ```
 
 ## Phase 1: 優先度高（2週間）
@@ -58,7 +58,7 @@ app/components/
 
 #### テスト対象: `app/stores/saved-query.ts`
 
-**テストファイル**: `app/stores/__tests__/saved-query.spec.ts`
+**テストファイル**: `tests/stores/saved-query.spec.ts`
 
 #### テストケース設計
 
@@ -256,7 +256,7 @@ describe('useSqlFormatter', () => {
 
 #### 1.4.1 TableRelationArea.vue
 
-**テストファイル**: `app/components/query-builder/TableRelationArea.spec.ts`
+**テストファイル**: `tests/components/query-builder/TableRelationArea.spec.ts`
 
 **テストケース**:
 ```typescript
@@ -284,7 +284,7 @@ describe('TableRelationArea', () => {
 
 #### 1.4.2 WhereTab.vue
 
-**テストファイル**: `app/components/query-builder/where/WhereTab.spec.ts`
+**テストファイル**: `tests/components/query-builder/where/WhereTab.spec.ts`
 
 **テストケース**:
 ```typescript

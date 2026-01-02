@@ -48,8 +48,8 @@
 - `WhereBuilder.vue` - WHERE句ビルダー
 - `ConditionRow.vue` - 条件行コンポーネント
 - `ConditionGroup.vue` - 条件グループコンポーネント
-- `GroupByPanel.vue` - GROUP BY パネル
-- `OrderByPanel.vue` - ORDER BY パネル
+- `GroupByTab.vue` - GROUP BY パネル
+- `OrderByTab.vue` - ORDER BY パネル
 
 #### 優先度：中（Phase 2）
 
@@ -174,7 +174,7 @@
 
 - 既存テストファイル
   - `tests/stores/query-builder.spec.ts`
-  - `app/components/query-builder/error/ErrorHint.spec.ts`
-  - `app/components/query-builder/SqlPreview.spec.ts`
+  - `tests/components/query-builder/error/ErrorHint.spec.ts`
+  - `tests/components/query-builder/SqlPreview.spec.ts`
 - Vitest公式ドキュメント: https://vitest.dev/
 - Vue Test Utils公式ドキュメント: https://test-utils.vuejs.org/

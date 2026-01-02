@@ -5,7 +5,7 @@
 ### 1.1 Saved Query Store テスト
 
 - [ ] **Task 1-1**: saved-query.spec.ts ファイル作成とセットアップ
-  - ファイル作成: `app/stores/__tests__/saved-query.spec.ts`
+  - ファイル作成: `tests/stores/saved-query.spec.ts`
   - 基本的なモック設定
   - 初期状態のテスト実装
   - 担当者: -

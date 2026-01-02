@@ -51,7 +51,7 @@ npm run test:run -- tests/stores/
 npm run test:run -- tests/composables/
 
 # 特定のファイル
-npm run test:run -- app/stores/__tests__/saved-query.spec.ts
+npm run test:run -- tests/stores/saved-query.spec.ts
 ```
 
 ### 3. カバレッジ付きで実行
@@ -89,7 +89,7 @@ npm run test:run -- --grep="SavedQueryStore.*getters"
 
 ```bash
 # テスト実行
-npm run test:run -- app/stores/__tests__/saved-query.spec.ts
+npm run test:run -- tests/stores/saved-query.spec.ts
 
 # カバレッジ確認
 npm run test:coverage -- app/stores/saved-query.ts
@@ -143,15 +143,15 @@ npm run test:coverage -- app/composables/useSqlFormatter.ts
 
 ```bash
 # 全Query Builderコンポーネントテスト実行
-npm run test:run -- app/components/query-builder/
+npm run test:run -- tests/components/query-builder/
 
 # 個別確認
-npm run test:run -- app/components/query-builder/TableRelationArea.spec.ts
-npm run test:run -- app/components/query-builder/where/WhereTab.spec.ts
-npm run test:run -- app/components/query-builder/where/ConditionRow.spec.ts
-npm run test:run -- app/components/query-builder/where/ConditionGroup.spec.ts
-npm run test:run -- app/components/query-builder/panel/GroupByPanel.spec.ts
-npm run test:run -- app/components/query-builder/panel/OrderByPanel.spec.ts
+npm run test:run -- tests/components/query-builder/TableRelationArea.spec.ts
+npm run test:run -- tests/components/query-builder/where/WhereTab.spec.ts
+npm run test:run -- tests/components/query-builder/where/ConditionRow.spec.ts
+npm run test:run -- tests/components/query-builder/where/ConditionGroup.spec.ts
+npm run test:run -- tests/components/query-builder/group-by/GroupByTab.spec.ts
+npm run test:run -- tests/components/query-builder/order-by/OrderByTab.spec.ts
 ```
 
 **確認項目（各コンポーネント共通）**:
@@ -184,14 +184,14 @@ npm run test:coverage
 
 ```bash
 # Connection関連テスト実行
-npm run test:run -- app/components/connection/
+npm run test:run -- tests/components/connection/
 
 # 個別確認
-npm run test:run -- app/components/connection/ConnectionList.spec.ts
-npm run test:run -- app/components/connection/ConnectionCard.spec.ts
-npm run test:run -- app/components/connection/ConnectionTestResultDialog.spec.ts
-npm run test:run -- app/components/connection/EnvironmentSelector.spec.ts
-npm run test:run -- app/components/connection/EnvironmentBadge.spec.ts
+npm run test:run -- tests/components/connection/ConnectionList.spec.ts
+npm run test:run -- tests/components/connection/ConnectionCard.spec.ts
+npm run test:run -- tests/components/ConnectionTestResultDialog.spec.ts
+npm run test:run -- tests/components/connection/EnvironmentSelector.spec.ts
+npm run test:run -- tests/components/common/EnvironmentBadge.spec.ts
 ```
 
 **確認項目**:
@@ -205,14 +205,14 @@ npm run test:run -- app/components/connection/EnvironmentBadge.spec.ts
 
 ```bash
 # Security関連テスト実行
-npm run test:run -- app/components/security/
+npm run test:run -- tests/components/security/
 
 # 個別確認
-npm run test:run -- app/components/security/MasterPasswordSetupDialog.spec.ts
-npm run test:run -- app/components/security/PasswordStrengthMeter.spec.ts
-npm run test:run -- app/components/security/SecurityProviderComparison.spec.ts
-npm run test:run -- app/components/security/provider-change/FromSimpleDialog.spec.ts
-npm run test:run -- app/components/security/provider-change/FromMasterPasswordDialog.spec.ts
+npm run test:run -- tests/components/security/MasterPasswordSetupDialog.spec.ts
+npm run test:run -- tests/components/security/PasswordStrengthMeter.spec.ts
+npm run test:run -- tests/components/security/SecurityProviderComparison.spec.ts
+npm run test:run -- tests/components/security/provider-change/FromSimpleDialog.spec.ts
+npm run test:run -- tests/components/security/provider-change/FromMasterPasswordDialog.spec.ts
 ```
 
 **確認項目**:
@@ -239,10 +239,10 @@ npm run test:coverage
 
 ```bash
 # Settings関連テスト実行
-npm run test:run -- app/components/settings/
+npm run test:run -- tests/components/settings/
 
 # Launcher関連テスト実行
-npm run test:run -- app/components/launcher/
+npm run test:run -- tests/components/launcher/
 ```
 
 **確認項目**:
@@ -279,7 +279,7 @@ open coverage/index.html
 npm run test
 
 # 特定のファイルのみウォッチ
-npm run test -- app/stores/__tests__/saved-query.spec.ts
+npm run test -- tests/stores/saved-query.spec.ts
 ```
 
 ### 2. コミット前の確認
