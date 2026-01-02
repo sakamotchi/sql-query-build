@@ -5,12 +5,16 @@
 DELETEビルダーは、既存のmutation-builderページに統合される形で実装します。
 INSERTビルダー（8.2）やUPDATEビルダー（8.3）と同様に、mutation-builderページのタブ切り替えで
 DELETEモードに切り替わり、右パネルにDeletePanel.vueが表示される構成です。
+テーブル選択はMutationBuilderLayoutの共通TableSelectorで行い、DeletePanelはWHERE条件と警告表示に専念します。
 
 ### システム構成図
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ MutationBuilderToolbar (タブ切り替え: INSERT/UPDATE/DELETE)  │
+└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ TableSelector (テーブル選択)                                 │
 └─────────────────────────────────────────────────────────────┘
 ┌────────────┬────────────────────────┬────────────────────────┐
 │ LeftPanel  │  CenterPanel          │  RightPanel            │
@@ -19,8 +23,7 @@ DELETEモードに切り替わり、右パネルにDeletePanel.vueが表示さ�
 │            │  DELETE FROM table     │  ┌──────────────────┐ │
 │            │  WHERE condition       │  │ DeletePanel.vue  │ │
 │            │                        │  ├──────────────────┤ │
-│            │  [コピー] ボタン        │  │ テーブル選択     │ │
-│            │                        │  │ WHERE条件設定    │ │
+│            │  [コピー] ボタン        │  │ 警告/WHERE条件   │ │
 │            │                        │  └──────────────────┘ │
 └────────────┴────────────────────────┴────────────────────────┘
 ```
@@ -33,7 +36,6 @@ DELETEモードに切り替わり、右パネルにDeletePanel.vueが表示さ�
 
 **責務:**
 - DELETE操作のメインUI
-- テーブル選択ドロップダウン表示
 - WHERE条件設定UI（MutationWhereTab）の表示
 - WHERE句なし警告の表示
 
@@ -53,28 +55,17 @@ DELETEモードに切り替わり、右パネルにDeletePanel.vueが表示さ�
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMutationBuilderStore } from '@/stores/mutation-builder'
-import TableSelector from './TableSelector.vue'
 import MutationWhereTab from './MutationWhereTab.vue'
 
 const store = useMutationBuilderStore()
 
-const selectedTable = computed(() => store.selectedTable)
-const hasWhereConditions = computed(() => {
-  const model = store.queryModel
-  if (!model || model.type !== 'DELETE') return false
-  return model.whereConditions && model.whereConditions.length > 0
-})
+const showWarning = computed(() => store.selectedTable && !store.hasWhereConditions)
 </script>
 
 <template>
   <div class="flex flex-col h-full bg-white dark:bg-gray-900">
-    <!-- テーブル選択 -->
-    <div class="p-4 border-b border-gray-200 dark:border-gray-800">
-      <TableSelector />
-    </div>
-
     <!-- WHERE句なし警告 -->
-    <div v-if="selectedTable && !hasWhereConditions" class="p-4">
+    <div v-if="showWarning" class="p-4">
       <UAlert
         color="red"
         icon="i-heroicons-exclamation-triangle"
@@ -95,12 +86,12 @@ const hasWhereConditions = computed(() => {
 
 #### 1. TableSelector.vue
 
-既存のコンポーネントをそのまま再利用します。mutation-builderストアの
+既存のコンポーネントをMutationBuilderLayoutで共通表示し、mutation-builderストアの
 `selectedTable`と`setSelectedTable()`を使用してテーブル選択を管理します。
 
 #### 2. MutationWhereTab.vue
 
-既存のコンポーネントをそのまま再利用します。mutation-builderストアの
+既存のコンポーネントをUPDATE/DELETE共通で再利用します。mutation-builderストアの
 `queryModel.whereConditions`を使用してWHERE条件を管理します。
 
 ## ストア設計（mutation-builder.ts）
@@ -250,21 +241,23 @@ pub async fn execute_mutation_query(
 
 ## フロントエンド API設計
 
-### app/api/mutation-builder.ts
+### app/api/mutation.ts
 
 既存のAPIファイルに`generateDeleteSql`関数を追加します。
 
 ```typescript
 import { invoke } from '@tauri-apps/api/core'
-import type { DeleteQueryModel } from '@/types/mutation-query'
+import type { DeleteSqlQueryModel } from '@/types/mutation-query'
 
 export async function generateDeleteSql(
-  model: DeleteQueryModel,
-  connectionId: string
+  query: DeleteSqlQueryModel,
+  connectionId: string,
+  smartQuote: boolean = true
 ): Promise<string> {
   return await invoke('generate_delete_sql', {
-    model,
+    query,
     connectionId,
+    smartQuote,
   })
 }
 ```
@@ -288,40 +281,19 @@ export async function generateDeleteSql(
 
 #### 2. DangerousQueryDialog連携
 
-mutation-builderストアの`executeQuery()`で、WHERE句がない場合は
-`warningLevel: 'danger'`を設定し、DangerousQueryDialogを表示します。
+DELETEのSQL生成後に`analyzeQuery`を実行し、WHERE句がない場合は`riskLevel: 'danger'`になります。
+MutationBuilderToolbarが安全設定に従ってDangerousQueryDialogを表示します。
 
 ```typescript
-// mutation-builder.ts
+// MutationBuilderToolbar.vue
 
-async executeQuery() {
-  const model = this.queryModel
-  if (!model) return
-
-  // WHERE句チェック
-  const hasWhere = model.type === 'DELETE' || model.type === 'UPDATE'
-    ? (model.whereConditions && model.whereConditions.length > 0)
-    : true
-
-  // 警告レベル設定
-  let warningLevel: 'info' | 'warning' | 'danger' = 'info'
-  if (model.type === 'DELETE') {
-    warningLevel = hasWhere ? 'warning' : 'danger'
-  }
-
-  // DangerousQueryDialog表示（dangerレベルの場合）
-  if (warningLevel === 'danger') {
-    const confirmed = await showDangerousQueryDialog({
-      sql: this.generatedSql,
-      warningLevel,
-      message: 'WHERE句がないため、テーブルの全行が削除されます。',
-    })
-    if (!confirmed) return
-  }
-
-  // 実行
-  await executeMutationQuery(this.generatedSql, connectionId)
+const analysis = store.analysisResult
+if (analysis?.riskLevel === 'danger' && safetyConfig.confirmationEnabled) {
+  showConfirmDialog.value = true
+  return
 }
+
+store.executeMutation()
 ```
 
 ## データフロー
@@ -333,10 +305,9 @@ async executeQuery() {
    ↓
 2. DeletePanel.vueが表示される
    ↓
-3. テーブル選択ドロップダウンでテーブルを選択
+3. TableSelectorでテーブルを選択
    ↓ (mutation-builderストアのsetSelectedTable()呼び出し)
-4. mutation-builderストアのselectedTableが更新される
-   ↓ (watchでqueryModelが自動更新)
+4. mutation-builderストアがqueryModelを初期化し、DELETE SQLを生成
 5. MutationWhereTabでWHERE条件を設定
    ↓ (addWhereCondition()等を呼び出し)
 6. mutation-builderストアのqueryModel.whereConditionsが更新される

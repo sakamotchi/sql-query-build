@@ -135,7 +135,7 @@ mutation-builderページ内のタブ切り替えで実装します。
 
 - mutation-builderページの既存レイアウトに従う
 - 既存のINSERT/UPDATEビルダーに影響を与えない
-- 既存のMutationWhereTab.vueを変更せずに再利用する
+- 既存のMutationWhereTab.vueを再利用し、DELETEでも利用できるように拡張する
 
 ## 依存関係
 

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type {
   MutationType,
   MutationQueryModel,
+  DeleteSqlQueryModel,
   InsertQueryModel,
   UpdateQueryModel,
   UpdateSetValue,
@@ -243,6 +244,9 @@ export const useMutationBuilderStore = defineStore('mutation-builder', {
     setMutationType(type: MutationType): void {
       this.mutationType = type
       this.resetQueryModel()
+      if (type === 'DELETE') {
+        void this.generateDeleteSql()
+      }
     },
 
     /**
@@ -251,6 +255,9 @@ export const useMutationBuilderStore = defineStore('mutation-builder', {
     setSelectedTable(table: string | null): void {
       this.selectedTable = table
       this.resetQueryModel()
+      if (this.mutationType === 'DELETE') {
+        void this.generateDeleteSql()
+      }
     },
 
     /**
@@ -537,6 +544,68 @@ export const useMutationBuilderStore = defineStore('mutation-builder', {
     },
 
     /**
+     * DELETE SQLを生成
+     */
+    async generateDeleteSql(): Promise<void> {
+      if (!this.queryModel || this.queryModel.type !== 'DELETE') {
+        this.generatedSql = ''
+        this.analysisResult = null
+        return
+      }
+
+      if (!this.queryModel.table) {
+        this.generatedSql = ''
+        this.analysisResult = null
+        return
+      }
+
+      const connectionStore = useConnectionStore()
+      const windowStore = useWindowStore()
+      const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+
+      if (!connectionId) {
+        this.generatedSql = ''
+        this.analysisResult = null
+        return
+      }
+
+      const whereClause = buildWhereClause(this.queryModel.whereConditions)
+
+      this.isGeneratingSql = true
+      this.sqlGenerationError = null
+
+      try {
+        const request: DeleteSqlQueryModel = {
+          type: 'DELETE',
+          table: this.queryModel.table,
+          whereClause,
+        }
+
+        const rawSql = await mutationApi.generateDeleteSql(request, connectionId, this.smartQuote)
+
+        const { formatMutationSql } = useSqlFormatter()
+        this.generatedSql = formatMutationSql(rawSql, 'DELETE')
+
+        const activeConnection =
+          connectionStore.activeConnection ||
+          connectionStore.connections.find((c) => c.id === connectionId)
+        if (activeConnection) {
+          const dialect = activeConnection.type.toLowerCase()
+          this.analysisResult = await queryApi.analyzeQuery(this.generatedSql, dialect)
+        } else {
+          this.analysisResult = null
+        }
+      } catch (error) {
+        console.error('Failed to generate DELETE SQL:', error)
+        this.sqlGenerationError = error instanceof Error ? error.message : 'Unknown error'
+        this.generatedSql = ''
+        this.analysisResult = null
+      } finally {
+        this.isGeneratingSql = false
+      }
+    },
+
+    /**
      * mutation種別に応じたSQLを生成
      */
     async generateMutationSql(): Promise<void> {
@@ -544,6 +613,8 @@ export const useMutationBuilderStore = defineStore('mutation-builder', {
         await this.generateInsertSql()
       } else if (this.mutationType === 'UPDATE') {
         await this.generateUpdateSql()
+      } else if (this.mutationType === 'DELETE') {
+        await this.generateDeleteSql()
       } else {
         this.generatedSql = ''
         this.analysisResult = null

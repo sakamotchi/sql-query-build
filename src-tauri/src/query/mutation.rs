@@ -31,6 +31,15 @@ pub struct UpdateSqlResult {
     pub has_where_clause: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteQueryModel {
+    #[serde(rename = "type")]
+    pub query_type: String,
+    pub table: String,
+    pub where_clause: Option<WhereClause>,
+}
+
 pub fn generate_insert_sql(
     model: &InsertQueryModel,
     dialect: &dyn Dialect,
@@ -139,6 +148,37 @@ pub fn generate_update_sql(
         sql,
         has_where_clause,
     })
+}
+
+pub fn generate_delete_sql(
+    model: &DeleteQueryModel,
+    dialect: &dyn Dialect,
+    smart_quote: bool,
+) -> Result<String, String> {
+    if model.table.trim().is_empty() {
+        return Err("Table name is required".to_string());
+    }
+
+    let quote_style = if smart_quote {
+        QuoteStyle::Smart
+    } else {
+        QuoteStyle::Always
+    };
+
+    let table_name = quote_identifier_path(&model.table, dialect, quote_style);
+
+    let mut sql = format!("DELETE FROM {}", table_name);
+
+    if let Some(ref where_clause) = model.where_clause {
+        let builder = SqlBuilder::new(dialect).smart_quote(smart_quote);
+        let where_sql = builder.build_where(where_clause)?;
+        sql.push(' ');
+        sql.push_str(&where_sql);
+    }
+
+    sql.push(';');
+
+    Ok(sql)
 }
 
 fn quote_identifier_path(identifier: &str, dialect: &dyn Dialect, quote_style: QuoteStyle) -> String {
@@ -410,5 +450,48 @@ mod tests {
         let result = generate_update_sql(&model, &dialect, true).unwrap();
 
         assert!(result.sql.contains("email = NULL"));
+    }
+
+    #[test]
+    fn test_generate_delete_sql_with_where() {
+        let model = DeleteQueryModel {
+            query_type: "DELETE".to_string(),
+            table: "users".to_string(),
+            where_clause: Some(WhereClause {
+                logic: "AND".to_string(),
+                conditions: vec![WhereConditionItem::Condition(WhereCondition {
+                    id: "cond-1".to_string(),
+                    column: WhereConditionColumn {
+                        table_alias: "users".to_string(),
+                        column_name: "id".to_string(),
+                    },
+                    operator: "=".to_string(),
+                    value: WhereValue::Literal {
+                        value: LiteralValue::Number(1.0),
+                    },
+                })],
+            }),
+        };
+
+        let dialect = PostgresDialect;
+        let sql = generate_delete_sql(&model, &dialect, true).unwrap();
+
+        assert!(sql.contains("DELETE FROM users"));
+        assert!(sql.contains("WHERE users.id = 1"));
+    }
+
+    #[test]
+    fn test_generate_delete_sql_without_where() {
+        let model = DeleteQueryModel {
+            query_type: "DELETE".to_string(),
+            table: "users".to_string(),
+            where_clause: None,
+        };
+
+        let dialect = PostgresDialect;
+        let sql = generate_delete_sql(&model, &dialect, true).unwrap();
+
+        assert!(sql.contains("DELETE FROM users"));
+        assert!(!sql.contains("WHERE"));
     }
 }

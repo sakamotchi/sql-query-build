@@ -5,6 +5,7 @@ import MutationBuilderToolbar from './MutationBuilderToolbar.vue'
 import TableSelector from './TableSelector.vue'
 import InsertInputPanel from './InsertInputPanel.vue'
 import UpdatePanel from './UpdatePanel.vue'
+import DeletePanel from './DeletePanel.vue'
 import SqlPreviewPanel from './SqlPreviewPanel.vue'
 import ResizablePanel from '@/components/query-builder/ResizablePanel.vue'
 
@@ -33,6 +34,7 @@ const handlePreviewResize = (height: number) => {
       <div class="flex-1 min-h-0">
         <InsertInputPanel v-if="mutationType === 'INSERT'" />
         <UpdatePanel v-else-if="mutationType === 'UPDATE'" />
+        <DeletePanel v-else-if="mutationType === 'DELETE'" />
         <div v-else class="flex-1 flex items-center justify-center p-6 text-sm text-gray-500 dark:text-gray-400">
           {{ mutationType }} は実装予定です
         </div>

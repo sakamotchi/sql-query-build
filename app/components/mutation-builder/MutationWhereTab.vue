@@ -57,7 +57,7 @@ const tableAlias = computed(() => {
 })
 
 const whereConditions = computed<Array<WhereCondition | ConditionGroupType>>(() => {
-  if (!mutationStore.queryModel || mutationStore.queryModel.type !== 'UPDATE') return []
+  if (!mutationStore.queryModel || mutationStore.queryModel.type === 'INSERT') return []
   return mutationStore.queryModel.whereConditions
 })
 

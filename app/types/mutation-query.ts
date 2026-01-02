@@ -66,6 +66,18 @@ export interface UpdateSqlResult {
 }
 
 /**
+ * DELETE SQL生成用モデル
+ */
+export interface DeleteSqlQueryModel {
+  /** クエリ種別 */
+  type: 'DELETE'
+  /** 削除対象テーブル名 */
+  table: string
+  /** WHERE句 */
+  whereClause: WhereClause | null
+}
+
+/**
  * DELETE クエリモデル
  */
 export interface DeleteQueryModel {

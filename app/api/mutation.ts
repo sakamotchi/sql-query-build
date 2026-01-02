@@ -1,5 +1,10 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { InsertQueryModel, UpdateSqlQueryModel, UpdateSqlResult } from '@/types/mutation-query'
+import type {
+  DeleteSqlQueryModel,
+  InsertQueryModel,
+  UpdateSqlQueryModel,
+  UpdateSqlResult,
+} from '@/types/mutation-query'
 import type { MutationExecuteRequest, MutationResult } from '@/types/mutation-result'
 
 export const mutationApi = {
@@ -19,6 +24,17 @@ export const mutationApi = {
     smartQuote: boolean = true
   ): Promise<UpdateSqlResult> {
     return invoke('generate_update_sql', { query, connectionId, smartQuote })
+  },
+
+  /**
+   * DELETE SQLを生成
+   */
+  async generateDeleteSql(
+    query: DeleteSqlQueryModel,
+    connectionId: string,
+    smartQuote: boolean = true
+  ): Promise<string> {
+    return invoke('generate_delete_sql', { query, connectionId, smartQuote })
   },
 
   /**
