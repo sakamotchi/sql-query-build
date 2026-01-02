@@ -16,6 +16,7 @@ dist-ssr
 .output
 .nuxt
 .nitro
+coverage
 
 # Tauri
 src-tauri/target

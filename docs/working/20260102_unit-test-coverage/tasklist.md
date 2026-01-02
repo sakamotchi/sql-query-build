@@ -197,18 +197,18 @@
   - 担当者: -
   - 見積もり: 0.5日
 
-#### GroupByPanel.vue
+#### GroupByTab.vue
 
-- [ ] **Task 4-9**: GroupByPanel.spec.ts 作成
+- [ ] **Task 4-9**: GroupByTab.spec.ts 作成
   - ファイル作成
   - カラム追加/削除テスト
   - 順序変更テスト
   - 担当者: -
   - 見積もり: 0.5日
 
-#### OrderByPanel.vue
+#### OrderByTab.vue
 
-- [ ] **Task 4-10**: OrderByPanel.spec.ts 作成
+- [ ] **Task 4-10**: OrderByTab.spec.ts 作成
   - ファイル作成
   - カラム追加/削除テスト
   - ソート順変更テスト

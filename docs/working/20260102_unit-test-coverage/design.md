@@ -353,11 +353,11 @@ describe('ConditionGroup', () => {
 })
 ```
 
-#### 1.4.5 GroupByPanel.vue
+#### 1.4.5 GroupByTab.vue
 
 **テストケース**:
 ```typescript
-describe('GroupByPanel', () => {
+describe('GroupByTab', () => {
   describe('カラム追加', () => {
     it('GROUP BYカラムを追加できる')
   })
@@ -372,11 +372,11 @@ describe('GroupByPanel', () => {
 })
 ```
 
-#### 1.4.6 OrderByPanel.vue
+#### 1.4.6 OrderByTab.vue
 
 **テストケース**:
 ```typescript
-describe('OrderByPanel', () => {
+describe('OrderByTab', () => {
   describe('カラム追加', () => {
     it('ORDER BYカラムを追加できる')
   })
