@@ -19,9 +19,12 @@ const emit = defineEmits<{
 
 const dataType = computed(() => props.column.dataType.toUpperCase())
 
+const isUuidType = computed(() => dataType.value.includes('UUID'))
+
 const inputType = computed(() => {
   if (dataType.value.includes('BOOL')) return 'checkbox'
   if (dataType.value.includes('TEXT')) return 'textarea'
+  if (isUuidType.value) return 'uuid'
 
   // 日時型 (Timestamp/Datetime) - Check this BEFORE Date/Time to avoid misclassification
   if (dataType.value.includes('TIMESTAMP') || dataType.value.includes('DATETIME')) {
@@ -160,6 +163,27 @@ const onTimeChange = (v: any) => {
   timestampTime.value = v
   updateTimestamp()
 }
+
+// --- UUID Handling ---
+
+const generateUuid = () => {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    emit('update:value', crypto.randomUUID())
+  } else {
+    // Fallback for older browsers
+    emit('update:value', 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0
+      const v = c === 'x' ? r : (r & 0x3 | 0x8)
+      return v.toString(16)
+    }))
+  }
+}
+
+const isValidUuid = computed(() => {
+  if (!props.value || props.isNull) return true
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidPattern.test(props.value)
+})
 </script>
 
 <template>
@@ -220,6 +244,31 @@ const onTimeChange = (v: any) => {
           </template>
         </UPopover>
       </ClientOnly>
+    </template>
+
+    <!-- UUID Type -->
+    <template v-else-if="inputType === 'uuid'">
+      <div class="flex gap-2">
+        <UInput
+          v-model="modelValue"
+          :disabled="isDisabled"
+          placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          :color="!isValidUuid ? 'red' : undefined"
+          class="flex-1"
+        />
+        <UButton
+          icon="i-heroicons-sparkles"
+          color="primary"
+          variant="outline"
+          :disabled="isDisabled"
+          @click="generateUuid"
+        >
+          生成
+        </UButton>
+      </div>
+      <p v-if="!isValidUuid" class="text-xs text-red-500 dark:text-red-400 mt-1">
+        無効なUUID形式です
+      </p>
     </template>
 
     <!-- Number Type -->
