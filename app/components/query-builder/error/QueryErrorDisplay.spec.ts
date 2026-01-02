@@ -4,6 +4,18 @@ import { mount } from '@vue/test-utils'
 import QueryErrorDisplay from './QueryErrorDisplay.vue'
 import type { QueryExecuteError } from '@/types/query-result'
 
+// Stub Nuxt UI components
+const stubs = {
+  UIcon: {
+    template: '<i></i>',
+    props: ['name']
+  },
+  UButton: {
+    template: '<button><slot /></button>',
+    props: ['color', 'variant', 'icon', 'size']
+  }
+}
+
 describe('QueryErrorDisplay', () => {
   const mockError: QueryExecuteError = {
     code: 'syntax_error',
@@ -21,6 +33,9 @@ describe('QueryErrorDisplay', () => {
       props: {
         error: mockError,
       },
+      global: {
+        stubs
+      }
     })
     
     // Check main title (mapped from code)
@@ -39,6 +54,9 @@ describe('QueryErrorDisplay', () => {
       props: {
         error: mockError,
       },
+      global: {
+        stubs
+      }
     })
 
     // Initially hidden
@@ -57,9 +75,14 @@ describe('QueryErrorDisplay', () => {
       props: {
         error: mockError,
       },
+      global: {
+        stubs
+      }
     })
 
-    await wrapper.findComponent({ name: 'UButton' }).trigger('click')
+    // Find the retry button (the second button, which is the UButton stub)
+    const buttons = wrapper.findAll('button')
+    await buttons[buttons.length - 1].trigger('click')
     expect(wrapper.emitted('retry')).toBeTruthy()
   })
 })

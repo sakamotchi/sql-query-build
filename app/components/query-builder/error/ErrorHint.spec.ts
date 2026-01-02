@@ -4,6 +4,14 @@ import { mount } from '@vue/test-utils'
 import ErrorHintComponent from './ErrorHint.vue'
 import type { ErrorHint } from '@/utils/error-messages'
 
+// Stub Nuxt UI components
+const stubs = {
+  UIcon: {
+    template: '<i></i>',
+    props: ['name']
+  }
+}
+
 describe('ErrorHint', () => {
   const mockHint: ErrorHint = {
     title: 'Check syntax',
@@ -16,6 +24,9 @@ describe('ErrorHint', () => {
       props: {
         hint: mockHint,
       },
+      global: {
+        stubs
+      }
     })
     
     expect(wrapper.text()).toContain('Check syntax')
@@ -27,6 +38,9 @@ describe('ErrorHint', () => {
       props: {
         hint: mockHint,
       },
+      global: {
+        stubs
+      }
     })
     
     expect(wrapper.text()).toContain('Example 1')

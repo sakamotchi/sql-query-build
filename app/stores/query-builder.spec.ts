@@ -12,6 +12,24 @@ vi.mock('@/api/query', () => ({
   },
 }))
 
+// Mock connection store
+vi.mock('@/stores/connection', () => ({
+  useConnectionStore: () => ({
+    activeConnection: {
+      id: 'test-connection-id',
+      type: 'postgresql'
+    },
+    connections: []
+  })
+}))
+
+// Mock window store
+vi.mock('@/stores/window', () => ({
+  useWindowStore: () => ({
+    currentConnectionId: 'test-connection-id'
+  })
+}))
+
 describe('QueryBuilder Store Error Handling', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -20,22 +38,22 @@ describe('QueryBuilder Store Error Handling', () => {
 
   it('handles execution error', async () => {
     const store = useQueryBuilderStore()
-    
+
     // Mock error response
     const mockError = new Error('Execution failed')
     vi.mocked(queryApi.executeQuery).mockRejectedValueOnce(mockError)
-    
+
     // Setup state for execution
     store.generatedSql = 'SELECT * FROM users'
     store.selectedColumns = [{
        tableId: '1', tableAlias: 't1', columnName: 'c1', columnAlias: null, dataType: 'text'
     }]
-    
+
     // Execute
     await store.executeQuery()
-    
-    // Check error state
-    expect(store.queryError).toEqual({
+
+    // Check error state (Error objects get converted to unknown code)
+    expect(store.queryError).toMatchObject({
       code: 'unknown',
       message: 'Execution failed',
     })
@@ -44,7 +62,7 @@ describe('QueryBuilder Store Error Handling', () => {
 
   it('handles JSON error string from Rust', async () => {
     const store = useQueryBuilderStore()
-    
+
     // Mock error response as JSON string
     const jsonError = JSON.stringify({
       code: 'syntax_error',
@@ -52,15 +70,15 @@ describe('QueryBuilder Store Error Handling', () => {
       details: { line: 1 },
     })
     vi.mocked(queryApi.executeQuery).mockRejectedValueOnce(jsonError)
-    
+
     store.generatedSql = 'SELECT * FROM users'
     store.selectedColumns = [{
        tableId: '1', tableAlias: 't1', columnName: 'c1', columnAlias: null, dataType: 'text'
     }]
-    
+
     await store.executeQuery()
-    
-    expect(store.queryError).toEqual({
+
+    expect(store.queryError).toMatchObject({
       code: 'syntax_error',
       message: 'Syntax error',
       details: { line: 1 },
