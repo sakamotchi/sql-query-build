@@ -5,8 +5,10 @@ import type {
   QueryHistory,
   QueryHistoryMetadata,
   AddHistoryRequest,
-  SearchHistoryRequest
+  SearchHistoryRequest,
+  SerializableBuilderState
 } from '@/types/query-history'
+import type { SerializableMutationState } from '@/stores/mutation-builder'
 
 export const useQueryHistoryStore = defineStore('query-history', () => {
   const histories = ref<QueryHistoryMetadata[]>([])
@@ -109,18 +111,24 @@ export const useQueryHistoryStore = defineStore('query-history', () => {
   async function loadToBuilder(id: string): Promise<QueryHistory | null> {
     const history = await loadHistory(id)
     if (history) {
-      // query-builderストアに状態を復元
-      // 動的インポートを使用して循環参照を回避
-      const { useQueryBuilderStore } = await import('./query-builder')
-      const queryBuilderStore = useQueryBuilderStore()
-      
-      // QueryBuilderStoreにクエリ状態を適用
-      // Note: QueryBuilderStoreに SerializableQueryState を受け取るアクションが必要
-      // なければパッチを当てるか、個別に設定する
-      queryBuilderStore.$patch(history.query)
-      
-      // 生成されたSQLもセットする
-      // queryBuilderStore.generatedSql = history.sql
+      if (history.query && typeof history.query === 'object' && 'mutationType' in history.query) {
+        const { useMutationBuilderStore } = await import('./mutation-builder')
+        const mutationBuilderStore = useMutationBuilderStore()
+        mutationBuilderStore.loadState(history.query as SerializableMutationState)
+      } else {
+        // query-builderストアに状態を復元
+        // 動的インポートを使用して循環参照を回避
+        const { useQueryBuilderStore } = await import('./query-builder')
+        const queryBuilderStore = useQueryBuilderStore()
+        
+        // QueryBuilderStoreにクエリ状態を適用
+        // Note: QueryBuilderStoreに SerializableQueryState を受け取るアクションが必要
+        // なければパッチを当てるか、個別に設定する
+        queryBuilderStore.$patch(history.query)
+        
+        // 生成されたSQLもセットする
+        // queryBuilderStore.generatedSql = history.sql
+      }
     }
     return history
   }

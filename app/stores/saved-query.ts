@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import type { SavedQueryMetadata, SaveQueryRequest, SearchQueryRequest } from '@/types/saved-query'
+import type { SavedQueryMetadata, SaveQueryRequest, SearchQueryRequest, SerializableBuilderState } from '@/types/saved-query'
+import type { SerializableMutationState } from '@/stores/mutation-builder'
 import { queryStorageApi } from '@/api/query-storage'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import { useConnectionStore } from '@/stores/connection'
@@ -63,7 +64,7 @@ export const useSavedQueryStore = defineStore('saved-query', {
       description: string,
       tags: string[],
       overwriteId?: string,
-      queryOverride?: SerializableQueryState,
+      queryOverride?: SerializableBuilderState,
       connectionIdOverride?: string
     ): Promise<boolean> {
       const queryBuilderStore = useQueryBuilderStore()
@@ -138,9 +139,14 @@ export const useSavedQueryStore = defineStore('saved-query', {
         // しかし、Task 4.1.5 では saved-query ストア実装となっている。
         
         // queryBuilderStoreにロードを委譲する形にする
-        const queryBuilderStore = useQueryBuilderStore()
-        
-        queryBuilderStore.loadState(savedQuery.query)
+        if (savedQuery.query && typeof savedQuery.query === 'object' && 'mutationType' in savedQuery.query) {
+          const { useMutationBuilderStore } = await import('./mutation-builder')
+          const mutationBuilderStore = useMutationBuilderStore()
+          mutationBuilderStore.loadState(savedQuery.query as SerializableMutationState)
+        } else {
+          const queryBuilderStore = useQueryBuilderStore()
+          queryBuilderStore.loadState(savedQuery.query)
+        }
         
         return savedQuery
       } catch (e) {

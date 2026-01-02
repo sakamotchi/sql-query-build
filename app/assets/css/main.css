@@ -41,3 +41,11 @@
 .dark .env-production {
   background-color: #B71C1C;
 }
+
+/* フォーム入力グリッドレイアウト（INSERTビルダー） */
+.form-input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}

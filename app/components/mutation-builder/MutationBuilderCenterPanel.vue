@@ -48,10 +48,10 @@ const showWarning = computed(() => {
         <div v-if="queryInfo.affectedRows !== null">
           影響行数: {{ queryInfo.affectedRows }}行
         </div>
-        <div v-if="queryInfo.executionTime !== null">
-          実行時間: {{ queryInfo.executionTime.toFixed(3) }}秒
+        <div v-if="queryInfo.executionTimeMs !== null">
+          実行時間: {{ (queryInfo.executionTimeMs / 1000).toFixed(3) }}秒
         </div>
-        <div v-if="queryInfo.affectedRows === null && queryInfo.executionTime === null">
+        <div v-if="queryInfo.affectedRows === null && queryInfo.executionTimeMs === null">
           クエリを実行してください
         </div>
       </div>

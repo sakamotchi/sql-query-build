@@ -81,7 +81,10 @@ impl PostgresqlInspector {
                       AND kcu.table_name = c.table_name
                       AND kcu.column_name = c.column_name
                 ) as is_unique,
-                COALESCE(c.column_default LIKE '%nextval%', false) as is_auto_increment,
+                (
+                    c.is_identity = 'YES' OR
+                    COALESCE(c.column_default LIKE '%nextval%', false)
+                ) as is_auto_increment,
                 c.ordinal_position,
                 col_description(
                     (quote_ident(c.table_schema) || '.' || quote_ident(c.table_name))::regclass,
@@ -491,7 +494,10 @@ impl DatabaseInspector for PostgresqlInspector {
                       AND kcu.table_name = c.table_name
                       AND kcu.column_name = c.column_name
                 ) as is_unique,
-                COALESCE(c.column_default LIKE '%nextval%', false) as is_auto_increment,
+                (
+                    c.is_identity = 'YES' OR
+                    COALESCE(c.column_default LIKE '%nextval%', false)
+                ) as is_auto_increment,
                 c.ordinal_position,
                 col_description(
                     (quote_ident(c.table_schema) || '.' || quote_ident(c.table_name))::regclass,

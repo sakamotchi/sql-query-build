@@ -1,4 +1,5 @@
 use crate::connection::ConnectionInfo;
+use crate::models::mutation_result::MutationResult;
 use crate::models::query_result::{
     QueryError, QueryErrorCode, QueryErrorDetails, QueryResult, QueryResultColumn, QueryResultRow,
     QueryValue,
@@ -7,7 +8,7 @@ use crate::services::query_executor::QueryExecutor;
 use async_trait::async_trait;
 use sqlx::mysql::{MySqlPool, MySqlRow};
 use sqlx::{Column, Row, TypeInfo, ValueRef};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 pub struct MysqlExecutor {
     pool: MySqlPool,
@@ -230,6 +231,19 @@ impl QueryExecutor for MysqlExecutor {
             row_count: rows.len(),
             execution_time_ms,
             warnings: vec![],
+        })
+    }
+
+    async fn execute_mutation(&self, sql: &str) -> Result<MutationResult, QueryError> {
+        let start = Instant::now();
+        let result = sqlx::query(sql)
+            .execute(&self.pool)
+            .await
+            .map_err(Self::map_error)?;
+
+        Ok(MutationResult {
+            affected_rows: result.rows_affected(),
+            execution_time_ms: start.elapsed().as_millis() as u64,
         })
     }
 

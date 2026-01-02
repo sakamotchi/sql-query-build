@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useSavedQueryStore } from '@/stores/saved-query'
-import type { SerializableQueryState } from '@/stores/query-builder'
+import type { SerializableBuilderState } from '@/types/saved-query'
 
 interface FormError {
   path: string
@@ -11,7 +11,7 @@ interface FormError {
 const props = defineProps<{
   open: boolean
   defaultName?: string
-  query?: SerializableQueryState
+  query?: SerializableBuilderState
   connectionId?: string
 }>()
 
