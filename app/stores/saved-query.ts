@@ -162,7 +162,7 @@ export const useSavedQueryStore = defineStore('saved-query', {
       this.error = null
       try {
         const savedQuery = await queryStorageApi.loadQuery(id)
-        const { useMutationBuilderStore } = await import('./mutation-builder')
+        const { useMutationBuilderStore } = await import('@/stores/mutation-builder')
         const mutationBuilderStore = useMutationBuilderStore()
         mutationBuilderStore.loadState(savedQuery.query as SerializableMutationState)
 

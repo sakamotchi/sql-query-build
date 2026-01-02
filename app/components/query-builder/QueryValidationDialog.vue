@@ -65,9 +65,9 @@ const handleCancel = () => {
 <template>
   <UModal v-model:open="isOpen">
     <UCard>
-      <template #header>
+      <template v-if="validation" #header>
         <div class="flex items-center gap-3">
-          <UIcon :name="iconClass" class="w-6 h-6" />
+          <UIcon v-if="iconClass" :name="iconClass" class="w-6 h-6" />
           <h3 class="text-lg font-semibold">
             {{ dialogTitle }}
           </h3>

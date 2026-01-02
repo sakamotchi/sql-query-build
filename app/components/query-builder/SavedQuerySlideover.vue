@@ -258,6 +258,7 @@ const formatDate = (dateStr: string) => {
     />
 
     <QueryValidationDialog
+      v-if="validationResult"
       v-model:open="validationDialogOpen"
       :validation="validationResult"
       :query-name="queryToLoad?.name"

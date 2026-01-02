@@ -43,7 +43,7 @@ vi.mock('@/stores/window', () => ({
   useWindowStore: () => windowStoreMock,
 }))
 
-vi.mock('../mutation-builder', () => ({
+vi.mock('@/stores/mutation-builder', () => ({
   useMutationBuilderStore: () => mutationBuilderStoreMock,
 }))
 
