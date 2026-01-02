@@ -1,4 +1,5 @@
-use crate::sql_generator::builder::QuoteStyle;
+use crate::models::query::WhereClause;
+use crate::sql_generator::builder::{QuoteStyle, SqlBuilder};
 use crate::sql_generator::{reserved_words, Dialect};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -11,6 +12,23 @@ pub struct InsertQueryModel {
     pub table: String,
     pub columns: Vec<String>,
     pub values: Vec<Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateQueryModel {
+    #[serde(rename = "type")]
+    pub query_type: String,
+    pub table: String,
+    pub set_clause: Value,
+    pub where_clause: Option<WhereClause>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateSqlResult {
+    pub sql: String,
+    pub has_where_clause: bool,
 }
 
 pub fn generate_insert_sql(
@@ -56,6 +74,71 @@ pub fn generate_insert_sql(
         "INSERT INTO {} ({}) VALUES {};",
         table_name, columns, values_clause
     ))
+}
+
+pub fn generate_update_sql(
+    model: &UpdateQueryModel,
+    dialect: &dyn Dialect,
+    smart_quote: bool,
+) -> Result<UpdateSqlResult, String> {
+    if model.table.trim().is_empty() {
+        return Err("Table name is required".to_string());
+    }
+
+    let set_clause_obj = model
+        .set_clause
+        .as_object()
+        .ok_or("Invalid setClause format")?;
+
+    if set_clause_obj.is_empty() {
+        return Err("Set clause is required".to_string());
+    }
+
+    let quote_style = if smart_quote {
+        QuoteStyle::Smart
+    } else {
+        QuoteStyle::Always
+    };
+
+    let table_name = quote_identifier_path(&model.table, dialect, quote_style);
+
+    let set_items = set_clause_obj
+        .iter()
+        .map(|(column, config)| {
+            let column_name = quote_identifier_path(column, dialect, quote_style);
+            let is_null = config
+                .get("isNull")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+
+            let value_str = if is_null {
+                "NULL".to_string()
+            } else {
+                let value = config.get("value").unwrap_or(&Value::Null);
+                format_value(value, dialect)
+            };
+
+            Ok(format!("{} = {}", column_name, value_str))
+        })
+        .collect::<Result<Vec<_>, String>>()?
+        .join(", ");
+
+    let mut sql = format!("UPDATE {} SET {}", table_name, set_items);
+
+    let has_where_clause = model.where_clause.is_some();
+    if let Some(ref where_clause) = model.where_clause {
+        let builder = SqlBuilder::new(dialect).smart_quote(smart_quote);
+        let where_sql = builder.build_where(where_clause)?;
+        sql.push(' ');
+        sql.push_str(&where_sql);
+    }
+
+    sql.push(';');
+
+    Ok(UpdateSqlResult {
+        sql,
+        has_where_clause,
+    })
 }
 
 fn quote_identifier_path(identifier: &str, dialect: &dyn Dialect, quote_style: QuoteStyle) -> String {
@@ -149,6 +232,10 @@ fn format_value(value: &Value, dialect: &dyn Dialect) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::query::{
+        LiteralValue, WhereClause, WhereCondition, WhereConditionColumn, WhereConditionItem,
+        WhereValue,
+    };
     use crate::sql_generator::dialects::{MysqlDialect, PostgresDialect, SqliteDialect};
 
     #[test]
@@ -251,5 +338,77 @@ mod tests {
         let sql = generate_insert_sql(&model, &dialect, false).unwrap();
 
         assert!(sql.contains("INSERT INTO \"users\""));
+    }
+
+    #[test]
+    fn test_generate_update_sql_with_where() {
+        let model = UpdateQueryModel {
+            query_type: "UPDATE".to_string(),
+            table: "users".to_string(),
+            set_clause: serde_json::json!({
+                "name": { "value": "Alice", "isNull": false },
+                "email": { "value": "alice@example.com", "isNull": false }
+            }),
+            where_clause: Some(WhereClause {
+                logic: "AND".to_string(),
+                conditions: vec![WhereConditionItem::Condition(WhereCondition {
+                    id: "cond-1".to_string(),
+                    column: WhereConditionColumn {
+                        table_alias: "users".to_string(),
+                        column_name: "id".to_string(),
+                    },
+                    operator: "=".to_string(),
+                    value: WhereValue::Literal {
+                        value: LiteralValue::Number(1.0),
+                    },
+                })],
+            }),
+        };
+
+        let dialect = PostgresDialect;
+        let result = generate_update_sql(&model, &dialect, true).unwrap();
+
+        assert!(result.sql.contains("UPDATE users"));
+        assert!(result.sql.contains("name = 'Alice'"));
+        assert!(result.sql.contains("email = 'alice@example.com'"));
+        assert!(result.sql.contains("WHERE users.id = 1"));
+        assert!(result.has_where_clause);
+    }
+
+    #[test]
+    fn test_generate_update_sql_without_where() {
+        let model = UpdateQueryModel {
+            query_type: "UPDATE".to_string(),
+            table: "users".to_string(),
+            set_clause: serde_json::json!({
+                "is_active": { "value": true, "isNull": false }
+            }),
+            where_clause: None,
+        };
+
+        let dialect = PostgresDialect;
+        let result = generate_update_sql(&model, &dialect, true).unwrap();
+
+        assert!(result.sql.contains("UPDATE users"));
+        assert!(result.sql.contains("SET is_active = TRUE"));
+        assert!(!result.sql.contains("WHERE"));
+        assert!(!result.has_where_clause);
+    }
+
+    #[test]
+    fn test_generate_update_sql_with_null() {
+        let model = UpdateQueryModel {
+            query_type: "UPDATE".to_string(),
+            table: "users".to_string(),
+            set_clause: serde_json::json!({
+                "email": { "value": null, "isNull": true }
+            }),
+            where_clause: None,
+        };
+
+        let dialect = PostgresDialect;
+        let result = generate_update_sql(&model, &dialect, true).unwrap();
+
+        assert!(result.sql.contains("email = NULL"));
     }
 }

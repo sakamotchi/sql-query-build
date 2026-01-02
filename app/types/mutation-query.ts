@@ -1,4 +1,5 @@
 import type { WhereCondition, ConditionGroup } from '@/types/query'
+import type { WhereClause } from '@/types/query-model'
 
 /**
  * データ変更クエリの種別
@@ -22,18 +23,46 @@ export interface InsertQueryModel {
 /**
  * UPDATE クエリモデル
  */
+export interface UpdateSetValue {
+  /** 更新値 */
+  value: any
+  /** NULL指定 */
+  isNull: boolean
+}
+
 export interface UpdateQueryModel {
   /** クエリ種別 */
   type: 'UPDATE'
   /** 更新対象テーブル名 */
   table: string
   /** SET句（カラム=値のペア） */
-  setClause: Array<{
-    column: string
-    value: any
-  }>
+  setClause: Record<string, UpdateSetValue>
   /** WHERE条件 */
   whereConditions: Array<WhereCondition | ConditionGroup>
+}
+
+/**
+ * UPDATE SQL生成用モデル
+ */
+export interface UpdateSqlQueryModel {
+  /** クエリ種別 */
+  type: 'UPDATE'
+  /** 更新対象テーブル名 */
+  table: string
+  /** SET句 */
+  setClause: Record<string, UpdateSetValue>
+  /** WHERE句 */
+  whereClause: WhereClause | null
+}
+
+/**
+ * UPDATE SQL生成結果
+ */
+export interface UpdateSqlResult {
+  /** 生成SQL */
+  sql: string
+  /** WHERE句有無 */
+  hasWhereClause: boolean
 }
 
 /**

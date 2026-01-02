@@ -1,6 +1,9 @@
 use crate::connection::{ConnectionConfig, ConnectionService, DatabaseType};
 use crate::models::mutation_result::{MutationExecuteRequest, MutationResult};
-use crate::query::mutation::{generate_insert_sql as build_insert_sql, InsertQueryModel};
+use crate::query::mutation::{
+    generate_insert_sql as build_insert_sql, generate_update_sql as build_update_sql,
+    InsertQueryModel, UpdateQueryModel, UpdateSqlResult,
+};
 use crate::services::query_executor::ConnectionPoolManager;
 use crate::sql_generator::dialects::{MysqlDialect, PostgresDialect, SqliteDialect};
 use crate::sql_generator::Dialect;
@@ -28,6 +31,29 @@ pub async fn generate_insert_sql(
     };
 
     build_insert_sql(&query, dialect.as_ref(), smart_quote)
+}
+
+/// UPDATE SQLを生成
+#[command]
+pub async fn generate_update_sql(
+    query: UpdateQueryModel,
+    connection_id: String,
+    smart_quote: bool,
+    connection_service: State<'_, ConnectionService>,
+) -> Result<UpdateSqlResult, String> {
+    let connection = connection_service
+        .get_by_id(&connection_id, false)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Connection not found: {}", connection_id))?;
+
+    let dialect: Box<dyn Dialect> = match connection.database_type {
+        DatabaseType::PostgreSQL => Box::new(PostgresDialect),
+        DatabaseType::MySQL => Box::new(MysqlDialect),
+        DatabaseType::SQLite => Box::new(SqliteDialect),
+    };
+
+    build_update_sql(&query, dialect.as_ref(), smart_quote)
 }
 
 /// INSERT/UPDATE/DELETEを実行

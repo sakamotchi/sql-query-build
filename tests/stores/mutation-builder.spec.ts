@@ -39,7 +39,7 @@ describe('useMutationBuilderStore', () => {
     expect(store.queryModel).toEqual({
       type: 'UPDATE',
       table: 'users',
-      setClause: [],
+      setClause: {},
       whereConditions: [],
     })
   })

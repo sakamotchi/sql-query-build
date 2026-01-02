@@ -10,6 +10,8 @@ const generatedSql = computed(() => store.generatedSql)
 const analysisResult = computed(() => store.analysisResult)
 const queryError = computed(() => store.queryError)
 const queryInfo = computed(() => store.queryInfo)
+const mutationType = computed(() => store.mutationType)
+const hasWhereConditions = computed(() => store.hasWhereConditions)
 const { smartQuote } = storeToRefs(store)
 
 const copyToClipboard = async () => {
@@ -29,6 +31,10 @@ const formattedExecutionTime = computed(() => {
 const formattedLastExecuted = computed(() => {
   if (!queryInfo.value.lastExecutedAt) return '-'
   return new Date(queryInfo.value.lastExecutedAt).toLocaleString('ja-JP')
+})
+
+const showWarning = computed(() => {
+  return (mutationType.value === 'UPDATE' || mutationType.value === 'DELETE') && !hasWhereConditions.value
 })
 </script>
 
@@ -65,6 +71,18 @@ const formattedLastExecuted = computed(() => {
       <p class="text-xs text-red-700 dark:text-red-300">
         実行エラー: {{ queryError.message }}
       </p>
+    </div>
+
+    <div
+      v-if="showWarning"
+      class="border-b border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/40 px-3 py-2"
+    >
+      <div class="flex items-start gap-2">
+        <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5" />
+        <div class="text-xs text-orange-800 dark:text-orange-200">
+          WHERE句がありません。このクエリは全ての行を{{ mutationType === 'DELETE' ? '削除' : '更新' }}します。
+        </div>
+      </div>
     </div>
 
     <SqlPreview

@@ -217,6 +217,7 @@ pub fn run() {
             commands::query::execute_query,
             commands::query::cancel_query,
             commands::mutation_commands::generate_insert_sql,
+            commands::mutation_commands::generate_update_sql,
             commands::mutation_commands::execute_mutation,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,

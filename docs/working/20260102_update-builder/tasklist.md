@@ -22,7 +22,7 @@ UPDATEビルダーの実装タスクを管理するドキュメントです。Ph
 | 2.1 | UpdatePanel.vueコンポーネント作成 | 📝 | - | タブ切り替え（SET / WHERE） |
 | 2.2 | SetTab.vueコンポーネント作成 | 📝 | - | SET句設定UI |
 | 2.3 | SetColumnField.vueコンポーネント作成 | 📝 | - | カラム個別の値入力フィールド |
-| 2.4 | WhereTab.vue再利用対応 | 📝 | - | mutation-builderストアとの連携調整 |
+| 2.4 | MutationWhereTab.vue再利用対応 | 📝 | - | mutation-builderストアとの連携調整 |
 | 2.5 | TableSelector.vue拡張（UPDATE対応） | 📝 | - | 既存コンポーネント、必要に応じて拡張 |
 
 ### 3. フロントエンド実装（UI機能）
@@ -132,7 +132,7 @@ UPDATEビルダーの実装タスクを管理するドキュメントです。Ph
 ### 2026-01-02
 - UPDATEビルダーの開発作業ドキュメントを作成
 - INSERTビルダーの実装パターンを参考に設計
-- WhereTab.vueの再利用により、WHERE句設定は既存コンポーネントを活用
+- MutationWhereTab.vueでWhereTab構成を再利用し、WHERE句設定は既存コンポーネントを活用
 - WHERE句なし警告を強調表示することで、安全性を向上
 
 ## 参考リンク

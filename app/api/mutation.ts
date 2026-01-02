@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { InsertQueryModel } from '@/types/mutation-query'
+import type { InsertQueryModel, UpdateSqlQueryModel, UpdateSqlResult } from '@/types/mutation-query'
 import type { MutationExecuteRequest, MutationResult } from '@/types/mutation-result'
 
 export const mutationApi = {
@@ -8,6 +8,17 @@ export const mutationApi = {
    */
   async generateInsertSql(query: InsertQueryModel, connectionId: string, smartQuote: boolean = true): Promise<string> {
     return invoke('generate_insert_sql', { query, connectionId, smartQuote })
+  },
+
+  /**
+   * UPDATE SQLを生成
+   */
+  async generateUpdateSql(
+    query: UpdateSqlQueryModel,
+    connectionId: string,
+    smartQuote: boolean = true
+  ): Promise<UpdateSqlResult> {
+    return invoke('generate_update_sql', { query, connectionId, smartQuote })
   },
 
   /**

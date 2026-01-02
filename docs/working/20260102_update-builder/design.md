@@ -12,7 +12,7 @@ Frontend (Vue/Nuxt)
   │   │   ├─ カラム選択
   │   │   ├─ 値入力フォーム
   │   │   └─ カラム追加・削除
-  │   └─ WhereTab.vue (WHERE条件設定、再利用)
+  │   └─ MutationWhereTab.vue (WHERE条件設定、再利用)
   ├─ mutation-builderストア
   │   ├─ UpdateQueryModel管理
   │   └─ SQL生成・実行制御
@@ -32,7 +32,7 @@ Database (PostgreSQL/MySQL/SQLite)
 - **フロントエンド**:
   - 新規: `app/components/mutation-builder/UpdatePanel.vue`
   - 新規: `app/components/mutation-builder/SetTab.vue`
-  - 再利用: `app/components/mutation-builder/WhereTab.vue`（既存、必要に応じて拡張）
+  - 再利用: `app/components/mutation-builder/MutationWhereTab.vue`（既存、必要に応じて拡張）
   - 拡張: `app/stores/mutation-builder.ts`（UPDATE関連のアクション追加）
   - 拡張: `app/types/mutation-query.ts`（UpdateQueryModel追加）
 
@@ -46,7 +46,7 @@ Database (PostgreSQL/MySQL/SQLite)
 
 1. **Phase 8.2（INSERTビルダー）の基盤を活用**: InsertPanelと同様のレイアウト・パターンを踏襲
 2. **UpdatePanel.vueの実装**: 上パネルにUPDATE専用の入力UIを実装（タブ構成: SET / WHERE）
-3. **WhereTab.vueの再利用**: SELECTビルダーで実装済みのWhereTabを再利用
+3. **MutationWhereTab.vueの再利用**: SELECTビルダーで実装済みのWhereTab構成を流用
 4. **Rust側SQL生成**: データベース方言に応じたUPDATE文を生成
 5. **WHERE句なし警告**: 全行更新の危険性を強調表示
 6. **既存機能との統合**: クエリ保存・履歴、安全機能と連携
@@ -56,7 +56,7 @@ Database (PostgreSQL/MySQL/SQLite)
 1. **UpdatePanel.vueの責務**:
    - テーブル選択UI（TableSelectorコンポーネント再利用）
    - タブ切り替え（SET / WHERE）
-   - SetTabとWhereTabのコンテナとして機能
+   - SetTabとMutationWhereTabのコンテナとして機能
    - mutation-builderストアとの連携
 
 2. **SetTab.vueの責務**:
@@ -65,8 +65,8 @@ Database (PostgreSQL/MySQL/SQLite)
    - カラムの追加・削除
    - NULL設定
 
-3. **WhereTab.vueの再利用**:
-   - SELECTビルダーで実装済みのWhereTabをそのまま再利用
+3. **MutationWhereTab.vueの再利用**:
+   - SELECTビルダーで実装済みのWhereTab構成をそのまま再利用
    - mutation-builderストアとの連携部分のみ調整
    - WHERE条件の構築ロジックは変更不要
 
@@ -277,7 +277,7 @@ pub fn generate_update_sql(
 └───────────────────────────────────────────────────────┘
 ```
 
-### WHEREタブの画面（WhereTab.vue再利用）
+### WHEREタブの画面（MutationWhereTab.vue再利用）
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -319,7 +319,7 @@ MutationBuilderLayout.vue (上下分割レイアウト)
   │           │       ├─ NULLチェックボックス
   │           │       └─ 削除ボタン
   │           │
-  │           └─ WhereTab.vue (既存を再利用)
+  │           └─ MutationWhereTab.vue (既存を再利用)
   │               └─ WhereConditionRow.vue (v-for="condition in whereConditions")
   │
   └─ 下パネル (固定高さまたはリサイズ可能)
@@ -338,7 +338,7 @@ MutationBuilderLayout.vue (上下分割レイアウト)
 import { computed, ref } from 'vue'
 import { useMutationBuilderStore } from '@/stores/mutation-builder'
 import SetTab from './SetTab.vue'
-import WhereTab from './WhereTab.vue'
+import MutationWhereTab from './MutationWhereTab.vue'
 
 const mutationStore = useMutationBuilderStore()
 
@@ -357,7 +357,7 @@ const tabs = [
         <SetTab />
       </template>
       <template #WHERE>
-        <WhereTab />
+        <MutationWhereTab />
       </template>
     </UTabs>
   </div>
@@ -893,7 +893,7 @@ mod tests {
 | 決定事項 | 理由 | 代替案 |
 |---------|------|--------|
 | **タブ構成（SET / WHERE）** | SET句とWHERE句を明確に分離し、UIを整理 | 単一画面にすべて表示（煩雑になる） |
-| **WhereTab.vueを再利用** | コードの重複を避け、SELECTビルダーとの一貫性を保つ | UPDATE専用のWHERE UIを新規作成（冗長） |
+| **MutationWhereTab.vueを再利用** | コードの重複を避け、SELECTビルダーとの一貫性を保つ | UPDATE専用のWHERE UIを新規作成（冗長） |
 | **SET句はカラム追加方式** | 必要なカラムのみ更新できる柔軟性を提供 | 全カラムを常に表示（不要なカラムも表示される） |
 | **WHERE句なし警告を強調** | 全行更新の危険性をユーザーに明示 | 警告なし（誤操作リスク高） |
 | **SQL生成はRust側で実装** | セキュリティ（エスケープ処理）と方言対応を確実に行うため | フロントエンド側でSQL文字列を組み立て（危険） |
