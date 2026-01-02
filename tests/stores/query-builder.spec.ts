@@ -14,13 +14,18 @@ vi.mock('~/composables/useTauri', () => ({
 
 vi.mock('~/api/query', () => ({
   queryApi: {
-    generateSqlFormatted: vi.fn().mockResolvedValue('SELECT * FROM users')
+    generateSqlFormatted: vi.fn().mockResolvedValue('SELECT * FROM users'),
+    analyzeQuery: vi.fn().mockResolvedValue({ queryType: 'select', riskLevel: 'safe', riskFactors: [], affectedTables: [], hasWhereClause: true })
   }
 }))
 
 vi.mock('~/stores/connection', () => ({
   useConnectionStore: () => ({
-    activeConnection: { id: 'test-connection-id' }
+    activeConnection: {
+      id: 'test-connection-id',
+      type: 'postgresql'
+    },
+    connections: []
   })
 }))
 
@@ -48,7 +53,8 @@ describe('QueryBuilderStore', () => {
       expect(store.query).toBeNull()
       expect(store.generatedSql).toBe('')
       expect(store.isExecuting).toBe(false)
-      expect(store.error).toBeNull()
+      expect(store.queryError).toBeNull()
+      expect(store.sqlGenerationError).toBeNull()
       expect(store.limit).toBeNull()
       expect(store.offset).toBeNull()
       expect(store.smartQuote).toBe(true)
@@ -126,6 +132,17 @@ describe('QueryBuilderStore', () => {
   })
 
   describe('カラム操作', () => {
+    const createMockTable = (id: string, name: string): SelectedTable => ({
+      id,
+      schemaName: 'public',
+      tableName: name,
+      alias: name.charAt(0),
+      columns: [
+        { name: 'id', dataType: 'integer', nullable: false } as Column,
+        { name: 'name', dataType: 'varchar', nullable: true } as Column
+      ]
+    })
+
     const createMockColumn = (tableId: string, columnName: string): SelectedColumn => ({
       tableId,
       tableAlias: 'u',
@@ -136,8 +153,11 @@ describe('QueryBuilderStore', () => {
 
     it('selectColumn でカラムを選択できる', () => {
       const store = useQueryBuilderStore()
-      const column = createMockColumn('table1', 'id')
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
 
+      const column = createMockColumn('table1', 'id')
       store.selectColumn(column)
 
       expect(store.selectedColumns).toHaveLength(1)
@@ -146,8 +166,11 @@ describe('QueryBuilderStore', () => {
 
     it('selectColumn で重複するカラムは追加されない', () => {
       const store = useQueryBuilderStore()
-      const column = createMockColumn('table1', 'id')
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
 
+      const column = createMockColumn('table1', 'id')
       store.selectColumn(column)
       store.selectColumn(column)
 
@@ -156,8 +179,11 @@ describe('QueryBuilderStore', () => {
 
     it('deselectColumn でカラム選択を解除できる', () => {
       const store = useQueryBuilderStore()
-      const column = createMockColumn('table1', 'id')
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
 
+      const column = createMockColumn('table1', 'id')
       store.selectColumn(column)
       expect(store.selectedColumns).toHaveLength(1)
 
@@ -167,8 +193,11 @@ describe('QueryBuilderStore', () => {
 
     it('updateColumnAlias でカラムエイリアスを更新できる', () => {
       const store = useQueryBuilderStore()
-      const column = createMockColumn('table1', 'id')
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
 
+      const column = createMockColumn('table1', 'id')
       store.selectColumn(column)
       store.updateColumnAlias('table1', 'id', 'user_id')
 
@@ -177,6 +206,10 @@ describe('QueryBuilderStore', () => {
 
     it('reorderColumns でカラムの順序を変更できる', () => {
       const store = useQueryBuilderStore()
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
+
       store.selectColumn(createMockColumn('table1', 'id'))
       store.selectColumn(createMockColumn('table1', 'name'))
       store.selectColumn(createMockColumn('table1', 'email'))
@@ -190,6 +223,10 @@ describe('QueryBuilderStore', () => {
 
     it('clearSelectedColumns で全カラム選択を解除できる', () => {
       const store = useQueryBuilderStore()
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
+
       store.selectColumn(createMockColumn('table1', 'id'))
       store.selectColumn(createMockColumn('table1', 'name'))
 
@@ -200,6 +237,9 @@ describe('QueryBuilderStore', () => {
 
     it('canExecuteQuery はカラム選択時に true になる', () => {
       const store = useQueryBuilderStore()
+      // まずテーブルを追加
+      const table = createMockTable('table1', 'users')
+      store.addTable(table)
 
       expect(store.canExecuteQuery).toBe(false)
 
@@ -404,7 +444,7 @@ describe('QueryBuilderStore', () => {
         dataType: 'integer'
       })
       store.updateLimit(100)
-      store.error = 'test error'
+      store.sqlGenerationError = 'test error'
 
       // リセット
       store.resetQuery()
@@ -414,7 +454,7 @@ describe('QueryBuilderStore', () => {
       expect(store.whereConditions).toHaveLength(0)
       expect(store.query).toBeNull()
       expect(store.generatedSql).toBe('')
-      expect(store.error).toBeNull()
+      expect(store.sqlGenerationError).toBeNull()
       expect(store.limit).toBeNull()
       expect(store.offset).toBeNull()
     })

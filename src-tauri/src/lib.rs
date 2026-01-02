@@ -3,6 +3,7 @@ pub mod connection;
 pub mod crypto;
 pub mod database;
 pub mod models;
+pub mod query;
 pub mod services;
 pub mod sql_generator;
 pub mod storage;
@@ -210,11 +211,16 @@ pub fn run() {
             commands::database_structure::get_schemas,
             commands::database_structure::get_tables,
             commands::database_structure::get_columns,
+            commands::database_structure::validate_query_tables,
             commands::join_suggestions::get_join_suggestions,
             commands::query::generate_sql,
             commands::query::generate_sql_formatted,
             commands::query::execute_query,
             commands::query::cancel_query,
+            commands::mutation_commands::generate_insert_sql,
+            commands::mutation_commands::generate_update_sql,
+            commands::mutation_commands::generate_delete_sql,
+            commands::mutation_commands::execute_mutation,
             commands::security::get_security_provider_info,
             commands::security::get_available_providers,
             commands::security::get_security_config,
@@ -234,6 +240,7 @@ pub fn run() {
             commands::settings::set_security_level,
             commands::window::get_window_environment,
             commands::window::open_query_builder_window,
+            commands::window::open_mutation_builder_window,
             commands::window::open_settings_window,
             commands::window::close_window,
             commands::window::focus_window,

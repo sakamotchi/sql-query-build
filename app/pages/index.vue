@@ -57,7 +57,7 @@ const navigateToConnectionForm = (connectionId?: string) => {
 const handleConnect = async (connection: Connection) => {
   try {
     // 既存のウィンドウを検索
-    const existing = await windowApi.findWindowByConnection(connection.id)
+    const existing = await windowApi.findWindowByConnection(connection.id, 'query_builder')
 
     if (existing) {
       // 既存のウィンドウにフォーカス
@@ -78,6 +78,35 @@ const handleConnect = async (connection: Connection) => {
     }
   } catch (error) {
     console.error('Failed to open query builder:', error)
+    toast.add({
+      title: 'ウィンドウの起動に失敗しました',
+      description: error instanceof Error ? error.message : '不明なエラーが発生しました',
+      color: 'red',
+    })
+  }
+}
+
+const handleMutation = async (connection: Connection) => {
+  try {
+    const existing = await windowApi.findWindowByConnection(connection.id, 'mutation_builder')
+
+    if (existing) {
+      await windowApi.focusWindow(existing.label)
+      toast.add({
+        title: '既存のウィンドウにフォーカスしました',
+        description: `${connection.name} のデータ変更ウィンドウが既に開いています`,
+        color: 'primary',
+      })
+    } else {
+      await windowApi.openMutationBuilder(connection.id, connection.name, connection.environment)
+      toast.add({
+        title: 'データ変更ビルダーを起動しました',
+        description: `${connection.name} に接続しています`,
+        color: 'primary',
+      })
+    }
+  } catch (error) {
+    console.error('Failed to open mutation builder:', error)
     toast.add({
       title: 'ウィンドウの起動に失敗しました',
       description: error instanceof Error ? error.message : '不明なエラーが発生しました',
@@ -153,6 +182,7 @@ onMounted(() => {
               :key="connection.id"
               :connection="connection"
               @connect="handleConnect"
+              @mutation="handleMutation"
               @edit="handleEdit"
               @delete="handleDelete"
             />
@@ -163,6 +193,7 @@ onMounted(() => {
               :connections="filteredConnections"
               :loading="loading"
               @connect="handleConnect"
+              @mutation="handleMutation"
               @edit="handleEdit"
               @delete="handleDelete"
             />

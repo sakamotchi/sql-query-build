@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   // Nuxt 4標準ディレクトリ構成
   srcDir: 'app/',
 
+
   // コンポーネント自動インポート設定
   components: [
     {

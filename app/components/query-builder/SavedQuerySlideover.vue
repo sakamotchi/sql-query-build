@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useSavedQueryStore } from '@/stores/saved-query'
+import { useConnectionStore } from '@/stores/connection'
+import { useWindowStore } from '@/stores/window'
 import type { SavedQueryMetadata } from '@/types/saved-query'
+import type { QueryValidationResult } from '@/types/query-validation'
+import { validateSavedQuery } from '@/utils/query-validator'
+import { detectQueryType, getQueryBuilderPath, getQueryTypeLabel } from '@/utils/query-type-detector'
+import QueryValidationDialog from './QueryValidationDialog.vue'
 
 const props = defineProps<{
   open: boolean
@@ -12,7 +18,10 @@ const emit = defineEmits<{
   (e: 'load', id: string): void
 }>()
 
+const router = useRouter()
 const store = useSavedQueryStore()
+const connectionStore = useConnectionStore()
+const windowStore = useWindowStore()
 const toast = useToast()
 
 const isOpen = computed({
@@ -41,17 +50,49 @@ watch(() => props.open, (newVal) => {
   }
 })
 
+const validationDialogOpen = ref(false)
+const validationResult = ref<QueryValidationResult | null>(null)
+const queryToLoad = ref<SavedQueryMetadata | null>(null)
+
 const handleLoad = async (query: SavedQueryMetadata) => {
   try {
-    const loadedQuery = await store.loadQueryToBuilder(query.id)
-    toast.add({
-      title: '読み込み成功',
-      description: `クエリ「${loadedQuery.name}」を読み込みました`,
-      color: 'green',
-      icon: 'i-heroicons-check-circle'
-    })
-    emit('load', query.id)
-    isOpen.value = false
+    // クエリの詳細を取得
+    const fullQuery = await store.loadQuery(query.id)
+    const currentConnectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+
+    if (!currentConnectionId) {
+      toast.add({
+        title: '接続が選択されていません',
+        description: '接続を選択してからクエリを開いてください',
+        color: 'red',
+        icon: 'i-heroicons-exclamation-circle'
+      })
+      return
+    }
+
+    // バリデーション実行
+    const validation = await validateSavedQuery(fullQuery, currentConnectionId)
+
+    // エラーまたは警告がある場合はダイアログを表示
+    if (validation.status === 'error' || validation.status === 'warning') {
+      queryToLoad.value = query
+      validationResult.value = validation
+      validationDialogOpen.value = true
+      return
+    }
+
+    // 接続が異なるが全テーブル存在する場合はToast通知
+    if (!validation.connectionMatches && validation.message) {
+      toast.add({
+        title: '接続が異なります',
+        description: validation.message,
+        color: 'blue',
+        icon: 'i-heroicons-information-circle'
+      })
+    }
+
+    // クエリをロード
+    await executeLoad(query)
   } catch (error) {
     toast.add({
       title: '読み込み失敗',
@@ -60,6 +101,57 @@ const handleLoad = async (query: SavedQueryMetadata) => {
       icon: 'i-heroicons-exclamation-circle'
     })
   }
+}
+
+const executeLoad = async (query: SavedQueryMetadata) => {
+  // クエリの詳細を取得してタイプを判定
+  const fullQuery = await store.loadQuery(query.id)
+  const queryType = detectQueryType(fullQuery.query)
+  const targetPath = getQueryBuilderPath(queryType)
+  const currentPath = router.currentRoute.value.path
+
+  // クエリタイプに応じて適切なストアにロード
+  if (queryType === 'SELECT') {
+    // SELECTクエリの場合はquery-builderストアにロード
+    await store.loadQueryToBuilder(query.id)
+  } else {
+    // INSERT/UPDATE/DELETEクエリの場合はmutation-builderストアにロード
+    await store.loadQueryToMutationBuilder(query.id)
+  }
+
+  toast.add({
+    title: '読み込み成功',
+    description: `クエリ「${fullQuery.name}」を読み込みました`,
+    color: 'green',
+    icon: 'i-heroicons-check-circle'
+  })
+
+  emit('load', query.id)
+  isOpen.value = false
+
+  // 必要に応じて画面遷移
+  if (currentPath !== targetPath) {
+    const typeLabel = getQueryTypeLabel(queryType)
+    toast.add({
+      title: '画面を切り替えました',
+      description: `${typeLabel}画面に移動しました`,
+      color: 'blue',
+      icon: 'i-heroicons-arrow-right-circle'
+    })
+    await router.push(targetPath)
+  }
+}
+
+const handleValidationConfirm = async () => {
+  if (!queryToLoad.value) return
+  await executeLoad(queryToLoad.value)
+  queryToLoad.value = null
+  validationResult.value = null
+}
+
+const handleValidationCancel = () => {
+  queryToLoad.value = null
+  validationResult.value = null
 }
 
 const confirmDialogOpen = ref(false)
@@ -156,11 +248,22 @@ const formatDate = (dateStr: string) => {
     </template>
   </USlideover>
 
-  <ConfirmDialog
-    v-model:open="confirmDialogOpen"
-    title="クエリの削除"
-    :description="`クエリ「${queryToDelete?.name}」を本当に削除してもよろしいですか？`"
-    confirm-label="削除"
-    @confirm="executeDelete"
-  />
+  <Teleport to="body">
+    <ConfirmDialog
+      v-model:open="confirmDialogOpen"
+      title="クエリの削除"
+      :description="`クエリ「${queryToDelete?.name}」を本当に削除してもよろしいですか？`"
+      confirm-label="削除"
+      @confirm="executeDelete"
+    />
+
+    <QueryValidationDialog
+      v-if="validationResult"
+      v-model:open="validationDialogOpen"
+      :validation="validationResult"
+      :query-name="queryToLoad?.name"
+      @confirm="handleValidationConfirm"
+      @cancel="handleValidationCancel"
+    />
+  </Teleport>
 </template>

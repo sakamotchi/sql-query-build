@@ -1,6 +1,7 @@
 pub mod database_structure;
 pub mod export_commands;
 pub mod join_suggestions;
+pub mod mutation_commands;
 pub mod query;
 pub mod query_analyzer;
 pub mod query_history_commands;

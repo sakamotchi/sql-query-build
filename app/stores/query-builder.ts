@@ -708,6 +708,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.query = null
       this.generatedSql = ''
       this.queryError = null
+      this.sqlGenerationError = null
       this.limit = null
       this.offset = null
       this.analysisResult = null

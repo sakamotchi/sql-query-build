@@ -105,7 +105,7 @@ describe('useWindow', () => {
       const { openQueryBuilder } = useWindow()
       const result = await openQueryBuilder('123', 'Test DB', 'development')
 
-      expect(windowApiMock.findWindowByConnection).toHaveBeenCalledWith('123')
+      expect(windowApiMock.findWindowByConnection).toHaveBeenCalledWith('123', 'query_builder')
       expect(windowApiMock.focusWindow).toHaveBeenCalledWith('query-builder-123')
       expect(windowApiMock.openQueryBuilder).not.toHaveBeenCalled()
       expect(result).toEqual(mockWindowInfo)
@@ -118,7 +118,7 @@ describe('useWindow', () => {
       const { openQueryBuilder } = useWindow()
       const result = await openQueryBuilder('123', 'Test DB', 'development')
 
-      expect(windowApiMock.findWindowByConnection).toHaveBeenCalledWith('123')
+      expect(windowApiMock.findWindowByConnection).toHaveBeenCalledWith('123', 'query_builder')
       expect(windowApiMock.openQueryBuilder).toHaveBeenCalledWith('123', 'Test DB', 'development')
       expect(windowApiMock.focusWindow).not.toHaveBeenCalled()
       expect(result).toEqual(mockWindowInfo)

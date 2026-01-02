@@ -1,6 +1,7 @@
 use crate::connection::{ConnectionConfig, ConnectionService};
 use crate::models::database_structure::*;
 use crate::services::database_inspector::DatabaseInspectorFactory;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 
 /// データベース構造を取得
@@ -96,4 +97,59 @@ pub async fn get_columns(
 
     let inspector = DatabaseInspectorFactory::create(&connection, password.as_deref()).await?;
     inspector.get_columns(&schema, &table).await
+}
+
+/// テーブル存在チェック用のリクエスト
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableIdentifier {
+    pub schema: String,
+    pub table: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableValidationInfo {
+    pub schema: String,
+    pub table: String,
+    pub exists: bool,
+}
+
+/// 複数テーブルの存在チェック
+#[tauri::command]
+pub async fn validate_query_tables(
+    connection_id: String,
+    tables: Vec<TableIdentifier>,
+    connection_service: State<'_, ConnectionService>,
+) -> Result<Vec<TableValidationInfo>, String> {
+    let connection = connection_service
+        .get_by_id(&connection_id, true)
+        .await
+        .map_err(|e| format!("Failed to get connection: {}", e))?
+        .ok_or_else(|| format!("Connection not found: {}", connection_id))?;
+
+    let password = match &connection.connection {
+        ConnectionConfig::Network(cfg) => cfg.encrypted_password.clone(),
+        _ => None,
+    };
+
+    let inspector = DatabaseInspectorFactory::create(&connection, password.as_deref()).await?;
+
+    // すべてのスキーマとテーブルを取得
+    let db_structure = inspector.get_database_structure().await?;
+
+    // 各テーブルの存在をチェック
+    let mut results = Vec::new();
+    for table_id in tables {
+        let exists = db_structure.schemas.iter().any(|schema| {
+            schema.name == table_id.schema
+                && schema.tables.iter().any(|t| t.name == table_id.table)
+        });
+
+        results.push(TableValidationInfo {
+            schema: table_id.schema,
+            table: table_id.table,
+            exists,
+        });
+    }
+
+    Ok(results)
 }

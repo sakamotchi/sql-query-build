@@ -446,65 +446,165 @@
 **目的**: INSERT/UPDATE/DELETEクエリをGUIで構築する機能を追加
 
 **前提**:
-- SELECTビルダー（Phase 1.6）とは別のUIとして設計
+- SELECTビルダー（Phase 1.6）とは別のページとして設計
 - 本番環境安全機能（Phase 3）と連携して危険なクエリの確認ダイアログを表示
+
+**全体設計方針（アプローチ4: 新規ページ/タブ方式）**:
+- **ページ構成**:
+  - `/query-builder` - SELECTクエリビルダー（既存）
+  - `/mutation-builder` - データ変更クエリビルダー（新規）
+    - ツールバーでINSERT/UPDATE/DELETEを切り替え（UButtonGroup）
+- **利点**:
+  - SELECTビルダーとINSERT/UPDATE/DELETEビルダーを完全に分離
+  - 既存のSELECTビルダーに影響を与えない
+  - 各ビルダーの実装を独立して進められる
+  - 条件分岐が少なくシンプルな実装
+- **ナビゲーション**:
+  - トップページから「クエリビルダー」と「データ変更」を選択
+  - または各ビルダーから相互にリンク（ツールバーにリンクボタン配置）
+- **共通コンポーネント再利用**:
+  - DatabaseTree（LeftPanel）
+  - WhereTab（WHERE句設定）
+  - DangerousQueryDialog（安全機能）
+  - SqlPreview、QueryInfo
 
 ### 8.1 共通基盤
 
 | タスクID | タスク名 | 依存関係 | 完了条件 |
 |---------|---------|---------|---------|
-| 8.1.1 | クエリ種別選択UI | Phase 7 | SELECT/INSERT/UPDATE/DELETEの切り替えUI |
-| 8.1.2 | MutationQueryModel型定義 | 8.1.1 | INSERT/UPDATE/DELETE共通のデータ構造 |
-| 8.1.3 | mutation-query-builderストア | 8.1.2 | データ変更クエリ用の状態管理 |
+| 8.1.1 | MutationQueryModel型定義 | Phase 7 | INSERT/UPDATE/DELETE共通のデータ構造定義（types/mutation-query.ts） |
+| 8.1.2 | mutation-builderストア作成 | 8.1.1 | データ変更クエリ用のPiniaストア（stores/mutation-builder.ts） |
+| 8.1.3 | mutation-builder.vueページ作成 | 8.1.2 | `/mutation-builder`ページ作成 |
+| 8.1.4 | MutationBuilderLayout.vue作成 | 8.1.3 | データ変更ビルダー用のレイアウトコンポーネント（3ペインレイアウト） |
+| 8.1.5 | MutationBuilderToolbar.vue作成 | 8.1.4 | INSERT/UPDATE/DELETE切り替えタブ + 実行・保存ボタン |
+| 8.1.6 | トップページにナビゲーション追加 | 8.1.3 | index.vueに「データ変更」メニュー追加 |
+
+**8.1の設計方針**:
+- **ページ構成**:
+  - `app/pages/mutation-builder.vue`: データ変更ビルダーのページ
+  - `app/components/mutation-builder/`: データ変更ビルダー専用コンポーネント
+  - `app/stores/mutation-builder.ts`: データ変更ビルダー専用ストア
+  - `app/types/mutation-query.ts`: INSERT/UPDATE/DELETE用の型定義
+- **レイアウト**:
+  - 左パネル: DatabaseTree（query-builderから再利用）
+  - 中央パネル: SQLプレビュー（mutation-builder専用）
+  - 右パネル: クエリ種別に応じた入力フォーム
+- **既存コンポーネントとの分離**:
+  - query-builderストアは変更しない
+  - QueryBuilderLayoutは変更しない
+  - 共通コンポーネント（DatabaseTree, WhereTab等）は再利用
 
 ### 8.2 INSERTビルダー
 
+**設計変更（2026-01-01）**: 3カラムレイアウトから上下分割レイアウトに変更。データ入力に特化したUIに刷新。
+
 | タスクID | タスク名 | 依存関係 | 完了条件 |
 |---------|---------|---------|---------|
-| 8.2.1 | InsertBuilderPanel.vue | 8.1.3 | INSERTビルダーUI |
-| 8.2.2 | テーブル選択（単一） | 8.2.1 | 挿入先テーブル選択 |
-| 8.2.3 | カラム・値入力UI | 8.2.2 | カラムごとの値入力 |
-| 8.2.4 | 複数行INSERT対応 | 8.2.3 | VALUES句の複数行対応 |
-| 8.2.5 | INSERT SQL生成（Rust） | 8.2.4 | INSERT文生成エンジン |
+| 8.2.1 | レイアウト変更 | 8.1.5 | 上下分割レイアウトへの変更、MutationBuilderLayout.vue再設計 |
+| 8.2.2 | テーブルセレクトボックス | 8.2.1 | 検索フィルター付きセレクトボックス、左ツリー削除 |
+| 8.2.3 | 上パネル（タブUI） | 8.2.2 | フォーム形式/表形式/INSERT SELECT のタブ切り替えUI |
+| 8.2.4 | フォーム形式入力 | 8.2.3 | カラム別入力フォーム、複数行対応、行追加・削除 |
+| 8.2.5 | 表形式入力（オプション） | 8.2.4 | Excelライクな表形式入力UI（Phase 1では未実装でも可） |
+| 8.2.6 | 下パネル（SQLプレビュー） | 8.2.3 | SQLプレビュー表示、クリップボードコピー機能 |
+| 8.2.7 | INSERT SQL生成（Rust） | 8.2.4 | `generate_insert_sql`コマンド実装（src-tauri/src/query/mutation.rs） |
+| 8.2.8 | INSERT実行機能 | 8.2.7 | ツールバーの実行ボタンでINSERT実行、結果表示 |
+
+**8.2の新設計ポイント**:
+- **レイアウト**: 上下分割（上60-70%: 入力、下30-40%: SQLプレビュー）
+- **テーブル選択**: 検索フィルター付きセレクトボックス（左上に配置、左ツリーは削除）
+- **上パネル**: タブ切り替え
+  - **フォーム形式タブ**: カラムごとの入力フォーム（Phase 1で実装）
+  - **表形式タブ**: Excelライクな一覧入力（Phase 2で実装、Phase 1ではタブのみ表示）
+  - **INSERT SELECTタブ**: 既存データからの挿入（将来実装）
+- **下パネル**: SQLプレビュー + コピーボタン
+- **画面占有率**: 横幅を広く使い、複数カラムの同時表示が容易
 
 ### 8.3 UPDATEビルダー
 
 | タスクID | タスク名 | 依存関係 | 完了条件 |
 |---------|---------|---------|---------|
-| 8.3.1 | UpdateBuilderPanel.vue | 8.1.3 | UPDATEビルダーUI |
-| 8.3.2 | SET句設定UI | 8.3.1 | カラム=値のペア設定 |
-| 8.3.3 | WHERE条件設定（既存流用） | 8.3.2 | WHERE句設定（SELECTと共通化） |
-| 8.3.4 | UPDATE SQL生成（Rust） | 8.3.3 | UPDATE文生成エンジン |
+| 8.3.1 | UpdatePanel.vue作成 | 8.1.5 | mutation-builder専用の右パネルコンポーネント作成（タブ構成: SET/WHERE） |
+| 8.3.2 | テーブル選択UI | 8.3.1 | ドロップダウンで更新対象テーブル選択 |
+| 8.3.3 | SET句設定UI（SETタブ） | 8.3.2 | カラム=値のペア設定UI（複数カラム対応、カラム追加・削除） |
+| 8.3.4 | WHERE条件設定（WHEREタブ） | 8.3.3 | WhereTab.vueを再利用（mutation-builder用にインポート） |
+| 8.3.5 | UPDATE SQL生成（Rust） | 8.3.4 | `generate_update_sql`コマンド実装（src-tauri/src/query/mutation.rs） |
+| 8.3.6 | WHERE句なし警告 | 8.3.5 | WHERE句がない場合の強い警告表示（DangerousQueryDialog連携） |
+| 8.3.7 | UPDATE実行機能 | 8.3.6 | ツールバーの実行ボタンでUPDATE実行、影響行数表示 |
+
+**8.3の設計ポイント**:
+- **右パネル**: UpdatePanel（タブ: SET / WHERE）
+  - **SETタブ**: カラム選択 + 値入力のペア（複数対応）
+  - **WHEREタブ**: WhereTab.vue再利用
+- **中央パネル**: 生成されたUPDATE文のプレビュー
+- **WHERE句なし警告**: 全行更新の危険性を赤色で強調表示
 
 ### 8.4 DELETEビルダー
 
 | タスクID | タスク名 | 依存関係 | 完了条件 |
 |---------|---------|---------|---------|
-| 8.4.1 | DeleteBuilderPanel.vue | 8.1.3 | DELETEビルダーUI |
-| 8.4.2 | テーブル選択（単一） | 8.4.1 | 削除対象テーブル選択 |
-| 8.4.3 | WHERE条件設定（既存流用） | 8.4.2 | WHERE句設定（SELECTと共通化） |
-| 8.4.4 | DELETE SQL生成（Rust） | 8.4.3 | DELETE文生成エンジン |
+| 8.4.1 | DeletePanel.vue作成 | 8.1.5 | mutation-builder専用の右パネルコンポーネント作成（シンプル構成） |
+| 8.4.2 | テーブル選択UI | 8.4.1 | ドロップダウンで削除対象テーブル選択 |
+| 8.4.3 | WHERE条件設定 | 8.4.2 | WhereTab.vueを再利用（mutation-builder用にインポート） |
+| 8.4.4 | DELETE SQL生成（Rust） | 8.4.3 | `generate_delete_sql`コマンド実装（src-tauri/src/query/mutation.rs） |
+| 8.4.5 | WHERE句なし警告（最重要） | 8.4.4 | WHERE句がない場合の最も強い警告表示（赤色、全行削除の危険性） |
+| 8.4.6 | DELETE実行機能 | 8.4.5 | ツールバーの実行ボタンでDELETE実行、削除行数表示 |
+
+**8.4の設計ポイント**:
+- **右パネル**: DeletePanel（最もシンプル）
+  - テーブル選択
+  - WHERE条件設定（WhereTab.vue再利用）
+- **中央パネル**: 生成されたDELETE文のプレビュー
+- **WHERE句なし警告**: 全行削除の危険性を最も強く警告（赤背景、確認チェックボックス必須等）
 
 ### 8.5 安全機能統合
 
-| タスクID | タスク名 | 依存関係 | 完了条件 |
-|---------|---------|---------|---------|
-| 8.5.1 | Phase 3確認ダイアログ統合 | 8.2-8.4 | 危険なクエリ実行時に確認ダイアログ表示 |
-| 8.5.2 | 影響行数プレビュー | 8.5.1 | EXPLAIN結果で影響行数を事前表示 |
-| 8.5.3 | 統合テスト | 8.5.2 | 全機能の動作確認 |
+**⚠️ 注**: 8.5.1〜8.5.3および8.5.5は**既に実装済み**（Phase 3, 4.3, 8.1-8.4で実装）。動作確認のみ実施。
+
+| タスクID | タスク名 | 依存関係 | 完了条件 | 状態 |
+|---------|---------|---------|---------|------|
+| 8.5.1 | DangerousQueryDialog拡張 | 8.2-8.4 | INSERT/UPDATE/DELETEに対応した警告メッセージ表示 | ✅ 実装済み（Phase 3） |
+| 8.5.2 | WHERE句なし検出ロジック | 8.5.1 | mutation-builderストアでWHERE句の有無を判定 | ✅ 実装済み（Phase 8.1-8.4） |
+| 8.5.3 | 警告レベル設定 | 8.5.2 | クエリ種別とWHERE句有無に応じた警告レベル（warning/danger） | ✅ 実装済み（Phase 3, 8.1-8.4） |
+| 8.5.4 | 影響行数プレビュー（オプション） | 8.5.3 | EXPLAIN結果で影響行数を事前表示（実装可能な場合） | ⏳ 未実装（後回し） |
+| 8.5.5 | クエリ履歴・保存機能の動作確認 | 8.5.3 | mutation-builderでもクエリ履歴・保存機能が動作することを確認 | ✅ 実装済み（Phase 4.3） |
+| 8.5.6 | 統合テスト | 8.5.5 | 全機能の動作確認（各クエリ種別の構築・実行・警告表示） | ⏳ 要実施 |
+
+**8.5の設計ポイント**:
+- **警告レベル**:
+  - INSERT: warning（データ挿入の確認）
+  - UPDATE（WHERE有）: warning（注意が必要）
+  - UPDATE（WHERE無）: danger（全行更新の危険性）
+  - DELETE（WHERE有）: warning（注意が必要）
+  - DELETE（WHERE無）: danger（全行削除の危険性、最重要）
+- **DangerousQueryDialog**: Phase 3で既に実装済み（mutation-builder対応済み）
+- **クエリ履歴**: Phase 4.3で既に実装済み（mutation-builder対応済み）
+- **実装箇所**:
+  - `DangerousQueryDialog.vue` (Phase 3)
+  - `mutation-builder.ts` hasWhereConditions getter (Phase 8.1-8.4)
+  - `query_analyzer.rs` 警告レベル判定 (Phase 3)
+  - `query-history.ts` loadToBuilder() (Phase 4.3)
 
 **成果物**:
-- クエリ種別選択UI
-- InsertBuilderPanel/UpdateBuilderPanel/DeleteBuilderPanel
-- INSERT/UPDATE/DELETE SQL生成エンジン（Rust）
-- Phase 3安全機能との統合
+- `/mutation-builder` ページ（新規ページ）
+- `app/components/mutation-builder/` コンポーネント群
+  - MutationBuilderLayout.vue
+  - MutationBuilderToolbar.vue
+  - InsertPanel.vue
+  - UpdatePanel.vue
+  - DeletePanel.vue
+- `app/stores/mutation-builder.ts` ストア
+- `app/types/mutation-query.ts` 型定義
+- INSERT/UPDATE/DELETE SQL生成エンジン（Rust: src-tauri/src/query/mutation.rs）
+- Phase 3安全機能との統合（DangerousQueryDialog拡張）
 
 **完了条件**:
-- ✅ GUIでINSERT文を構築・実行できる
-- ✅ GUIでUPDATE文を構築・実行できる
-- ✅ GUIでDELETE文を構築・実行できる
+- ✅ `/mutation-builder` ページでINSERT/UPDATE/DELETEを切り替えできる
+- ✅ GUIでINSERT文を構築・実行できる（複数行対応）
+- ✅ GUIでUPDATE文を構築・実行できる（SET句 + WHERE句）
+- ✅ GUIでDELETE文を構築・実行できる（WHERE句）
 - ✅ 危険なクエリ実行時に確認ダイアログが表示される
 - ✅ WHERE句のないUPDATE/DELETEは特に強い警告が表示される
+- ✅ 既存のSELECTビルダー（`/query-builder`）に影響を与えていない
 
 ---
 

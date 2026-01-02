@@ -25,6 +25,7 @@ description: ドキュメント内のNuxt UI v3記法を検出し、v4記法へ�
 | `UFormGroup` | v3 のコンポーネント名 | `UFormField` に置換 |
 | `:options=` または `options=` | v3 の属性名 | `:items=` に置換 |
 | `v-bind:options=` | v3 の属性名 | `:items=` に置換 |
+| `UButtonGroup` | v4 では非推奨 | `UFieldGroup` に置換 |
 
 ### チェック対象ファイル
 
@@ -60,6 +61,7 @@ find docs/working -name "*.md" -type f
 - `UFormGroup` の使用箇所
 - `options=` または `:options=` の使用箇所
 - `v-bind:options=` の使用箇所
+- `UButtonGroup` の使用箇所
 
 検出には `grep` コマンドまたは Grep ツールを使用します。
 
@@ -121,7 +123,8 @@ find docs/working -name "*.md" -type f
 2. `UFormGroup` → `UFormField` に置換
 3. `:options=` → `:items=` に置換
 4. `options=` → `items=` に置換
-5. 修正完了をユーザーに報告
+5. `UButtonGroup` → `UFieldGroup` に置換
+6. 修正完了をユーザーに報告
 
 **注意**:
 - コードブロック内のみを対象とし、説明文は変更しない
@@ -161,17 +164,26 @@ find docs/working -name "*.md" -type f
 |---------------|-------------|------|
 | `UFormGroup` | `UFormField` | フォームフィールドラッパー |
 | `options` 属性 | `items` 属性 | USelect, USelectMenu等の選択肢 |
+| `UButtonGroup` | `UFieldGroup` | ボタングループラッパー（v4では非推奨） |
 
 ### 正しい記法（v4）
 
 ```vue
 <template>
-  <!-- ✅ 正しい -->
+  <!-- ✅ 正しい: UFormField を使用 -->
   <UFormField label="データベース" name="database">
     <USelect v-model="selected" :items="databases" />
   </UFormField>
 
+  <!-- ✅ 正しい: items 属性を使用 -->
   <USelectMenu v-model="selected" :items="options" />
+
+  <!-- ✅ 正しい: UFieldGroup を使用してボタンをグループ化 -->
+  <UFieldGroup>
+    <UButton color="primary">INSERT</UButton>
+    <UButton color="gray">UPDATE</UButton>
+    <UButton color="gray">DELETE</UButton>
+  </UFieldGroup>
 </template>
 ```
 
@@ -179,11 +191,19 @@ find docs/working -name "*.md" -type f
 
 ```vue
 <template>
-  <!-- ❌ 検出される -->
+  <!-- ❌ 検出される: UFormGroup（v3） -->
   <UFormGroup label="データベース">
     <USelect v-model="selected" :options="databases" />
   </UFormGroup>
 
+  <!-- ❌ 検出される: options 属性（v3） -->
   <USelectMenu v-model="selected" :options="options" />
+
+  <!-- ❌ 検出される: UButtonGroup（v4では非推奨） -->
+  <UButtonGroup>
+    <UButton color="primary">INSERT</UButton>
+    <UButton color="gray">UPDATE</UButton>
+    <UButton color="gray">DELETE</UButton>
+  </UButtonGroup>
 </template>
 ```

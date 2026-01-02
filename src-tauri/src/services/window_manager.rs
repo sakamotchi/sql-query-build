@@ -32,7 +32,9 @@ impl WindowManager {
 
         // 同じ接続のウィンドウが既に存在するかチェック
         if let Some(connection_id) = &options.connection_id {
-            if let Some(existing) = self.find_window_by_connection(app_handle, connection_id) {
+            if let Some(existing) =
+                self.find_window_by_connection(app_handle, connection_id, Some(&options.window_type))
+            {
                 // 既存のウィンドウにフォーカス
                 if let Some(window) = app_handle.get_webview_window(&existing.label) {
                     let _ = window.set_focus();
@@ -65,6 +67,17 @@ impl WindowManager {
                     (Some(id), None) => format!("query-builder?connectionId={}", id),
                     (None, Some(env)) => format!("query-builder?environment={}", env),
                     (None, None) => "query-builder".to_string(),
+                };
+                WebviewUrl::App(path.into())
+            }
+            WindowType::MutationBuilder => {
+                let path = match (&options.connection_id, environment.as_deref()) {
+                    (Some(id), Some(env)) => {
+                        format!("mutation-builder?connectionId={}&environment={}", id, env)
+                    }
+                    (Some(id), None) => format!("mutation-builder?connectionId={}", id),
+                    (None, Some(env)) => format!("mutation-builder?environment={}", env),
+                    (None, None) => "mutation-builder".to_string(),
                 };
                 WebviewUrl::App(path.into())
             }
@@ -169,24 +182,51 @@ impl WindowManager {
         &self,
         app_handle: &AppHandle,
         connection_id: &str,
+        window_type: Option<&WindowType>,
     ) -> Option<WindowInfo> {
         let windows = self.windows.lock().unwrap();
-        windows.iter().find_map(|(label, state)| {
-            if state.connection_id.as_deref() == Some(connection_id) {
-                app_handle
-                    .get_webview_window(label)
-                    .map(|window| WindowInfo {
-                        label: label.clone(),
-                        title: window.title().unwrap_or_default(),
-                        window_type: state.window_type.clone(),
-                        connection_id: state.connection_id.clone(),
-                        focused: window.is_focused().unwrap_or(false),
-                        visible: window.is_visible().unwrap_or(false),
-                    })
-            } else {
-                None
+        let mut fallback = None;
+
+        for (label, state) in windows.iter() {
+            if state.connection_id.as_deref() != Some(connection_id) {
+                continue;
             }
-        })
+
+            if let Some(expected_type) = window_type {
+                if &state.window_type != expected_type {
+                    continue;
+                }
+            } else if state.window_type != WindowType::QueryBuilder {
+                fallback = Some((label, state));
+                continue;
+            }
+
+            return app_handle
+                .get_webview_window(label)
+                .map(|window| WindowInfo {
+                    label: label.clone(),
+                    title: window.title().unwrap_or_default(),
+                    window_type: state.window_type.clone(),
+                    connection_id: state.connection_id.clone(),
+                    focused: window.is_focused().unwrap_or(false),
+                    visible: window.is_visible().unwrap_or(false),
+                });
+        }
+
+        if let Some((label, state)) = fallback {
+            return app_handle
+                .get_webview_window(label)
+                .map(|window| WindowInfo {
+                    label: label.clone(),
+                    title: window.title().unwrap_or_default(),
+                    window_type: state.window_type.clone(),
+                    connection_id: state.connection_id.clone(),
+                    focused: window.is_focused().unwrap_or(false),
+                    visible: window.is_visible().unwrap_or(false),
+                });
+        }
+
+        None
     }
 
     /// ウィンドウにフォーカス
@@ -258,6 +298,10 @@ impl WindowManager {
             WindowType::QueryBuilder => match connection_id {
                 Some(id) => format!("query-builder-{}", id),
                 None => format!("query-builder-{}", uuid::Uuid::new_v4()),
+            },
+            WindowType::MutationBuilder => match connection_id {
+                Some(id) => format!("mutation-builder-{}", id),
+                None => format!("mutation-builder-{}", uuid::Uuid::new_v4()),
             },
             WindowType::Settings => "settings".to_string(),
         }
@@ -351,6 +395,7 @@ impl WindowManager {
         match state.window_type {
             WindowType::Launcher => "SQL Query Builder".to_string(),
             WindowType::QueryBuilder => "SQL Query Builder".to_string(),
+            WindowType::MutationBuilder => "データ変更".to_string(),
             WindowType::Settings => "設定 - SQL Query Builder".to_string(),
         }
     }

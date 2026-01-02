@@ -84,7 +84,7 @@ export function convertToQueryModel(
       },
     },
     joins: state.joins || [],
-    whereClause: convertWhereConditions(state.whereConditions, 'AND') || undefined,
+    whereClause: convertWhereConditions(state.whereConditions, 'AND') || null,
     groupBy:
       state.groupByColumns.length > 0
         ? { columns: convertGroupByColumns(state.groupByColumns) }

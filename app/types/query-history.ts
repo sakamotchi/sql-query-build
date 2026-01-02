@@ -1,4 +1,7 @@
 import type { SerializableQueryState } from '@/stores/query-builder'
+import type { SerializableMutationState } from '@/stores/mutation-builder'
+
+export type SerializableBuilderState = SerializableQueryState | SerializableMutationState
 
 /**
  * クエリ履歴
@@ -6,7 +9,7 @@ import type { SerializableQueryState } from '@/stores/query-builder'
 export interface QueryHistory {
   id: string
   connectionId: string
-  query: SerializableQueryState
+  query: SerializableBuilderState
   sql: string
   executedAt: string
   success: boolean
@@ -33,7 +36,7 @@ export interface QueryHistoryMetadata {
  */
 export interface AddHistoryRequest {
   connectionId: string
-  query: SerializableQueryState
+  query: SerializableBuilderState
   sql: string
   success: boolean
   resultCount?: number

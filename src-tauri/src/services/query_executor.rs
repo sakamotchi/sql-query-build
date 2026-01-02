@@ -1,5 +1,6 @@
 use crate::connection::ConnectionInfo;
 use crate::connection::DatabaseType;
+use crate::models::mutation_result::MutationResult;
 use crate::models::query_result::{QueryError, QueryErrorCode, QueryResult};
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -24,6 +25,25 @@ pub trait QueryExecutor: Send + Sync {
         timeout: Duration,
     ) -> Result<QueryResult, QueryError> {
         tokio::time::timeout(timeout, self.execute(sql))
+            .await
+            .map_err(|_| QueryError {
+                code: QueryErrorCode::QueryTimeout,
+                message: format!("Query timed out after {:?}", timeout),
+                details: None,
+                native_code: None,
+            })?
+    }
+
+    /// SQLを実行（データ変更用）
+    async fn execute_mutation(&self, sql: &str) -> Result<MutationResult, QueryError>;
+
+    /// SQLを実行（データ変更用、タイムアウト付き）
+    async fn execute_mutation_with_timeout(
+        &self,
+        sql: &str,
+        timeout: Duration,
+    ) -> Result<MutationResult, QueryError> {
+        tokio::time::timeout(timeout, self.execute_mutation(sql))
             .await
             .map_err(|_| QueryError {
                 code: QueryErrorCode::QueryTimeout,

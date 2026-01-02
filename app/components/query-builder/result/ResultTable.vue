@@ -2,22 +2,27 @@
 import type { QueryResultColumn, QueryResultRow } from '@/types/query-result'
 import ResultColumnHeader from './ResultColumnHeader.vue'
 import ResultRow from './ResultRow.vue'
+import { useColumnResize } from '@/composables/useColumnResize'
 
 const props = defineProps<{
   columns: QueryResultColumn[]
   rows: QueryResultRow[]
 }>()
+
+const { getColumnWidth, startResize } = useColumnResize()
 </script>
 
 <template>
   <div class="inline-block min-w-full align-middle">
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
       <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
         <tr>
           <ResultColumnHeader
             v-for="column in columns"
             :key="column.name"
             :column="column"
+            :width="getColumnWidth(column.name)"
+            @resize="startResize"
           />
         </tr>
       </thead>
@@ -27,6 +32,7 @@ const props = defineProps<{
           :key="index"
           :row="row"
           :columns="columns"
+          :get-column-width="getColumnWidth"
         />
         <!-- 結果が0件の場合 -->
         <tr v-if="rows.length === 0">

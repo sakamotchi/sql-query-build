@@ -267,6 +267,20 @@ const openHistory = () => {
 
     <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
+    <!-- データ変更へ -->
+    <UButton
+      icon="i-heroicons-arrow-right"
+      size="sm"
+      color="gray"
+      variant="ghost"
+      title="データ変更へ"
+      to="/mutation-builder"
+    >
+      データ変更へ
+    </UButton>
+
+    <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
+
     <!-- ダークモード切り替え -->
     <UButton
       :icon="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"

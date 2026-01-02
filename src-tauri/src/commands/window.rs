@@ -33,6 +33,35 @@ pub async fn open_query_builder_window(
     window_manager.create_window(&app_handle, options)
 }
 
+/// データ変更ビルダーウィンドウを開く
+#[command]
+pub async fn open_mutation_builder_window(
+    app_handle: AppHandle,
+    window_manager: State<'_, WindowManager>,
+    connection_id: String,
+    connection_name: String,
+    environment: String,
+) -> Result<WindowInfo, String> {
+    let title = format!(
+        "データ変更 - {} ({})",
+        connection_name,
+        get_environment_label(&environment)
+    );
+
+    let options = WindowCreateOptions {
+        title,
+        window_type: WindowType::MutationBuilder,
+        connection_id: Some(connection_id),
+        environment: Some(environment),
+        width: Some(1400),
+        height: Some(900),
+        center: true,
+        restore_state: true,
+    };
+
+    window_manager.create_window(&app_handle, options)
+}
+
 /// 設定ウィンドウを開く
 #[command]
 pub async fn open_settings_window(
@@ -88,8 +117,13 @@ pub async fn find_window_by_connection(
     app_handle: AppHandle,
     window_manager: State<'_, WindowManager>,
     connection_id: String,
+    window_type: Option<WindowType>,
 ) -> Result<Option<WindowInfo>, String> {
-    Ok(window_manager.find_window_by_connection(&app_handle, &connection_id))
+    Ok(window_manager.find_window_by_connection(
+        &app_handle,
+        &connection_id,
+        window_type.as_ref(),
+    ))
 }
 
 /// ウィンドウタイトルを更新

@@ -51,6 +51,13 @@ export const useWindowStore = defineStore('window', {
     },
 
     /**
+     * データ変更ビルダーウィンドウかどうか
+     */
+    isMutationBuilder(state): boolean {
+      return state.currentContext?.windowType === 'mutation_builder'
+    },
+
+    /**
      * 設定ウィンドウかどうか
      */
     isSettings(state): boolean {
@@ -213,6 +220,7 @@ export const useWindowStore = defineStore('window', {
      * @example
      * parseWindowLabel('launcher') // => { windowLabel: 'launcher', windowType: 'launcher' }
      * parseWindowLabel('query-builder-conn-123') // => { windowLabel: '...', windowType: 'query_builder', connectionId: 'conn-123' }
+     * parseWindowLabel('mutation-builder-conn-123') // => { windowLabel: '...', windowType: 'mutation_builder', connectionId: 'conn-123' }
      */
     parseWindowLabel(label: string): WindowContext {
       // ランチャー
@@ -237,6 +245,16 @@ export const useWindowStore = defineStore('window', {
         return {
           windowLabel: label,
           windowType: 'query_builder',
+          connectionId,
+        }
+      }
+
+      // データ変更ビルダー
+      if (label.startsWith('mutation-builder-')) {
+        const connectionId = label.replace('mutation-builder-', '')
+        return {
+          windowLabel: label,
+          windowType: 'mutation_builder',
           connectionId,
         }
       }
