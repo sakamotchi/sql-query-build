@@ -33,14 +33,14 @@ const selectedTab = computed({
 
         <div v-else class="h-full flex items-center justify-center">
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            表形式はPhase 2で実装予定です
+            表形式は実装予定です
           </div>
         </div>
       </div>
     </template>
 
     <div v-else class="flex-1 flex items-center justify-center p-6 text-sm text-gray-500 dark:text-gray-400">
-      {{ mutationType }} はPhase 8.3以降で実装予定です
+      {{ mutationType }} は実装予定です
     </div>
   </div>
 </template>
