@@ -558,24 +558,31 @@
 
 ### 8.5 安全機能統合
 
-| タスクID | タスク名 | 依存関係 | 完了条件 |
-|---------|---------|---------|---------|
-| 8.5.1 | DangerousQueryDialog拡張 | 8.2-8.4 | INSERT/UPDATE/DELETEに対応した警告メッセージ表示 |
-| 8.5.2 | WHERE句なし検出ロジック | 8.5.1 | mutation-builderストアでWHERE句の有無を判定 |
-| 8.5.3 | 警告レベル設定 | 8.5.2 | クエリ種別とWHERE句有無に応じた警告レベル（info/warning/danger） |
-| 8.5.4 | 影響行数プレビュー（オプション） | 8.5.3 | EXPLAIN結果で影響行数を事前表示（実装可能な場合） |
-| 8.5.5 | クエリ履歴・保存機能 | 8.5.3 | mutation-builderでもクエリ履歴・保存機能を提供 |
-| 8.5.6 | 統合テスト | 8.5.5 | 全機能の動作確認（各クエリ種別の構築・実行・警告表示） |
+**⚠️ 注**: 8.5.1〜8.5.3および8.5.5は**既に実装済み**（Phase 3, 4.3, 8.1-8.4で実装）。動作確認のみ実施。
+
+| タスクID | タスク名 | 依存関係 | 完了条件 | 状態 |
+|---------|---------|---------|---------|------|
+| 8.5.1 | DangerousQueryDialog拡張 | 8.2-8.4 | INSERT/UPDATE/DELETEに対応した警告メッセージ表示 | ✅ 実装済み（Phase 3） |
+| 8.5.2 | WHERE句なし検出ロジック | 8.5.1 | mutation-builderストアでWHERE句の有無を判定 | ✅ 実装済み（Phase 8.1-8.4） |
+| 8.5.3 | 警告レベル設定 | 8.5.2 | クエリ種別とWHERE句有無に応じた警告レベル（warning/danger） | ✅ 実装済み（Phase 3, 8.1-8.4） |
+| 8.5.4 | 影響行数プレビュー（オプション） | 8.5.3 | EXPLAIN結果で影響行数を事前表示（実装可能な場合） | ⏳ 未実装（後回し） |
+| 8.5.5 | クエリ履歴・保存機能の動作確認 | 8.5.3 | mutation-builderでもクエリ履歴・保存機能が動作することを確認 | ✅ 実装済み（Phase 4.3） |
+| 8.5.6 | 統合テスト | 8.5.5 | 全機能の動作確認（各クエリ種別の構築・実行・警告表示） | ⏳ 要実施 |
 
 **8.5の設計ポイント**:
 - **警告レベル**:
-  - INSERT: info（通常の確認）
+  - INSERT: warning（データ挿入の確認）
   - UPDATE（WHERE有）: warning（注意が必要）
   - UPDATE（WHERE無）: danger（全行更新の危険性）
   - DELETE（WHERE有）: warning（注意が必要）
   - DELETE（WHERE無）: danger（全行削除の危険性、最重要）
-- **DangerousQueryDialog**: 既存のコンポーネントを拡張（mutation-builder用のprops追加）
-- **クエリ履歴**: mutation-builderでも履歴を保存（query-historyストアを再利用）
+- **DangerousQueryDialog**: Phase 3で既に実装済み（mutation-builder対応済み）
+- **クエリ履歴**: Phase 4.3で既に実装済み（mutation-builder対応済み）
+- **実装箇所**:
+  - `DangerousQueryDialog.vue` (Phase 3)
+  - `mutation-builder.ts` hasWhereConditions getter (Phase 8.1-8.4)
+  - `query_analyzer.rs` 警告レベル判定 (Phase 3)
+  - `query-history.ts` loadToBuilder() (Phase 4.3)
 
 **成果物**:
 - `/mutation-builder` ページ（新規ページ）
