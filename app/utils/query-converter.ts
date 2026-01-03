@@ -2,6 +2,7 @@ import type {
   SelectedTable,
   SelectedColumn,
   SelectedExpression,
+  SelectedExpressionNode,
   WhereCondition,
   ConditionGroup,
   GroupByColumn,
@@ -26,6 +27,7 @@ export interface UIQueryState {
   selectedTables: SelectedTable[]
   selectedColumns: SelectedColumn[]
   selectedExpressions: SelectedExpression[]
+  selectedExpressionNodes: SelectedExpressionNode[]
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
   orderByColumns: OrderByColumn[]
@@ -79,6 +81,7 @@ export function convertToQueryModel(
       columns: [
         ...convertSelectedColumns(state.selectedColumns),
         ...convertSelectedExpressions(state.selectedExpressions),
+        ...convertSelectedExpressionNodes(state.selectedExpressionNodes),
       ],
     },
     from: {
@@ -129,6 +132,17 @@ function convertSelectedExpressions(expressions: SelectedExpression[]): SelectCo
       expression: item.expression,
       alias: item.alias,
     }))
+}
+
+/**
+ * 選択された式ツリーを変換
+ */
+function convertSelectedExpressionNodes(expressions: SelectedExpressionNode[]): SelectColumn[] {
+  return expressions.map((item) => ({
+    type: 'expression_node',
+    expressionNode: item.expressionNode,
+    alias: item.alias,
+  }))
 }
 
 /**

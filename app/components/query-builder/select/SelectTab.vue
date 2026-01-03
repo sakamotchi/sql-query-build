@@ -4,6 +4,9 @@ import { useQueryBuilderStore } from '@/stores/query-builder';
 import TableColumnGroup from './TableColumnGroup.vue';
 import SelectedColumnList from './SelectedColumnList.vue';
 import ExpressionItem from './ExpressionItem.vue';
+import ExpressionNodeItem from './ExpressionNodeItem.vue';
+import FunctionBuilder from '../FunctionBuilder.vue';
+import type { FunctionCall } from '@/types/expression-node';
 
 const queryBuilderStore = useQueryBuilderStore();
 
@@ -13,6 +16,7 @@ const selectedTables = computed(() => queryBuilderStore.selectedTables);
 // 選択されたカラム一覧
 const selectedColumns = computed(() => queryBuilderStore.selectedColumns);
 const selectedExpressions = computed(() => queryBuilderStore.selectedExpressions);
+const selectedExpressionNodes = computed(() => queryBuilderStore.selectedExpressionNodes);
 
 // 選択カラム数
 const selectedColumnCount = computed(() => selectedColumns.value.length);
@@ -24,6 +28,17 @@ const totalColumnCount = computed(() =>
 
 // テーブルがない場合のメッセージ
 const isEmpty = computed(() => selectedTables.value.length === 0);
+
+const functionDialogOpen = computed({
+  get: () => queryBuilderStore.expressionDialogOpen,
+  set: (value: boolean) => {
+    if (value) {
+      queryBuilderStore.openFunctionBuilder();
+    } else {
+      queryBuilderStore.closeFunctionBuilder();
+    }
+  },
+});
 
 const newExpression = ref('');
 const newAlias = ref('');
@@ -40,6 +55,10 @@ const handleAddExpression = () => {
   newExpression.value = '';
   newAlias.value = '';
   expressionError.value = '';
+};
+
+const handleFunctionApply = (func: FunctionCall, alias?: string | null) => {
+  queryBuilderStore.addFunction(func, alias);
 };
 
 watch(newExpression, (value) => {
@@ -133,8 +152,39 @@ watch(newExpression, (value) => {
               </div>
             </div>
           </div>
+
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">関数</span>
+              <UButton size="2xs" label="関数を追加" @click="queryBuilderStore.openFunctionBuilder()" />
+            </div>
+
+            <div class="mt-3 max-h-48 overflow-y-auto">
+              <div
+                v-if="selectedExpressionNodes.length === 0"
+                class="text-xs text-gray-400 text-center py-4"
+              >
+                関数はまだありません
+              </div>
+              <div v-else class="flex flex-col gap-2">
+                <ExpressionNodeItem
+                  v-for="expression in selectedExpressionNodes"
+                  :key="expression.id"
+                  :expression="expression"
+                  @update="queryBuilderStore.updateExpressionNode"
+                  @remove="queryBuilderStore.removeExpressionNode"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
   </div>
+
+  <UModal v-model:open="functionDialogOpen" title="関数ビルダー">
+    <template #body>
+      <FunctionBuilder @apply="handleFunctionApply" @cancel="functionDialogOpen = false" />
+    </template>
+  </UModal>
 </template>

@@ -4,6 +4,7 @@ import type {
   SelectedTable,
   SelectedColumn,
   SelectedExpression,
+  SelectedExpressionNode,
   WhereCondition,
   ConditionGroup,
   GroupByColumn,
@@ -28,6 +29,7 @@ describe('query-converter', () => {
     } as SelectedTable],
     selectedColumns: [],
     selectedExpressions: [] as SelectedExpression[],
+    selectedExpressionNodes: [] as SelectedExpressionNode[],
     whereConditions: [],
     groupByColumns: [],
     orderByColumns: [],
@@ -115,6 +117,48 @@ describe('query-converter', () => {
       expect(result.select.columns[0]).toEqual({
         type: 'expression',
         expression: 'UPPER(u.name)',
+        alias: 'upper_name',
+      })
+    })
+
+    it('式ツリーを変換できる', () => {
+      const state = createBaseState()
+      state.selectedExpressionNodes = [
+        {
+          id: 'node-1',
+          expressionNode: {
+            type: 'function',
+            name: 'UPPER',
+            category: 'string',
+            arguments: [
+              {
+                type: 'column',
+                table: 'u',
+                column: 'name',
+              },
+            ],
+          },
+          alias: 'upper_name',
+        },
+      ]
+
+      const result = convertToQueryModel(state, 'conn-123')
+
+      expect(result.select.columns).toHaveLength(1)
+      expect(result.select.columns[0]).toEqual({
+        type: 'expression_node',
+        expressionNode: {
+          type: 'function',
+          name: 'UPPER',
+          category: 'string',
+          arguments: [
+            {
+              type: 'column',
+              table: 'u',
+              column: 'name',
+            },
+          ],
+        },
         alias: 'upper_name',
       })
     })
