@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useQueryBuilderStore } from '@/stores/query-builder';
 import TableColumnGroup from './TableColumnGroup.vue';
 import SelectedColumnList from './SelectedColumnList.vue';
+import ExpressionItem from './ExpressionItem.vue';
 
 const queryBuilderStore = useQueryBuilderStore();
 
@@ -11,6 +12,7 @@ const selectedTables = computed(() => queryBuilderStore.selectedTables);
 
 // 選択されたカラム一覧
 const selectedColumns = computed(() => queryBuilderStore.selectedColumns);
+const selectedExpressions = computed(() => queryBuilderStore.selectedExpressions);
 
 // 選択カラム数
 const selectedColumnCount = computed(() => selectedColumns.value.length);
@@ -22,6 +24,29 @@ const totalColumnCount = computed(() =>
 
 // テーブルがない場合のメッセージ
 const isEmpty = computed(() => selectedTables.value.length === 0);
+
+const newExpression = ref('');
+const newAlias = ref('');
+const expressionError = ref('');
+
+const handleAddExpression = () => {
+  const trimmed = newExpression.value.trim();
+  if (!trimmed) {
+    expressionError.value = '式を入力してください';
+    return;
+  }
+
+  queryBuilderStore.addExpression(trimmed, newAlias.value);
+  newExpression.value = '';
+  newAlias.value = '';
+  expressionError.value = '';
+};
+
+watch(newExpression, (value) => {
+  if (value.trim().length > 0) {
+    expressionError.value = '';
+  }
+});
 </script>
 
 <template>
@@ -69,7 +94,45 @@ const isEmpty = computed(() => selectedTables.value.length === 0);
             />
           </div>
 
-          <SelectedColumnList :columns="selectedColumns" />
+          <div class="flex-1 min-h-0">
+            <SelectedColumnList :columns="selectedColumns" />
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">式</span>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <UFormField label="式" :error="expressionError">
+                <UInput v-model="newExpression" placeholder="例: UPPER(u.name)" />
+              </UFormField>
+              <UFormField label="エイリアス">
+                <UInput v-model="newAlias" placeholder="例: upper_name" />
+              </UFormField>
+              <div class="flex justify-end">
+                <UButton size="2xs" label="式を追加" @click="handleAddExpression" />
+              </div>
+            </div>
+
+            <div class="mt-3 max-h-48 overflow-y-auto">
+              <div
+                v-if="selectedExpressions.length === 0"
+                class="text-xs text-gray-400 text-center py-4"
+              >
+                式はまだありません
+              </div>
+              <div v-else class="flex flex-col gap-2">
+                <ExpressionItem
+                  v-for="expression in selectedExpressions"
+                  :key="expression.id"
+                  :expression="expression"
+                  @update="queryBuilderStore.updateExpression"
+                  @remove="queryBuilderStore.removeExpression"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>

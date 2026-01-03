@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::expression_node::ExpressionNode;
+
 /// クエリモデル（完全版）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryModel {
     /// クエリID（保存時に使用）
@@ -40,7 +42,7 @@ pub struct QueryModel {
 }
 
 /// SELECT句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SelectClause {
     /// DISTINCT
@@ -50,7 +52,7 @@ pub struct SelectClause {
 }
 
 /// 選択カラム
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum SelectColumn {
     /// 通常のカラム
@@ -74,6 +76,13 @@ pub enum SelectColumn {
         aggregate: AggregateFunction,
         alias: Option<String>,
     },
+    /// 式ツリー
+    #[serde(rename = "expression_node")]
+    ExpressionNode {
+        #[serde(rename = "expressionNode")]
+        expression_node: ExpressionNode,
+        alias: Option<String>,
+    },
     /// すべてのカラム (table.*)
     #[serde(rename = "all")]
     All {
@@ -83,7 +92,7 @@ pub enum SelectColumn {
 }
 
 /// 集計関数
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AggregateFunction {
     /// 関数名
@@ -92,7 +101,7 @@ pub struct AggregateFunction {
     pub column: AggregateColumn,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum AggregateColumn {
     All,
@@ -105,7 +114,7 @@ pub enum AggregateColumn {
 }
 
 /// FROM句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct FromClause {
     /// メインテーブル
@@ -113,7 +122,7 @@ pub struct FromClause {
 }
 
 /// テーブル参照
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TableReference {
     /// スキーマ名
@@ -125,7 +134,7 @@ pub struct TableReference {
 }
 
 /// JOIN句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinClause {
     /// JOIN ID
@@ -142,7 +151,7 @@ pub struct JoinClause {
 }
 
 /// JOIN条件
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinCondition {
     /// 左側（元テーブル）
@@ -153,7 +162,7 @@ pub struct JoinCondition {
     pub right: JoinConditionColumn,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct JoinConditionColumn {
     pub table_alias: String,
@@ -161,7 +170,7 @@ pub struct JoinConditionColumn {
 }
 
 /// WHERE句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct WhereClause {
     /// 条件の結合方法
@@ -171,7 +180,7 @@ pub struct WhereClause {
 }
 
 /// WHERE条件アイテム（条件またはグループ）
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum WhereConditionItem {
     #[serde(rename = "condition")]
@@ -181,7 +190,7 @@ pub enum WhereConditionItem {
 }
 
 /// WHERE条件
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct WhereCondition {
     /// 条件ID
@@ -194,7 +203,7 @@ pub struct WhereCondition {
     pub value: WhereValue,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct WhereConditionColumn {
     pub table_alias: String,
@@ -202,7 +211,7 @@ pub struct WhereConditionColumn {
 }
 
 /// WHERE値
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum WhereValue {
     #[serde(rename = "literal")]
@@ -223,7 +232,7 @@ pub enum WhereValue {
     Subquery { query: Box<QueryModel> },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum LiteralValue {
     Null,
@@ -233,7 +242,7 @@ pub enum LiteralValue {
 }
 
 /// 条件グループ
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct WhereConditionGroup {
     /// グループID
@@ -245,7 +254,7 @@ pub struct WhereConditionGroup {
 }
 
 /// GROUP BY句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupByClause {
     /// グループ化カラム
@@ -253,7 +262,7 @@ pub struct GroupByClause {
 }
 
 /// グループ化カラム
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupByColumn {
     pub table_alias: String,
@@ -261,7 +270,7 @@ pub struct GroupByColumn {
 }
 
 /// HAVING句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HavingClause {
     /// 条件の結合方法
@@ -271,7 +280,7 @@ pub struct HavingClause {
 }
 
 /// HAVING条件
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct HavingCondition {
     /// 条件ID
@@ -285,7 +294,7 @@ pub struct HavingCondition {
 }
 
 /// ORDER BY句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderByClause {
     /// ソート項目
@@ -293,7 +302,7 @@ pub struct OrderByClause {
 }
 
 /// ソート項目
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderByItem {
     pub table_alias: String,
@@ -303,7 +312,7 @@ pub struct OrderByItem {
 }
 
 /// LIMIT/OFFSET句
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct LimitClause {
     /// 取得件数

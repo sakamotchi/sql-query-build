@@ -57,7 +57,7 @@ const handleDragEnd = () => {
 </script>
 
 <template>
-  <div class="flex-1 overflow-y-auto">
+  <div class="h-full overflow-y-auto">
     <div v-if="columns.length === 0" class="flex flex-col items-center justify-center h-full p-6 text-center">
       <UIcon name="i-heroicons-list-bullet" class="w-12 h-12 text-gray-300 dark:text-gray-600" />
       <p class="text-xs text-gray-400 mt-2">

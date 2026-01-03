@@ -80,6 +80,18 @@ export interface SelectedColumn {
 }
 
 /**
+ * 選択された式（式入力UI用）
+ */
+export interface SelectedExpression {
+  /** 一意識別子 */
+  id: string
+  /** 式 */
+  expression: string
+  /** エイリアス */
+  alias: string | null
+}
+
+/**
  * テーブル情報
  */
 export interface TableInfo {
