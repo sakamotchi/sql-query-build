@@ -70,7 +70,16 @@ const canSubmit = computed(() => {
     case 'table':
       return selectedColumns.value.length > 0
     case 'function':
-      return functionNode.value !== null
+      if (!functionNode.value) return false
+      // 引数の検証
+      const args = functionNode.value.arguments
+      if (args.length === 0) return true // 引数なしの関数（例：NOW()）
+      return args.every((arg) => {
+        if (arg.type === 'column') return Boolean(arg.column && arg.column.trim())
+        if (arg.type === 'literal') return arg.valueType !== undefined && arg.value !== null && arg.value !== undefined
+        if (arg.type === 'function') return Boolean(arg.name && arg.name.trim())
+        return false
+      })
     case 'expression':
       return expressionText.value.trim().length > 0
     case 'subquery':

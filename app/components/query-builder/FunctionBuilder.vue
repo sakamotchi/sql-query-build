@@ -221,10 +221,16 @@ function createDefaultArgument(): ExpressionNode {
 }
 
 function isArgumentValid(arg: ExpressionNode): boolean {
-  if (arg.type === 'column') return Boolean(arg.column)
-  if (arg.type === 'literal') return arg.valueType !== undefined
-  if (arg.type === 'function') return Boolean(arg.name)
-  return true
+  if (arg.type === 'column') {
+    return Boolean(arg.column && arg.column.trim())
+  }
+  if (arg.type === 'literal') {
+    return arg.valueType !== undefined && arg.value !== null && arg.value !== undefined
+  }
+  if (arg.type === 'function') {
+    return Boolean(arg.name && arg.name.trim())
+  }
+  return false
 }
 
 function addArgument() {
