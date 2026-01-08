@@ -35,6 +35,8 @@ interface QueryBuilderState {
   selectedExpressions: SelectedExpression[]
   /** 選択された式ツリー一覧（関数ビルダー用） */
   selectedExpressionNodes: SelectedExpressionNode[]
+  /** 選択アイテムの順序 (Items ID list) */
+  selectItemOrder: string[]
   /** ExpressionNode編集中の一時状態 */
   editingExpressionNode: SelectedExpressionNode | null
   /** 関数ビルダーダイアログ開閉 */
@@ -121,6 +123,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     selectedColumns: [],
     selectedExpressions: [],
     selectedExpressionNodes: [],
+    selectItemOrder: [],
     editingExpressionNode: null,
     expressionDialogOpen: false,
     draggingTable: null,
@@ -285,6 +288,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       )
       if (!exists) {
         this.selectedColumns.push(column)
+        this.selectItemOrder.push(`column:${column.tableId}:${column.columnName}`)
         this.regenerateSql()
       }
     },
@@ -298,6 +302,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       )
       if (index !== -1) {
         this.selectedColumns.splice(index, 1)
+        this.selectItemOrder = this.selectItemOrder.filter(
+          (id) => id !== `column:${tableId}:${columnName}`
+        )
         this.regenerateSql()
       }
     },
@@ -351,6 +358,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
             columnAlias: null,
             dataType: column.dataType,
           })
+          this.selectItemOrder.push(`column:${table.id}:${column.name}`)
         }
       })
       this.regenerateSql()
@@ -361,6 +369,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     deselectAllColumnsFromTable(tableId: string) {
       this.selectedColumns = this.selectedColumns.filter((c) => c.tableId !== tableId)
+      this.selectItemOrder = this.selectItemOrder.filter((id) => !id.startsWith(`column:${tableId}:`))
       this.regenerateSql()
     },
 
@@ -369,6 +378,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     clearSelectedColumns() {
       this.selectedColumns = []
+      this.selectItemOrder = this.selectItemOrder.filter((id) => !id.startsWith('column:'))
       this.regenerateSql()
     },
 
@@ -379,11 +389,13 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       const trimmed = expression.trim()
       if (!trimmed) return
 
+      const id = crypto.randomUUID()
       this.selectedExpressions.push({
-        id: crypto.randomUUID(),
+        id,
         expression: trimmed,
         alias: alias?.trim() || null,
       })
+      this.selectItemOrder.push(`expression:${id}`)
       this.regenerateSql()
     },
 
@@ -406,6 +418,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     removeExpression(id: string) {
       this.selectedExpressions = this.selectedExpressions.filter((item) => item.id !== id)
+      this.selectItemOrder = this.selectItemOrder.filter((item) => item !== `expression:${id}`)
       this.regenerateSql()
     },
 
@@ -413,11 +426,13 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      * 式ツリーを追加
      */
     addExpressionNode(expressionNode: SelectedExpressionNode['expressionNode'], alias?: string | null) {
+      const id = crypto.randomUUID()
       this.selectedExpressionNodes.push({
-        id: crypto.randomUUID(),
+        id,
         expressionNode,
         alias: alias?.trim() || null,
       })
+      this.selectItemOrder.push(`expression_node:${id}`)
       this.regenerateSql()
     },
 
@@ -440,6 +455,15 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     removeExpressionNode(id: string) {
       this.selectedExpressionNodes = this.selectedExpressionNodes.filter((item) => item.id !== id)
+      this.selectItemOrder = this.selectItemOrder.filter((item) => item !== `expression_node:${id}`)
+      this.regenerateSql()
+    },
+
+    /**
+     * SELECT項目の順序を更新
+     */
+    updateSelectItemOrder(newOrder: string[]) {
+      this.selectItemOrder = newOrder
       this.regenerateSql()
     },
 
