@@ -40,8 +40,8 @@ function onPageSizeChange(size: number) {
       <USelectMenu
         :model-value="pageSize"
         :items="pageSizeOptions.map(n => ({ value: n, label: `${n}件` }))"
-        value-attribute="value"
-        option-attribute="label"
+        value-key="value"
+        
         size="xs"
         class="w-24"
         @update:model-value="(v) => onPageSizeChange(Number(v))"

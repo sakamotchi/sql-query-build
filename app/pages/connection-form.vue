@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia'
 import type { Connection, ConnectionTestResult, DatabaseType } from '~/types'
 import { useConnectionStore } from '~/stores/connection'
+import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 
 const route = useRoute()
 const router = useRouter()
@@ -217,7 +218,7 @@ watch(() => form.type, (newType) => {
           <div class="lg:col-span-2 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UFormField label="接続名" required :error="errors.name">
-                <UInput v-model="form.name" placeholder="例: 開発用MySQL" />
+                <UInput v-model="form.name" placeholder="例: 開発用MySQL" v-bind="sqlIdentifierAttrs" />
               </UFormField>
 
               <UFormField label="データベースタイプ" required :error="errors.type">
@@ -231,7 +232,7 @@ watch(() => form.type, (newType) => {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UFormField label="ホスト" required :error="errors.host">
-                <UInput v-model="form.host" placeholder="localhost" />
+                <UInput v-model="form.host" placeholder="localhost" v-bind="sqlIdentifierAttrs" />
               </UFormField>
               <UFormField label="ポート" required :error="errors.port">
                 <UInput v-model.number="form.port" type="number" min="1" max="65535" />
@@ -240,10 +241,10 @@ watch(() => form.type, (newType) => {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UFormField label="データベース名" required :error="errors.database">
-                <UInput v-model="form.database" placeholder="sample_db" />
+                <UInput v-model="form.database" placeholder="sample_db" v-bind="sqlIdentifierAttrs" />
               </UFormField>
               <UFormField label="ユーザー名" required :error="errors.username">
-                <UInput v-model="form.username" placeholder="db_user" />
+                <UInput v-model="form.username" placeholder="db_user" v-bind="sqlIdentifierAttrs" />
               </UFormField>
             </div>
 

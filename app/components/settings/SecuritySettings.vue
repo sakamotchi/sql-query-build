@@ -143,7 +143,7 @@ const resetSecurity = async () => {
           <URadioGroup
             :model-value="settings.level"
             :items="levelOptions"
-            value-attribute="value"
+            value-key="value"
             :disabled="saving || loading"
             @update:model-value="updateLevel"
           >

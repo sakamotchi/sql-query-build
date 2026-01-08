@@ -104,7 +104,7 @@ onMounted(() => {
         v-model="selectedOption"
         :items="tableOptions"
         by="id"
-        option-attribute="label"
+        
         :search-attributes="['label', 'schema', 'table']"
         placeholder="テーブルを選択"
         searchable

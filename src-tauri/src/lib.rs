@@ -2,10 +2,13 @@ pub mod commands;
 pub mod connection;
 pub mod crypto;
 pub mod database;
+pub mod error;
 pub mod models;
 pub mod query;
 pub mod services;
+pub mod sql;
 pub mod sql_generator;
+pub mod validators;
 pub mod storage;
 
 use commands::query_history_commands::QueryHistoryState;

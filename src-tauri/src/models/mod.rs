@@ -1,4 +1,5 @@
 pub mod database_structure;
+pub mod expression_node;
 pub mod join_suggestion;
 pub mod mutation_result;
 pub mod query;

@@ -57,7 +57,7 @@ const selected = computed({
       :items="columns"
       by="id"
       :search-attributes="['displayName', 'tableName', 'columnName']"
-      option-attribute="displayName"
+      
       placeholder="カラムを選択"
       searchable
       clearable

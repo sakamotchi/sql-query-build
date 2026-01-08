@@ -1,11 +1,24 @@
 import { defineStore } from 'pinia'
-import type { QueryModel, QueryInfo, SelectedTable, SelectedColumn, WhereCondition, ConditionGroup, GroupByColumn, OrderByColumn } from '@/types/query'
+import type {
+  QueryModel,
+  QueryInfo,
+  SelectedTable,
+  SelectedColumn,
+  SelectedExpression,
+  SelectedExpressionNode,
+  WhereCondition,
+  ConditionGroup,
+  GroupByColumn,
+  OrderByColumn,
+} from '@/types/query'
 import type { JoinClause, JoinCondition as JoinConditionModel } from '@/types/query-model'
 import type { QueryAnalysisResult } from '@/types/query-analysis'
 import { queryApi } from '@/api/query'
 import { joinSuggestionsApi } from '@/api/join-suggestions'
 import { convertToQueryModel } from '@/utils/query-converter'
+import { generatePreviewSql } from '@/utils/expression-preview'
 import { useConnectionStore } from '@/stores/connection'
+import { useDatabaseStructureStore } from '@/stores/database-structure'
 import { useWindowStore } from '@/stores/window'
 import type { Table } from '@/types/database-structure'
 import type { QueryExecuteResult, QueryExecuteError, QueryResultRow } from '@/types/query-result'
@@ -18,6 +31,16 @@ interface QueryBuilderState {
   tablePositions: Record<string, { x: number; y: number }>
   /** 選択されたカラム一覧（カラム選択UI用） */
   selectedColumns: SelectedColumn[]
+  /** 選択された式一覧（式入力UI用） */
+  selectedExpressions: SelectedExpression[]
+  /** 選択された式ツリー一覧（関数ビルダー用） */
+  selectedExpressionNodes: SelectedExpressionNode[]
+  /** 選択アイテムの順序 (Items ID list) */
+  selectItemOrder: string[]
+  /** ExpressionNode編集中の一時状態 */
+  editingExpressionNode: SelectedExpressionNode | null
+  /** 関数ビルダーダイアログ開閉 */
+  expressionDialogOpen: boolean
   /** ドラッグ中のテーブル（ドラッグ&ドロップ用） */
   draggingTable: Table | null
   /** WHERE条件一覧 */
@@ -68,10 +91,22 @@ interface QueryBuilderState {
   executingQueryId: string | null
 }
 
+export interface AvailableColumn {
+  id: string
+  label: string
+  tableId: string
+  tableAlias: string
+  tableName: string
+  columnName: string
+  dataType: string
+}
+
 export interface SerializableQueryState {
   selectedTables: SelectedTable[]
   tablePositions?: Record<string, { x: number; y: number }>
   selectedColumns: SelectedColumn[]
+  selectedExpressions: SelectedExpression[]
+  selectedExpressionNodes: SelectedExpressionNode[]
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
   joins: JoinClause[]
@@ -86,6 +121,11 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     selectedTables: [],
     tablePositions: {},
     selectedColumns: [],
+    selectedExpressions: [],
+    selectedExpressionNodes: [],
+    selectItemOrder: [],
+    editingExpressionNode: null,
+    expressionDialogOpen: false,
     draggingTable: null,
     whereConditions: [],
     groupByColumns: [],
@@ -121,8 +161,52 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      * クエリ実行可能かどうか
      */
     canExecuteQuery(state): boolean {
-      return state.selectedColumns.length > 0
+      return (
+        state.selectedColumns.length > 0 ||
+        state.selectedExpressions.length > 0 ||
+        state.selectedExpressionNodes.length > 0
+      )
     },
+
+    /**
+     * 利用可能なカラムリスト
+     */
+    availableColumns(state): AvailableColumn[] {
+      return state.selectedTables.flatMap((table) =>
+        table.columns.map((column) => ({
+          id: `${table.alias}.${column.name}`,
+          label: `${table.alias}.${column.name}`,
+          tableId: table.id,
+          tableAlias: table.alias,
+          tableName: table.name,
+          columnName: column.name,
+          dataType: column.dataType,
+        }))
+      )
+    },
+
+    /**
+     * 利用可能なテーブル一覧（DB構造から取得）
+     */
+    availableTables(): Table[] {
+      const connectionStore = useConnectionStore()
+      const windowStore = useWindowStore()
+      const databaseStructureStore = useDatabaseStructureStore()
+
+      const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+      if (!connectionId) return []
+
+      const structure = databaseStructureStore.getStructure(connectionId)
+      if (!structure) return []
+
+      return structure.schemas.flatMap((schema) => schema.tables)
+    },
+
+    /**
+     * ExpressionNodeのプレビューSQLを生成
+     */
+    getExpressionPreviewSql: () => (expressionNode: SelectedExpressionNode) =>
+      generatePreviewSql(expressionNode.expressionNode),
 
     /**
      * 現在ページの行データ
@@ -204,6 +288,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       )
       if (!exists) {
         this.selectedColumns.push(column)
+        this.selectItemOrder.push(`column:${column.tableId}:${column.columnName}`)
         this.regenerateSql()
       }
     },
@@ -217,6 +302,9 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       )
       if (index !== -1) {
         this.selectedColumns.splice(index, 1)
+        this.selectItemOrder = this.selectItemOrder.filter(
+          (id) => id !== `column:${tableId}:${columnName}`
+        )
         this.regenerateSql()
       }
     },
@@ -270,6 +358,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
             columnAlias: null,
             dataType: column.dataType,
           })
+          this.selectItemOrder.push(`column:${table.id}:${column.name}`)
         }
       })
       this.regenerateSql()
@@ -280,6 +369,7 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     deselectAllColumnsFromTable(tableId: string) {
       this.selectedColumns = this.selectedColumns.filter((c) => c.tableId !== tableId)
+      this.selectItemOrder = this.selectItemOrder.filter((id) => !id.startsWith(`column:${tableId}:`))
       this.regenerateSql()
     },
 
@@ -288,7 +378,117 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     clearSelectedColumns() {
       this.selectedColumns = []
+      this.selectItemOrder = this.selectItemOrder.filter((id) => !id.startsWith('column:'))
       this.regenerateSql()
+    },
+
+    /**
+     * 式を追加
+     */
+    addExpression(expression: string, alias: string | null) {
+      const trimmed = expression.trim()
+      if (!trimmed) return
+
+      const id = crypto.randomUUID()
+      this.selectedExpressions.push({
+        id,
+        expression: trimmed,
+        alias: alias?.trim() || null,
+      })
+      this.selectItemOrder.push(`expression:${id}`)
+      this.regenerateSql()
+    },
+
+    /**
+     * 式を更新
+     */
+    updateExpression(id: string, updates: Partial<SelectedExpression>) {
+      const expression = this.selectedExpressions.find((item) => item.id === id)
+      if (!expression) return
+
+      Object.assign(expression, updates)
+      if (expression.alias !== null) {
+        expression.alias = expression.alias.trim() || null
+      }
+      this.regenerateSql()
+    },
+
+    /**
+     * 式を削除
+     */
+    removeExpression(id: string) {
+      this.selectedExpressions = this.selectedExpressions.filter((item) => item.id !== id)
+      this.selectItemOrder = this.selectItemOrder.filter((item) => item !== `expression:${id}`)
+      this.regenerateSql()
+    },
+
+    /**
+     * 式ツリーを追加
+     */
+    addExpressionNode(expressionNode: SelectedExpressionNode['expressionNode'], alias?: string | null) {
+      const id = crypto.randomUUID()
+      this.selectedExpressionNodes.push({
+        id,
+        expressionNode,
+        alias: alias?.trim() || null,
+      })
+      this.selectItemOrder.push(`expression_node:${id}`)
+      this.regenerateSql()
+    },
+
+    /**
+     * 式ツリーを更新
+     */
+    updateExpressionNode(id: string, updates: Partial<SelectedExpressionNode>) {
+      const target = this.selectedExpressionNodes.find((item) => item.id === id)
+      if (!target) return
+
+      Object.assign(target, updates)
+      if (target.alias !== null) {
+        target.alias = target.alias.trim() || null
+      }
+      this.regenerateSql()
+    },
+
+    /**
+     * 式ツリーを削除
+     */
+    removeExpressionNode(id: string) {
+      this.selectedExpressionNodes = this.selectedExpressionNodes.filter((item) => item.id !== id)
+      this.selectItemOrder = this.selectItemOrder.filter((item) => item !== `expression_node:${id}`)
+      this.regenerateSql()
+    },
+
+    /**
+     * SELECT項目の順序を更新
+     */
+    updateSelectItemOrder(newOrder: string[]) {
+      this.selectItemOrder = newOrder
+      this.regenerateSql()
+    },
+
+    /**
+     * 関数ビルダーを開く
+     */
+    openFunctionBuilder() {
+      this.editingExpressionNode = null
+      this.expressionDialogOpen = true
+    },
+
+    /**
+     * 関数ビルダーを閉じる
+     */
+    closeFunctionBuilder() {
+      this.editingExpressionNode = null
+      this.expressionDialogOpen = false
+    },
+
+    /**
+     * 関数を追加
+     */
+    addFunction(expressionNode: SelectedExpressionNode['expressionNode'], alias?: string | null) {
+      this.addExpressionNode(expressionNode, alias)
+      this.closeFunctionBuilder()
     },
 
     /**
@@ -612,7 +812,11 @@ export const useQueryBuilderStore = defineStore('query-builder', {
      */
     async regenerateSql() {
       // バックエンドでのSQL生成
-      if (this.selectedColumns.length === 0) {
+      if (
+        this.selectedColumns.length === 0 &&
+        this.selectedExpressions.length === 0 &&
+        this.selectedExpressionNodes.length === 0
+      ) {
         this.generatedSql = ''
         return
       }
@@ -703,6 +907,10 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       this.selectedTables = []
       this.tablePositions = {}
       this.selectedColumns = []
+      this.selectedExpressions = []
+      this.selectedExpressionNodes = []
+      this.editingExpressionNode = null
+      this.expressionDialogOpen = false
       this.joins = []
       this.whereConditions = []
       this.query = null
@@ -873,6 +1081,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         selectedTables: JSON.parse(JSON.stringify(this.selectedTables)),
         tablePositions: positionsByAlias,
         selectedColumns: JSON.parse(JSON.stringify(this.selectedColumns)),
+        selectedExpressions: JSON.parse(JSON.stringify(this.selectedExpressions)),
+        selectedExpressionNodes: JSON.parse(JSON.stringify(this.selectedExpressionNodes)),
         whereConditions: JSON.parse(JSON.stringify(this.whereConditions)),
         groupByColumns: JSON.parse(JSON.stringify(this.groupByColumns)),
         joins: JSON.parse(JSON.stringify(this.joins)),
@@ -905,6 +1115,8 @@ export const useQueryBuilderStore = defineStore('query-builder', {
 
       this.tablePositions = restoredPositions
       this.selectedColumns = state.selectedColumns || []
+      this.selectedExpressions = state.selectedExpressions || []
+      this.selectedExpressionNodes = state.selectedExpressionNodes || []
       this.whereConditions = state.whereConditions || []
       this.groupByColumns = state.groupByColumns || []
       this.joins = state.joins || []

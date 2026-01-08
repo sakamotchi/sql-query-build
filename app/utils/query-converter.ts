@@ -1,6 +1,8 @@
 import type {
   SelectedTable,
   SelectedColumn,
+  SelectedExpression,
+  SelectedExpressionNode,
   WhereCondition,
   ConditionGroup,
   GroupByColumn,
@@ -12,7 +14,6 @@ import type {
   WhereConditionItem,
   WhereValue,
   WhereOperator,
-  SelectColumn,
   LimitClause,
   OrderByItem,
   JoinClause,
@@ -24,6 +25,8 @@ import type {
 export interface UIQueryState {
   selectedTables: SelectedTable[]
   selectedColumns: SelectedColumn[]
+  selectedExpressions: SelectedExpression[]
+  selectedExpressionNodes: SelectedExpressionNode[]
   whereConditions: Array<WhereCondition | ConditionGroup>
   groupByColumns: GroupByColumn[]
   orderByColumns: OrderByColumn[]
@@ -31,6 +34,7 @@ export interface UIQueryState {
   limit: number | null
   offset: number | null
   joins: JoinClause[]
+  selectItemOrder?: string[]
 }
 
 /**
@@ -70,11 +74,57 @@ export function convertToQueryModel(
   // QueryModelのSelectedTableとは異なるが、ここではQueryModelのFromClauseを作るだけなので
   // schema, name, aliasがあれば良い。
 
+  // 中間表現: { item: SelectColumn, id: string }
+  const mappedColumns = state.selectedColumns.map((col) => ({
+    item: {
+      type: 'column' as const,
+      tableAlias: col.tableAlias,
+      columnName: col.columnName,
+      alias: col.columnAlias,
+      // dataType is not needed for SelectColumn
+    },
+    id: `column:${col.tableId}:${col.columnName}`,
+  }))
+
+  const mappedExpressions = state.selectedExpressions
+    .filter((expr) => expr.expression.trim().length > 0)
+    .map((expr) => ({
+      item: {
+        type: 'expression' as const,
+        expression: expr.expression,
+        alias: expr.alias,
+      },
+      id: `expression:${expr.id}`,
+    }))
+
+  const mappedNodes = state.selectedExpressionNodes.map((node) => ({
+    item: {
+      type: 'expression_node' as const,
+      expressionNode: node.expressionNode,
+      alias: node.alias,
+    },
+    id: `expression_node:${node.id}`,
+  }))
+
+  const combinedItems = [...mappedColumns, ...mappedExpressions, ...mappedNodes]
+
+  if (state.selectItemOrder && state.selectItemOrder.length > 0) {
+    const orderMap = new Map<string, number>(
+      state.selectItemOrder.map((id, index) => [id, index])
+    )
+
+    combinedItems.sort((a, b) => {
+      const indexA = orderMap.has(a.id) ? orderMap.get(a.id)! : 999999
+      const indexB = orderMap.has(b.id) ? orderMap.get(b.id)! : 999999
+      return indexA - indexB
+    })
+  }
+
   return {
     connectionId,
     select: {
       distinct: false, // UIにまだ設定がないのでデフォルト
-      columns: convertSelectedColumns(state.selectedColumns),
+      columns: combinedItems.map((wrapper) => wrapper.item),
     },
     from: {
       table: {
@@ -84,7 +134,7 @@ export function convertToQueryModel(
       },
     },
     joins: state.joins || [],
-    whereClause: convertWhereConditions(state.whereConditions, 'AND') || null,
+    whereClause: convertWhereConditions(state.whereConditions, 'AND') || undefined,
     groupBy:
       state.groupByColumns.length > 0
         ? { columns: convertGroupByColumns(state.groupByColumns) }
@@ -101,17 +151,7 @@ export function convertToQueryModel(
   }
 }
 
-/**
- * 選択カラムを変換
- */
-function convertSelectedColumns(columns: SelectedColumn[]): SelectColumn[] {
-  return columns.map((col) => ({
-    type: 'column',
-    tableAlias: col.tableAlias,
-    columnName: col.columnName,
-    alias: col.columnAlias,
-  }))
-}
+
 
 /**
  * WHERE条件を変換

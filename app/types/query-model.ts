@@ -1,3 +1,5 @@
+import type { ExpressionNode } from './expression-node'
+
 /**
  * クエリモデル（完全版）
  */
@@ -51,7 +53,7 @@ export interface SelectClause {
  */
 export interface SelectColumn {
   /** カラムタイプ */
-  type: 'column' | 'expression' | 'aggregate' | 'all'
+  type: 'column' | 'expression' | 'aggregate' | 'all' | 'expression_node'
   /** テーブルエイリアス（type: 'column' | 'all' の場合） */
   tableAlias?: string
   /** カラム名（type: 'column' の場合） */
@@ -60,6 +62,8 @@ export interface SelectColumn {
   expression?: string
   /** 集計関数（type: 'aggregate' の場合） */
   aggregate?: AggregateFunction
+  /** 式ツリー（type: 'expression_node' の場合） */
+  expressionNode?: ExpressionNode
   /** 出力エイリアス（AS句） */
   alias?: string | null
 }

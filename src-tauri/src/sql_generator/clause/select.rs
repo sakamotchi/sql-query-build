@@ -1,6 +1,7 @@
 use crate::models::query::*;
-
+use crate::sql::expression_builder::ExpressionBuilder;
 use crate::sql_generator::builder::SqlBuilder;
+use crate::validators::expression_validator::ExpressionValidator;
 
 impl<'a> SqlBuilder<'a> {
     /// SELECT句を生成
@@ -64,6 +65,24 @@ impl<'a> SqlBuilder<'a> {
                     format!("({}) AS {}", expression, self.quote_identifier(a))
                 } else {
                     format!("({})", expression)
+                }
+            }
+            SelectColumn::ExpressionNode {
+                expression_node,
+                alias,
+            } => {
+                let validator = ExpressionValidator::new();
+                validator
+                    .validate(expression_node)
+                    .map_err(|e| e.to_string())?;
+
+                let builder = ExpressionBuilder::new(self.dialect.dialect_name());
+                let expr_sql = builder.build(expression_node).map_err(|e| e.to_string())?;
+
+                if let Some(a) = alias {
+                    format!("{} AS {}", expr_sql, self.quote_identifier(a))
+                } else {
+                    expr_sql
                 }
             }
         };

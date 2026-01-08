@@ -1,4 +1,5 @@
 import type { Column } from './database-structure'
+import type { ExpressionNode } from './expression-node'
 
 /**
  * クエリモデル型定義
@@ -77,6 +78,30 @@ export interface SelectedColumn {
   columnAlias: string | null
   /** データ型 */
   dataType: string
+}
+
+/**
+ * 選択された式（式入力UI用）
+ */
+export interface SelectedExpression {
+  /** 一意識別子 */
+  id: string
+  /** 式 */
+  expression: string
+  /** エイリアス */
+  alias: string | null
+}
+
+/**
+ * 選択された式ツリー（関数ビルダー用）
+ */
+export interface SelectedExpressionNode {
+  /** 一意識別子 */
+  id: string
+  /** 式ツリー */
+  expressionNode: ExpressionNode
+  /** エイリアス */
+  alias: string | null
 }
 
 /**
