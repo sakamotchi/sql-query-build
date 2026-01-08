@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { FunctionCall } from '@/types/expression-node'
 import type { AvailableColumn } from '@/stores/query-builder'
+import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 import ColumnSelector from './ColumnSelector.vue'
 import FunctionBuilder from '../FunctionBuilder.vue'
 
@@ -208,6 +209,7 @@ watch(isOpen, (newValue) => {
             v-model="alias"
             placeholder="例: total_price, upper_name"
             :disabled="aliasDisabled"
+            v-bind="sqlIdentifierAttrs"
           />
         </UFormField>
       </div>

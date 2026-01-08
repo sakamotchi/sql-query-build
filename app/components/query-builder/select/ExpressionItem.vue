@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { SelectedExpression } from '@/types/query'
+import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 
 const props = defineProps<{
   expression: SelectedExpression
@@ -28,9 +29,9 @@ const handleRemove = () => {
 
 <template>
   <div class="p-2 border rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 flex flex-col gap-2">
-    <UInput v-model="expressionValue" placeholder="例: UPPER(u.name)" size="xs" />
+    <UInput v-model="expressionValue" placeholder="例: UPPER(u.name)" size="xs" v-bind="sqlIdentifierAttrs" />
     <div class="flex items-center gap-2">
-      <UInput v-model="aliasValue" placeholder="エイリアス（任意）" size="xs" />
+      <UInput v-model="aliasValue" placeholder="エイリアス（任意）" size="xs" v-bind="sqlIdentifierAttrs" />
       <UButton
         icon="i-heroicons-x-mark"
         size="2xs"

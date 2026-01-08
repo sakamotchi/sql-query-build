@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { SelectedExpressionNode } from '@/types/query'
 import { generatePreviewSql } from '@/utils/expression-preview'
+import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 
 const props = defineProps<{
   expression: SelectedExpressionNode
@@ -28,7 +29,7 @@ const handleRemove = () => {
   <div class="p-2 border rounded-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 flex flex-col gap-2">
     <div class="text-xs text-gray-500 break-all">{{ preview }}</div>
     <div class="flex items-center gap-2">
-      <UInput v-model="aliasValue" placeholder="エイリアス（任意）" size="xs" />
+      <UInput v-model="aliasValue" placeholder="エイリアス（任意）" size="xs" v-bind="sqlIdentifierAttrs" />
       <UButton
         icon="i-heroicons-x-mark"
         size="2xs"

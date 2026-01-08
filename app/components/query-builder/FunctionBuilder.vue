@@ -5,6 +5,7 @@ import { getFunctionCatalog } from '~/data/function-catalog'
 import { generatePreviewSql } from '~/utils/expression-preview'
 import { useConnectionStore } from '~/stores/connection'
 import { useWindowStore } from '~/stores/window'
+import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 import ArgumentEditor from './ArgumentEditor.vue'
 
 const props = withDefaults(
@@ -317,7 +318,11 @@ function buildFunction() {
       </div>
 
       <UFormField v-if="props.showAlias" label="エイリアス" name="alias">
-        <UInput v-model="aliasValue" placeholder="例: upper_name" />
+        <UInput
+          v-model="aliasValue"
+          placeholder="例: upper_name"
+          v-bind="sqlIdentifierAttrs"
+        />
       </UFormField>
 
       <div v-if="previewSql" class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
