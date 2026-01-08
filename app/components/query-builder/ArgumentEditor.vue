@@ -139,14 +139,13 @@ function handleNestedCancel() {
 
 <template>
   <div class="flex gap-2 flex-1 items-center">
-    <USelect v-model="argType" :items="argTypes" class="w-32" />
+    <USelect v-model="argType" :items="argTypes" value-key="value" class="w-32" />
 
     <USelectMenu
       v-if="argType === 'column'"
       v-model="selectedColumn"
       :items="columnItems"
-      value-attribute="value"
-      option-attribute="label"
+      value-key="value"
       searchable
       placeholder="カラムを選択..."
       class="flex-1"
@@ -159,6 +158,7 @@ function handleNestedCancel() {
           { value: 'string', label: '文字列' },
           { value: 'number', label: '数値' }
         ]"
+        value-key="value"
         class="w-24"
       />
       <UInput

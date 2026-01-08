@@ -12,26 +12,32 @@ const props = withDefaults(
     modelValue?: FunctionCall | null
     showAlias?: boolean
     allowNested?: boolean
+    showFooter?: boolean
   }>(),
   {
     modelValue: null,
     showAlias: true,
     allowNested: true,
+    showFooter: true,
   }
 )
 
 const emit = defineEmits<{
   (e: 'apply', value: FunctionCall, alias?: string | null): void
   (e: 'cancel'): void
+  (e: 'update:modelValue', value: FunctionCall | null): void
 }>()
 
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 
 const selectedCategory = ref<string>('string')
-const selectedFunction = ref<string>('')
+const selectedFunctionItem = ref<{ value: string; label: string } | null>(null)
 const functionArgs = ref<ExpressionNode[]>([])
 const aliasValue = ref<string>('')
+const isInternalUpdate = ref(false) // 内部更新フラグ
+
+const selectedFunction = computed(() => selectedFunctionItem.value?.value || '')
 
 const currentDbType = computed(() => {
   const active = connectionStore.activeConnection
@@ -72,6 +78,22 @@ const argumentCountValid = computed(() => {
   return functionArgs.value.length === argumentCount.value
 })
 
+const canAddArgument = computed(() => {
+  if (argumentCount.value === 'variable') return true
+  if (typeof argumentCount.value === 'number') {
+    return functionArgs.value.length < argumentCount.value
+  }
+  return false
+})
+
+const canRemoveArgument = computed(() => (index: number) => {
+  if (argumentCount.value === 'variable') return functionArgs.value.length > 1
+  if (typeof argumentCount.value === 'number') {
+    return functionArgs.value.length > argumentCount.value
+  }
+  return false
+})
+
 const argumentsValid = computed(() => functionArgs.value.every(isArgumentValid))
 
 const canSubmit = computed(() => {
@@ -94,9 +116,16 @@ const previewSql = computed(() => {
 watch(
   () => props.modelValue,
   (value) => {
+    if (isInternalUpdate.value) {
+      isInternalUpdate.value = false
+      return
+    }
     if (!value) return
     selectedCategory.value = value.category
-    selectedFunction.value = value.name
+    const funcItem = functions.value.find((f: { value: string; label: string }) => f.value === value.name)
+    if (funcItem) {
+      selectedFunctionItem.value = funcItem
+    }
     functionArgs.value = value.arguments.map((arg) => ({ ...arg }))
   },
   { immediate: true }
@@ -108,7 +137,7 @@ watch(
     if (!selectedFunction.value) return
     const exists = functions.value.some((item) => item.value === selectedFunction.value)
     if (!exists) {
-      selectedFunction.value = ''
+      selectedFunctionItem.value = null
       functionArgs.value = []
     }
   }
@@ -145,6 +174,32 @@ watch(
       )
     }
   }
+)
+
+// リアルタイムで親コンポーネントに変更を通知
+watch(
+  () => [selectedFunction.value, selectedCategory.value, functionArgs.value],
+  () => {
+    // showFooterがfalseの場合のみリアルタイム更新
+    if (!props.showFooter) {
+      if (!selectedFunction.value || !functionDef.value) {
+        isInternalUpdate.value = true
+        emit('update:modelValue', null)
+        return
+      }
+
+      const func: FunctionCall = {
+        type: 'function',
+        name: selectedFunction.value,
+        category: functionDef.value.category,
+        arguments: functionArgs.value,
+      }
+
+      isInternalUpdate.value = true
+      emit('update:modelValue', func)
+    }
+  },
+  { deep: true }
 )
 
 function getCategoryLabel(category: string): string {
@@ -203,15 +258,16 @@ function buildFunction() {
 
     <div class="space-y-4">
       <UFormField label="カテゴリ" name="category">
-        <USelect v-model="selectedCategory" :items="categories" />
+        <USelect v-model="selectedCategory" :items="categories" value-key="value" />
       </UFormField>
 
       <UFormField label="関数" name="function">
         <USelectMenu
-          v-model="selectedFunction"
+          v-model="selectedFunctionItem"
           :items="functions"
           searchable
           placeholder="関数を選択..."
+          class="w-full"
         />
       </UFormField>
 
@@ -230,7 +286,7 @@ function buildFunction() {
       <div v-if="selectedFunction && argumentCount !== 0">
         <div class="flex justify-between items-center mb-2">
           <label class="text-sm font-medium">引数</label>
-          <UButton size="xs" :disabled="argumentCount !== 'variable'" @click="addArgument">
+          <UButton size="xs" :disabled="!canAddArgument" @click="addArgument">
             引数を追加
           </UButton>
         </div>
@@ -243,6 +299,7 @@ function buildFunction() {
               :allow-function="props.allowNested"
             />
             <UButton
+              v-if="canRemoveArgument(index)"
               size="xs"
               color="red"
               variant="ghost"
@@ -267,7 +324,7 @@ function buildFunction() {
       </p>
     </div>
 
-    <template #footer>
+    <template v-if="props.showFooter" #footer>
       <div class="flex justify-end gap-2">
         <UButton variant="ghost" @click="emit('cancel')">キャンセル</UButton>
         <UButton :disabled="!canSubmit" @click="buildFunction">追加</UButton>

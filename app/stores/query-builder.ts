@@ -38,12 +38,6 @@ interface QueryBuilderState {
   editingExpressionNode: SelectedExpressionNode | null
   /** 関数ビルダーダイアログ開閉 */
   expressionDialogOpen: boolean
-  /** 選択された式ツリー一覧（関数ビルダー用） */
-  selectedExpressionNodes: SelectedExpressionNode[]
-  /** ExpressionNode編集中の一時状態 */
-  editingExpressionNode: SelectedExpressionNode | null
-  /** 関数ビルダーダイアログ開閉 */
-  expressionDialogOpen: boolean
   /** ドラッグ中のテーブル（ドラッグ&ドロップ用） */
   draggingTable: Table | null
   /** WHERE条件一覧 */
@@ -92,6 +86,16 @@ interface QueryBuilderState {
   pageSize: number
   /** 実行中のクエリID（キャンセル用） */
   executingQueryId: string | null
+}
+
+export interface AvailableColumn {
+  id: string
+  label: string
+  tableId: string
+  tableAlias: string
+  tableName: string
+  columnName: string
+  dataType: string
 }
 
 export interface SerializableQueryState {
@@ -163,11 +167,12 @@ export const useQueryBuilderStore = defineStore('query-builder', {
     /**
      * 利用可能なカラムリスト
      */
-    availableColumns(state) {
+    availableColumns(state): AvailableColumn[] {
       return state.selectedTables.flatMap((table) =>
         table.columns.map((column) => ({
           id: `${table.alias}.${column.name}`,
           label: `${table.alias}.${column.name}`,
+          tableId: table.id,
           tableAlias: table.alias,
           tableName: table.name,
           columnName: column.name,

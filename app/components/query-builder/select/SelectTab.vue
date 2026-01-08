@@ -1,77 +1,97 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useQueryBuilderStore } from '@/stores/query-builder';
-import TableColumnGroup from './TableColumnGroup.vue';
-import SelectedColumnList from './SelectedColumnList.vue';
-import ExpressionItem from './ExpressionItem.vue';
-import ExpressionNodeItem from './ExpressionNodeItem.vue';
-import FunctionBuilder from '../FunctionBuilder.vue';
-import type { FunctionCall } from '@/types/expression-node';
+import { computed, ref } from 'vue'
+import { useQueryBuilderStore, type AvailableColumn } from '@/stores/query-builder'
+import SelectColumnDialog from './SelectColumnDialog.vue'
+import type { FunctionCall } from '@/types/expression-node'
 
-const queryBuilderStore = useQueryBuilderStore();
+const queryBuilderStore = useQueryBuilderStore()
 
-// 選択されたテーブル一覧
-const selectedTables = computed(() => queryBuilderStore.selectedTables);
+const dialogOpen = ref(false)
 
-// 選択されたカラム一覧
-const selectedColumns = computed(() => queryBuilderStore.selectedColumns);
-const selectedExpressions = computed(() => queryBuilderStore.selectedExpressions);
-const selectedExpressionNodes = computed(() => queryBuilderStore.selectedExpressionNodes);
+const hasTables = computed(() => queryBuilderStore.selectedTables.length > 0)
 
-// 選択カラム数
-const selectedColumnCount = computed(() => selectedColumns.value.length);
+const selectItems = computed(() => {
+  const items: Array<{
+    key: string
+    preview: string
+    alias: string | null
+    remove: () => void
+  }> = []
 
-// 全カラム数
-const totalColumnCount = computed(() =>
-  selectedTables.value.reduce((sum, table) => sum + table.columns.length, 0)
-);
+  queryBuilderStore.selectedColumns.forEach((col) => {
+    items.push({
+      key: `column:${col.tableId}.${col.columnName}`,
+      preview: `${col.tableAlias}.${col.columnName}`,
+      alias: col.columnAlias,
+      remove: () => queryBuilderStore.deselectColumn(col.tableId, col.columnName),
+    })
+  })
 
-// テーブルがない場合のメッセージ
-const isEmpty = computed(() => selectedTables.value.length === 0);
+  queryBuilderStore.selectedExpressions.forEach((expr) => {
+    items.push({
+      key: `expression:${expr.id}`,
+      preview: expr.expression,
+      alias: expr.alias,
+      remove: () => queryBuilderStore.removeExpression(expr.id),
+    })
+  })
 
-const functionDialogOpen = computed({
-  get: () => queryBuilderStore.expressionDialogOpen,
-  set: (value: boolean) => {
-    if (value) {
-      queryBuilderStore.openFunctionBuilder();
-    } else {
-      queryBuilderStore.closeFunctionBuilder();
+  queryBuilderStore.selectedExpressionNodes.forEach((expr) => {
+    items.push({
+      key: `expression-node:${expr.id}`,
+      preview: queryBuilderStore.getExpressionPreviewSql(expr),
+      alias: expr.alias,
+      remove: () => queryBuilderStore.removeExpressionNode(expr.id),
+    })
+  })
+
+  return items
+})
+
+const openDialog = () => {
+  dialogOpen.value = true
+}
+
+const handleDialogApply = (
+  type: 'table' | 'function' | 'subquery' | 'expression',
+  data: AvailableColumn[] | FunctionCall | string,
+  alias?: string
+) => {
+  const aliasValue = alias?.trim() || null
+
+  if (type === 'table') {
+    const columns = data as AvailableColumn[]
+    const applyAlias = columns.length === 1 ? aliasValue : null
+
+    columns.forEach((col) => {
+      queryBuilderStore.selectColumn({
+        tableId: col.tableId,
+        tableAlias: col.tableAlias,
+        columnName: col.columnName,
+        columnAlias: applyAlias,
+        dataType: col.dataType,
+      })
+    })
+  } else if (type === 'function') {
+    queryBuilderStore.addFunction(data as FunctionCall, aliasValue)
+  } else if (type === 'expression') {
+    const expression = (data as string).trim()
+    if (expression) {
+      queryBuilderStore.addExpression(expression, aliasValue)
     }
-  },
-});
-
-const newExpression = ref('');
-const newAlias = ref('');
-const expressionError = ref('');
-
-const handleAddExpression = () => {
-  const trimmed = newExpression.value.trim();
-  if (!trimmed) {
-    expressionError.value = '式を入力してください';
-    return;
   }
 
-  queryBuilderStore.addExpression(trimmed, newAlias.value);
-  newExpression.value = '';
-  newAlias.value = '';
-  expressionError.value = '';
-};
+  dialogOpen.value = false
+}
 
-const handleFunctionApply = (func: FunctionCall, alias?: string | null) => {
-  queryBuilderStore.addFunction(func, alias);
-};
-
-watch(newExpression, (value) => {
-  if (value.trim().length > 0) {
-    expressionError.value = '';
-  }
-});
+const handleDialogCancel = () => {
+  dialogOpen.value = false
+}
 </script>
 
 <template>
   <div class="h-full overflow-hidden">
-    <!-- 空状態 -->
-    <div v-if="isEmpty" class="flex flex-col items-center justify-center h-full p-6 text-center">
+    <div v-if="!hasTables" class="flex flex-col items-center justify-center h-full p-6 text-center">
       <UIcon name="i-heroicons-table-cells" class="text-5xl text-gray-300 dark:text-gray-600" />
       <p class="text-gray-500 dark:text-gray-400 mt-4">テーブルを選択してください</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -79,112 +99,47 @@ watch(newExpression, (value) => {
       </p>
     </div>
 
-    <template v-else>
-      <div class="flex h-full gap-4 p-4">
-        <!-- 左: カラム選択 -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-200">カラム選択</span>
-            <span class="text-xs text-gray-500">
-              {{ selectedColumnCount }} / {{ totalColumnCount }}
-            </span>
-          </div>
-
-          <div class="flex-1 overflow-y-auto pr-1">
-            <TableColumnGroup
-              v-for="table in selectedTables"
-              :key="table.id"
-              :table="table"
-            />
-          </div>
+    <div v-else class="h-full overflow-y-auto p-4">
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">SELECT句の項目</h3>
+          <UButton icon="i-heroicons-plus" @click="openDialog">
+            項目を追加
+          </UButton>
         </div>
 
-        <!-- 右: 選択されたカラム -->
-        <div class="w-[300px] flex-shrink-0 flex flex-col overflow-hidden border-l border-gray-200 dark:border-gray-800 pl-4">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium text-gray-700 dark:text-gray-200">選択されたカラム</span>
-            <UButton
-              v-if="selectedColumnCount > 0"
-              variant="ghost"
-              size="2xs"
-              color="red"
-              label="全解除"
-              @click="queryBuilderStore.clearSelectedColumns()"
-            />
-          </div>
-
-          <div class="flex-1 min-h-0">
-            <SelectedColumnList :columns="selectedColumns" />
-          </div>
-
-          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">式</span>
-            </div>
-
-            <div class="flex flex-col gap-3">
-              <UFormField label="式" :error="expressionError">
-                <UInput v-model="newExpression" placeholder="例: UPPER(u.name)" />
-              </UFormField>
-              <UFormField label="エイリアス">
-                <UInput v-model="newAlias" placeholder="例: upper_name" />
-              </UFormField>
-              <div class="flex justify-end">
-                <UButton size="2xs" label="式を追加" @click="handleAddExpression" />
+        <div class="space-y-2">
+          <UCard
+            v-for="item in selectItems"
+            :key="item.key"
+            class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors p-3"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <p class="font-mono text-sm break-all">{{ item.preview }}</p>
+                <p v-if="item.alias" class="text-xs text-gray-500">AS {{ item.alias }}</p>
               </div>
+              <UButton
+                icon="i-heroicons-trash"
+                variant="ghost"
+                color="red"
+                size="xs"
+                @click="item.remove"
+              />
             </div>
+          </UCard>
 
-            <div class="mt-3 max-h-48 overflow-y-auto">
-              <div
-                v-if="selectedExpressions.length === 0"
-                class="text-xs text-gray-400 text-center py-4"
-              >
-                式はまだありません
-              </div>
-              <div v-else class="flex flex-col gap-2">
-                <ExpressionItem
-                  v-for="expression in selectedExpressions"
-                  :key="expression.id"
-                  :expression="expression"
-                  @update="queryBuilderStore.updateExpression"
-                  @remove="queryBuilderStore.removeExpression"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">関数</span>
-              <UButton size="2xs" label="関数を追加" @click="queryBuilderStore.openFunctionBuilder()" />
-            </div>
-
-            <div class="mt-3 max-h-48 overflow-y-auto">
-              <div
-                v-if="selectedExpressionNodes.length === 0"
-                class="text-xs text-gray-400 text-center py-4"
-              >
-                関数はまだありません
-              </div>
-              <div v-else class="flex flex-col gap-2">
-                <ExpressionNodeItem
-                  v-for="expression in selectedExpressionNodes"
-                  :key="expression.id"
-                  :expression="expression"
-                  @update="queryBuilderStore.updateExpressionNode"
-                  @remove="queryBuilderStore.removeExpressionNode"
-                />
-              </div>
-            </div>
+          <div v-if="selectItems.length === 0" class="text-center py-8 text-gray-500">
+            「項目を追加」ボタンから SELECT 句の項目を追加してください
           </div>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 
-  <UModal v-model:open="functionDialogOpen" title="関数ビルダー">
-    <template #body>
-      <FunctionBuilder @apply="handleFunctionApply" @cancel="functionDialogOpen = false" />
-    </template>
-  </UModal>
+  <SelectColumnDialog
+    v-if="dialogOpen"
+    @apply="handleDialogApply"
+    @cancel="handleDialogCancel"
+  />
 </template>
