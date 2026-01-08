@@ -1,7 +1,13 @@
 {
   "name": "sql-query-build",
-  "private": true,
+  "private": false,
   "version": "0.1.0",
+  "license": "MIT",
+  "author": "Yoshitaka Sakamoto",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sakamotochi/sql-query-build.git"
+  },
   "type": "module",
   "overrides": {
     "chokidar": "^3"

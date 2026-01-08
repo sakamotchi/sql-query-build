@@ -1,134 +1,161 @@
-# SQL Query Builder - Tauri Desktop App
+# SQL Query Builder
 
-Nuxt 4 + Vue 3 + TypeScript + Tauriで構築されたSQLクエリビルダーデスクトップアプリケーション
+A visual SQL query builder desktop application that lets you construct queries through an intuitive drag-and-drop interface.
 
-## 🚀 開発環境セットアップ
+English | [日本語](README.ja.md)
 
-### 前提条件
-- Node.js (v18以上)
-- Rust (最新安定版)
-- 必要に応じて各OSの開発ツール
+## Why SQL Query Builder?
 
-### インストール
+- **Visual Query Construction**: Build SQL queries by dragging tables and selecting columns - no need to memorize syntax
+- **Environment Safety**: Color-coded windows prevent accidental queries on production databases
+- **Real-time SQL Preview**: See the generated SQL as you build your query
+- **Multi-Database Support**: Works with PostgreSQL, MySQL, and SQLite
+- **Secure Credential Storage**: Your database passwords are encrypted locally
+
+## Features
+
+### Connection Management
+
+- Save and organize multiple database connections
+- Environment classification (Development / Test / Staging / Production)
+- Connection testing before saving
+- Custom color themes per connection
+
+### Visual Query Builder (SELECT)
+
+- Drag & drop table selection from database tree
+- Column selection with aliases
+- JOIN support (INNER / LEFT / RIGHT / FULL OUTER) with foreign key suggestions
+- WHERE conditions with nested groups (AND/OR)
+- GROUP BY with aggregate functions (COUNT, SUM, AVG, MAX, MIN)
+- ORDER BY (ASC/DESC, multiple columns)
+- LIMIT/OFFSET support
+- Subquery support in SELECT clause
+- Real-time SQL generation with syntax highlighting
+
+### Data Mutation Builder (INSERT/UPDATE/DELETE)
+
+- Visual INSERT row builder
+- UPDATE with SET clause and WHERE conditions
+- DELETE with WHERE conditions
+- Dangerous query warnings for production environments
+
+### Query Execution
+
+- Execute queries directly against your database
+- Result display with pagination
+- Export results to CSV
+- Query execution time display
+- Error handling with detailed messages
+
+### Query Management
+
+- Save queries for later use
+- Query history with search
+- Query validation before execution
+
+### Security
+
+- AES-256-GCM encryption for credentials
+- Multiple security providers:
+  - Simple (app-managed key)
+  - Master Password (user-defined password)
+- All data stored locally - no cloud dependency
+
+### Multi-Window Support
+
+- Open multiple database connections simultaneously
+- Each window color-coded by environment
+- Production environment warnings
+- Window state persistence (size/position)
+
+### Safety Features
+
+- Environment-specific safety settings
+- Dangerous query detection (DELETE/UPDATE without WHERE)
+- Confirmation dialogs for destructive operations
+- Production environment warnings and banners
+
+## Supported Platforms
+
+| Platform | Status |
+|----------|--------|
+| macOS (Apple Silicon / Intel) | Supported |
+| Windows 10/11 | Supported |
+| Linux (Ubuntu 20.04+) | Supported |
+
+## Supported Databases
+
+| Database | Version |
+|----------|---------|
+| PostgreSQL | 12.x+ |
+| MySQL | 8.0+ |
+| SQLite | 3.x |
+
+## Installation
+
+> **Coming Soon**: Pre-built installers will be available on the [Releases](https://github.com/sakamotochi/sql-query-build/releases) page.
+
+### Build from Source
+
+#### Prerequisites
+
+- Node.js v18+
+- Rust (latest stable)
+- Platform-specific dependencies ([Tauri Prerequisites](https://tauri.app/start/prerequisites/))
+
+#### Steps
 
 ```bash
+# Clone the repository
+git clone https://github.com/sakamotochi/sql-query-build.git
+cd sql-query-build
+
+# Install dependencies
 npm install
-```
 
-### 開発サーバー起動
-
-```bash
-# Tauriアプリを起動（通常はこちらを使用）
-npm run tauri:dev
-```
-
-**重要**: `npm run dev` だけではNuxt開発サーバーのみが起動し、Tauri APIが使えません。必ず `npm run tauri:dev` を使用してください。
-
-### ビルド
-
-```bash
-# 開発用ビルド（TypeScriptチェック + Nuxtビルド）
-npm run build
-
-# 本番用アプリビルド（配布可能なインストーラー生成）
+# Build the application
 npm run tauri:build
 ```
 
-## 🛠️ 技術スタック
+The built application will be in `src-tauri/target/release/bundle/`.
 
-- **フレームワーク**: Nuxt 4 + Vue 3 (Composition API) + TypeScript
-- **UIライブラリ**: Nuxt UI v4 (Tailwind CSS 4ベース)
-- **状態管理**: Pinia
-- **ビルドツール**: Vite 6
-- **デスクトップフレームワーク**: Tauri 2.x
-- **バックエンド**: Rust
-- **テスト**: Vitest (フロントエンド) + Rust標準テスト (バックエンド)
-
-## 📖 開発コマンド
-
-| コマンド | 説明 |
-|---------|------|
-| `npm run tauri:dev` | Tauriアプリを起動（**推奨**） |
-| `npm run dev` | Nuxt開発サーバーのみ起動（フロントエンドUI確認用） |
-| `npm run build` | フロントエンドをビルド（TypeScriptチェック + Nuxtビルド） |
-| `npm run tauri:build` | 本番用アプリをビルド |
-| `npm run preview` | ビルド結果をプレビュー |
-| `npm run typecheck` | TypeScript型チェック |
-| `npm test` | フロントエンドテストをウォッチモードで実行 |
-| `npm run test:run` | フロントエンドテストを1回実行 |
-| `npm run test:ui` | Vitest UIでテストを実行 |
-
-## 🧪 テスト
-
-このプロジェクトは、フロントエンドとバックエンドの両方に対して包括的なテストを実装しています。
-
-### フロントエンドテスト（Vitest）
+## Development
 
 ```bash
-# ウォッチモードでテストを実行（ファイル変更を自動検知）
-npm test
+# Start the development server
+npm run tauri:dev
 
-# テストを1回だけ実行（CI用）
+# Run tests
 npm run test:run
-
-# ブラウザUIでテストを実行
-npm run test:ui
-```
-
-**テストフレームワーク**:
-- Vitest（Nuxt 4 + Viteと最適に統合）
-- @vue/test-utils（Vueコンポーネントテスト）
-- happy-dom（軽量DOM環境）
-
-### バックエンドテスト（Rust）
-
-```bash
-# プロジェクトルートから全テストを実行
 cargo test --manifest-path=src-tauri/Cargo.toml
 
-# 出力を詳細表示
-cargo test --manifest-path=src-tauri/Cargo.toml -- --nocapture
-
-# ユニットテストのみ実行
-cargo test --manifest-path=src-tauri/Cargo.toml --lib
-
-# 統合テストのみ実行
-cargo test --manifest-path=src-tauri/Cargo.toml --test integration_persistence
+# Type check
+npm run typecheck
 ```
 
-**テストフレームワーク**: Rust標準のテストフレームワーク + tempfile（一時ファイル）
+### Tech Stack
 
-### すべてのテストを実行
+- **Frontend**: Nuxt 4 + Vue 3 + TypeScript
+- **UI**: Nuxt UI v4 (Tailwind CSS 4)
+- **State**: Pinia
+- **Desktop**: Tauri 2.x (Rust)
+- **Build**: Vite 6
 
-```bash
-# フロントエンドとバックエンドの両方
-npm run test:run && cargo test --manifest-path=src-tauri/Cargo.toml
-```
+## Contributing
 
-## 📁 ディレクトリ構成
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-```
-sql-query-build/
-├── app/                    # フロントエンド（Nuxt 4）
-│   ├── pages/              # ページコンポーネント（自動ルーティング）
-│   ├── components/         # 再利用可能なコンポーネント
-│   ├── stores/             # Piniaストア
-│   ├── composables/        # Composable関数
-│   ├── types/              # TypeScript型定義
-│   ├── api/                # API呼び出し関数
-│   └── assets/css/         # グローバルCSS
-├── src-tauri/              # バックエンド（Rust + Tauri）
-│   ├── src/                # Rustソースコード
-│   └── tauri.conf.json     # Tauri設定
-├── docs/                   # ドキュメント
-│   └── archive/            # 古いドキュメントのアーカイブ
-└── nuxt.config.ts          # Nuxt設定
-```
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📚 ドキュメント
+## License
 
-- [要件定義書](docs/sql_editor_requirements_md.md)
+This project is licensed under the [MIT License](LICENSE).
 
-## Recommended IDE Setup
+## Author
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+**Yoshitaka Sakamoto** - [@sakamotochi](https://github.com/sakamotochi)
