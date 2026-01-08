@@ -2,13 +2,16 @@
 import { computed, ref } from 'vue'
 import { useQueryBuilderStore, type AvailableColumn } from '@/stores/query-builder'
 import SelectColumnDialog from './SelectColumnDialog.vue'
-import type { FunctionCall } from '@/types/expression-node'
+import type { FunctionCall, SubqueryExpression } from '@/types/expression-node'
 
 const queryBuilderStore = useQueryBuilderStore()
 
 const dialogOpen = ref(false)
 
 const hasTables = computed(() => queryBuilderStore.selectedTables.length > 0)
+const parentTables = computed(() =>
+  queryBuilderStore.selectedTables.map((table) => table.alias || table.name)
+)
 
 const selectItems = computed(() => {
   const items: Array<{
@@ -54,7 +57,7 @@ const openDialog = () => {
 
 const handleDialogApply = (
   type: 'table' | 'function' | 'subquery' | 'expression',
-  data: AvailableColumn[] | FunctionCall | string,
+  data: AvailableColumn[] | FunctionCall | SubqueryExpression | string,
   alias?: string
 ) => {
   const aliasValue = alias?.trim() || null
@@ -74,6 +77,8 @@ const handleDialogApply = (
     })
   } else if (type === 'function') {
     queryBuilderStore.addFunction(data as FunctionCall, aliasValue)
+  } else if (type === 'subquery') {
+    queryBuilderStore.addExpressionNode(data as SubqueryExpression, aliasValue)
   } else if (type === 'expression') {
     const expression = (data as string).trim()
     if (expression) {
@@ -139,6 +144,7 @@ const handleDialogCancel = () => {
 
   <SelectColumnDialog
     v-if="dialogOpen"
+    :parent-tables="parentTables"
     @apply="handleDialogApply"
     @cancel="handleDialogCancel"
   />

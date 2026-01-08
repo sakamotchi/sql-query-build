@@ -225,7 +225,9 @@ pub enum WhereValue {
     },
     #[serde(rename = "column")]
     Column {
+        #[serde(rename = "tableAlias")]
         table_alias: String,
+        #[serde(rename = "columnName")]
         column_name: String,
     },
     #[serde(rename = "subquery")]

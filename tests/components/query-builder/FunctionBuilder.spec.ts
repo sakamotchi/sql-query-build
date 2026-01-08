@@ -66,11 +66,8 @@ describe('FunctionBuilder', () => {
       },
     })
 
-    const categorySelect = wrapper.findComponent({ name: 'USelect' })
-    categorySelect.vm.$emit('update:modelValue', 'string')
-
-    const functionSelect = wrapper.findComponent({ name: 'USelectMenu' })
-    functionSelect.vm.$emit('update:modelValue', 'UPPER')
+    wrapper.vm.selectedCategory = 'string'
+    wrapper.vm.selectedFunctionItem = { value: 'UPPER', label: 'UPPER - 文字列を大文字に変換' }
     await wrapper.vm.$nextTick()
 
     const argEditor = wrapper.findComponent({ name: 'ArgumentEditor' })

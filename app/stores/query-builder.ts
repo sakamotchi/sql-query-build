@@ -18,6 +18,7 @@ import { joinSuggestionsApi } from '@/api/join-suggestions'
 import { convertToQueryModel } from '@/utils/query-converter'
 import { generatePreviewSql } from '@/utils/expression-preview'
 import { useConnectionStore } from '@/stores/connection'
+import { useDatabaseStructureStore } from '@/stores/database-structure'
 import { useWindowStore } from '@/stores/window'
 import type { Table } from '@/types/database-structure'
 import type { QueryExecuteResult, QueryExecuteError, QueryResultRow } from '@/types/query-result'
@@ -179,6 +180,23 @@ export const useQueryBuilderStore = defineStore('query-builder', {
           dataType: column.dataType,
         }))
       )
+    },
+
+    /**
+     * 利用可能なテーブル一覧（DB構造から取得）
+     */
+    availableTables(): Table[] {
+      const connectionStore = useConnectionStore()
+      const windowStore = useWindowStore()
+      const databaseStructureStore = useDatabaseStructureStore()
+
+      const connectionId = connectionStore.activeConnection?.id || windowStore.currentConnectionId
+      if (!connectionId) return []
+
+      const structure = databaseStructureStore.getStructure(connectionId)
+      if (!structure) return []
+
+      return structure.schemas.flatMap((schema) => schema.tables)
     },
 
     /**

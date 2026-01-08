@@ -1,5 +1,6 @@
 use crate::error::QueryBuilderError;
 use crate::models::expression_node::*;
+use crate::validators::subquery_validator::SubqueryValidator;
 
 pub struct ExpressionValidator {
     max_depth: usize,
@@ -60,6 +61,7 @@ impl ExpressionValidator {
             }
             ExpressionNode::Subquery(sub) => {
                 self.validate_structure(&sub.query.select)?;
+                SubqueryValidator::validate_scalar(sub)?;
             }
             _ => {}
         }

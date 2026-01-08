@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { FunctionCall } from '@/types/expression-node'
+import type { FunctionCall, SubqueryExpression } from '@/types/expression-node'
 import type { AvailableColumn } from '@/stores/query-builder'
 import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 import ColumnSelector from './ColumnSelector.vue'
 import FunctionBuilder from '../FunctionBuilder.vue'
+import SubqueryBuilder from '../SubqueryBuilder.vue'
+
+const props = defineProps<{
+  parentTables?: string[]
+}>()
 
 const emit = defineEmits<{
   (
     e: 'apply',
     type: 'table' | 'function' | 'subquery' | 'expression',
-    data: AvailableColumn[] | FunctionCall | string,
+    data: AvailableColumn[] | FunctionCall | SubqueryExpression | string,
     alias?: string
   ): void
   (e: 'cancel'): void
@@ -45,8 +50,6 @@ const typeOptions: TypeOption[] = [
     label: 'サブクエリ',
     icon: 'i-heroicons-queue-list',
     description: 'サブクエリで値を取得します',
-    disabled: true,
-    badge: 'Phase 3',
   },
   {
     value: 'expression',
@@ -61,6 +64,7 @@ const alias = ref('')
 
 const selectedColumns = ref<AvailableColumn[]>([])
 const functionNode = ref<FunctionCall | null>(null)
+const subqueryNode = ref<SubqueryExpression | null>(null)
 const expressionText = ref('')
 
 // 選択されたタイプの値を取得する算出プロパティ
@@ -84,7 +88,7 @@ const canSubmit = computed(() => {
     case 'expression':
       return expressionText.value.trim().length > 0
     case 'subquery':
-      return false
+      return subqueryNode.value !== null
     default:
       return false
   }
@@ -102,7 +106,7 @@ const aliasDescription = computed(() => {
 })
 
 function handleApply() {
-  let data: AvailableColumn[] | FunctionCall | string
+  let data: AvailableColumn[] | FunctionCall | SubqueryExpression | string
 
   switch (selectedType.value) {
     case 'table':
@@ -110,6 +114,9 @@ function handleApply() {
       break
     case 'function':
       data = functionNode.value as FunctionCall
+      break
+    case 'subquery':
+      data = subqueryNode.value as SubqueryExpression
       break
     case 'expression':
       data = expressionText.value.trim()
@@ -135,7 +142,7 @@ watch(isOpen, (newValue) => {
     v-model:open="isOpen"
     title="SELECT項目を追加"
     description="SELECT句に追加する項目を選択してください。"
-    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-2xl' }"
+    :ui="{ content: 'w-[calc(100vw-2rem)] max-w-4xl' }"
   >
     <template #body>
       <div class="space-y-4">
@@ -176,10 +183,12 @@ watch(isOpen, (newValue) => {
             />
           </div>
 
-          <div v-else-if="selectedType === 'subquery'" class="p-6 bg-gray-50 dark:bg-gray-800 rounded text-center">
-            <UIcon name="i-heroicons-clock" class="w-12 h-12 mx-auto mb-2 text-gray-400" />
-            <p class="text-sm text-gray-600 dark:text-gray-400">Phase 3で実装予定</p>
-            <p class="text-xs text-gray-500 mt-1">サブクエリビルダーはPhase 3で追加されます</p>
+          <div v-else-if="selectedType === 'subquery'">
+            <SubqueryBuilder
+              v-model="subqueryNode"
+              :parent-tables="props.parentTables"
+              :show-footer="false"
+            />
           </div>
 
           <div v-else-if="selectedType === 'expression'" class="space-y-2">
@@ -200,7 +209,6 @@ watch(isOpen, (newValue) => {
         </div>
 
         <UFormField
-          v-if="selectedType !== 'subquery'"
           label="エイリアス（オプション）"
           name="alias"
           :description="aliasDescription"
