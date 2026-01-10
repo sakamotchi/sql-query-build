@@ -1,161 +1,161 @@
 # SQL Query Builder
 
-A visual SQL query builder desktop application that lets you construct queries through an intuitive drag-and-drop interface.
+ドラッグ&ドロップで直感的にSQLクエリを構築できるデスクトップアプリケーション
 
-English | [日本語](README.ja.md)
+日本語 | [English](README.en.md)
 
-## Why SQL Query Builder?
+## SQL Query Builderの特徴
 
-- **Visual Query Construction**: Build SQL queries by dragging tables and selecting columns - no need to memorize syntax
-- **Environment Safety**: Color-coded windows prevent accidental queries on production databases
-- **Real-time SQL Preview**: See the generated SQL as you build your query
-- **Multi-Database Support**: Works with PostgreSQL, MySQL, and SQLite
-- **Secure Credential Storage**: Your database passwords are encrypted locally
+- **ビジュアルなクエリ構築**: テーブルをドラッグ&ドロップ、カラムを選択するだけ。SQL構文を覚える必要なし
+- **環境の安全性**: ウィンドウの色分けで本番環境への誤操作を防止
+- **リアルタイムSQLプレビュー**: 構築中のクエリをリアルタイムで確認
+- **マルチデータベース対応**: PostgreSQL、MySQL、SQLiteをサポート
+- **安全な認証情報管理**: データベースパスワードはローカルで暗号化保存
 
-## Features
+## 機能
 
-### Connection Management
+### 接続管理
 
-- Save and organize multiple database connections
-- Environment classification (Development / Test / Staging / Production)
-- Connection testing before saving
-- Custom color themes per connection
+- 複数のデータベース接続を保存・管理
+- 環境分類（開発 / テスト / ステージング / 本番）
+- 保存前の接続テスト
+- 接続ごとのカスタムカラーテーマ
 
-### Visual Query Builder (SELECT)
+### ビジュアルクエリビルダー（SELECT）
 
-- Drag & drop table selection from database tree
-- Column selection with aliases
-- JOIN support (INNER / LEFT / RIGHT / FULL OUTER) with foreign key suggestions
-- WHERE conditions with nested groups (AND/OR)
-- GROUP BY with aggregate functions (COUNT, SUM, AVG, MAX, MIN)
-- ORDER BY (ASC/DESC, multiple columns)
-- LIMIT/OFFSET support
-- Subquery support in SELECT clause
-- Real-time SQL generation with syntax highlighting
+- データベースツリーからドラッグ&ドロップでテーブル選択
+- エイリアス付きカラム選択
+- JOIN対応（INNER / LEFT / RIGHT / FULL OUTER）外部キー自動提案付き
+- WHERE条件（ネストしたAND/ORグループ対応）
+- GROUP BY（集計関数：COUNT, SUM, AVG, MAX, MIN対応）
+- ORDER BY（ASC/DESC、複数カラム対応）
+- LIMIT/OFFSET対応
+- SELECT句でのサブクエリ対応
+- シンタックスハイライト付きリアルタイムSQL生成
 
-### Data Mutation Builder (INSERT/UPDATE/DELETE)
+### データ変更ビルダー（INSERT/UPDATE/DELETE）
 
-- Visual INSERT row builder
-- UPDATE with SET clause and WHERE conditions
-- DELETE with WHERE conditions
-- Dangerous query warnings for production environments
+- ビジュアルなINSERT行ビルダー
+- SET句とWHERE条件付きUPDATE
+- WHERE条件付きDELETE
+- 本番環境での危険なクエリ警告
 
-### Query Execution
+### クエリ実行
 
-- Execute queries directly against your database
-- Result display with pagination
-- Export results to CSV
-- Query execution time display
-- Error handling with detailed messages
+- データベースへの直接クエリ実行
+- ページネーション付き結果表示
+- CSV形式での結果エクスポート
+- クエリ実行時間表示
+- 詳細なエラーメッセージ
 
-### Query Management
+### クエリ管理
 
-- Save queries for later use
-- Query history with search
-- Query validation before execution
+- クエリの保存・再利用
+- 検索可能なクエリ履歴
+- 実行前のクエリバリデーション
 
-### Security
+### セキュリティ
 
-- AES-256-GCM encryption for credentials
-- Multiple security providers:
-  - Simple (app-managed key)
-  - Master Password (user-defined password)
-- All data stored locally - no cloud dependency
+- AES-256-GCMによる認証情報の暗号化
+- 複数のセキュリティプロバイダー：
+  - Simple（アプリ管理キー）
+  - マスターパスワード（ユーザー定義パスワード）
+- 全データはローカル保存（クラウド依存なし）
 
-### Multi-Window Support
+### マルチウィンドウ対応
 
-- Open multiple database connections simultaneously
-- Each window color-coded by environment
-- Production environment warnings
-- Window state persistence (size/position)
+- 複数のデータベース接続を同時に開く
+- 環境ごとに色分けされたウィンドウ
+- 本番環境での警告表示
+- ウィンドウ状態の永続化（サイズ/位置）
 
-### Safety Features
+### 安全機能
 
-- Environment-specific safety settings
-- Dangerous query detection (DELETE/UPDATE without WHERE)
-- Confirmation dialogs for destructive operations
-- Production environment warnings and banners
+- 環境別の安全設定
+- 危険なクエリの検出（WHERE句なしのDELETE/UPDATE）
+- 破壊的操作の確認ダイアログ
+- 本番環境の警告バナー
 
-## Supported Platforms
+## 対応プラットフォーム
 
-| Platform | Status |
-|----------|--------|
-| macOS (Apple Silicon / Intel) | Supported |
-| Windows 10/11 | Supported |
-| Linux (Ubuntu 20.04+) | Supported |
+| プラットフォーム | 状態 |
+|----------------|------|
+| macOS (Apple Silicon / Intel) | 対応 |
+| Windows 10/11 | 対応 |
+| Linux (Ubuntu 20.04+) | 対応 |
 
-## Supported Databases
+## 対応データベース
 
-| Database | Version |
-|----------|---------|
-| PostgreSQL | 12.x+ |
-| MySQL | 8.0+ |
+| データベース | バージョン |
+|------------|-----------|
+| PostgreSQL | 12.x以降 |
+| MySQL | 8.0以降 |
 | SQLite | 3.x |
 
-## Installation
+## インストール
 
-> **Coming Soon**: Pre-built installers will be available on the [Releases](https://github.com/sakamotochi/sql-query-build/releases) page.
+> **Coming Soon**: ビルド済みインストーラーは[Releases](https://github.com/sakamotochi/sql-query-build/releases)ページで公開予定です。
 
-### Build from Source
+### ソースからビルド
 
-#### Prerequisites
+#### 前提条件
 
-- Node.js v18+
-- Rust (latest stable)
-- Platform-specific dependencies ([Tauri Prerequisites](https://tauri.app/start/prerequisites/))
+- Node.js v18以上
+- Rust（最新安定版）
+- プラットフォーム固有の依存関係（[Tauri Prerequisites](https://tauri.app/start/prerequisites/)）
 
-#### Steps
+#### 手順
 
 ```bash
-# Clone the repository
+# リポジトリをクローン
 git clone https://github.com/sakamotochi/sql-query-build.git
 cd sql-query-build
 
-# Install dependencies
+# 依存関係をインストール
 npm install
 
-# Build the application
+# アプリケーションをビルド
 npm run tauri:build
 ```
 
-The built application will be in `src-tauri/target/release/bundle/`.
+ビルドされたアプリケーションは `src-tauri/target/release/bundle/` に出力されます。
 
-## Development
+## 開発
 
 ```bash
-# Start the development server
+# 開発サーバーを起動
 npm run tauri:dev
 
-# Run tests
+# テストを実行
 npm run test:run
 cargo test --manifest-path=src-tauri/Cargo.toml
 
-# Type check
+# 型チェック
 npm run typecheck
 ```
 
-### Tech Stack
+### 技術スタック
 
-- **Frontend**: Nuxt 4 + Vue 3 + TypeScript
+- **フロントエンド**: Nuxt 4 + Vue 3 + TypeScript
 - **UI**: Nuxt UI v4 (Tailwind CSS 4)
-- **State**: Pinia
-- **Desktop**: Tauri 2.x (Rust)
-- **Build**: Vite 6
+- **状態管理**: Pinia
+- **デスクトップ**: Tauri 2.x (Rust)
+- **ビルド**: Vite 6
 
-## Contributing
+## コントリビューション
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+コントリビューションを歓迎します！お気軽にPull Requestを送ってください。
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. リポジトリをフォーク
+2. フィーチャーブランチを作成（`git checkout -b feature/amazing-feature`）
+3. 変更をコミット（`git commit -m 'Add some amazing feature'`）
+4. ブランチをプッシュ（`git push origin feature/amazing-feature`）
+5. Pull Requestを作成
 
-## License
+## ライセンス
 
-This project is licensed under the [MIT License](LICENSE).
+このプロジェクトは[MITライセンス](LICENSE)の下で公開されています。
 
-## Author
+## 作者
 
 **Yoshitaka Sakamoto** - [@sakamotochi](https://github.com/sakamotochi)
