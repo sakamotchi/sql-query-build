@@ -1,7 +1,13 @@
 {
   "name": "sql-query-build",
-  "private": true,
+  "private": false,
   "version": "0.1.0",
+  "license": "MIT",
+  "author": "Yoshitaka Sakamoto",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sakamotochi/sql-query-build.git"
+  },
   "type": "module",
   "overrides": {
     "chokidar": "^3"
@@ -19,7 +25,11 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "version:sync": "node scripts/sync-version.js",
+    "preversion": "npm run test:run",
+    "version": "npm run version:sync && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
+    "postversion": "git push && git push --tags"
   },
   "dependencies": {
     "@nuxt/icon": "^1.8.0",

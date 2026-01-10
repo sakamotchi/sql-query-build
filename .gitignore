@@ -38,3 +38,7 @@ src-tauri/Cargo.lock
 *.sln
 *.sw?
 .claude/*.local.md
+
+# Local documents (not tracked)
+docs/local/*
+!docs/local/.gitkeep
