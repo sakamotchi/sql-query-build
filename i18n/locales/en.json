@@ -1,5 +1,161 @@
 {
+    "launcher": {
+        "title": "Connections",
+        "newConnection": "New Connection",
+        "searchPlaceholder": "Search by name, host, or database...",
+        "noConnections": "No connections found",
+        "noConnectionsDesc": "Add a new connection or change search filters.",
+        "filterApplied": "Filter applied",
+        "allEnvironments": "All Environments",
+        "stats": "{count} connections",
+        "statsDetail": "Total {total} • Dev: {dev} • Test: {test} • Staging: {staging} • Prod: {prod}",
+        "addNewConnection": "Add New Connection",
+        "toasts": {
+            "focus": "Focused existing window",
+            "focusDesc": "Window for {name} is already open",
+            "open": "Query Builder launched",
+            "openDesc": "Connecting to {name}",
+            "openMutation": "Mutation Builder launched",
+            "error": "Failed to launch window",
+            "unknownError": "An unknown error occurred"
+        }
+    },
+    "common": {
+        "ok": "OK",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "close": "Close",
+        "error": "Error",
+        "warning": "Warning",
+        "success": "Success",
+        "info": "Info",
+        "loading": "Loading...",
+        "edit": "Edit",
+        "update": "Update",
+        "create": "Create",
+        "add": "Add",
+        "back": "Back",
+        "next": "Next",
+        "confirm": "Confirm",
+        "settings": "Settings",
+        "refresh": "Refresh",
+        "list": "List",
+        "grid": "Grid",
+        "reset": "Reset",
+        "preview": "Preview",
+        "sampleText": "Sample Text",
+        "resetDefault": "Reset to Default",
+        "envSuffix": "Environment",
+        "mode": "Mode",
+        "colors": {
+            "green": "Green",
+            "blue": "Blue",
+            "orange": "Orange",
+            "red": "Red",
+            "purple": "Purple",
+            "brown": "Brown"
+        },
+        "theme": {
+            "light": "Light",
+            "dark": "Dark"
+        },
+        "environment": {
+            "development": "Development",
+            "test": "Test",
+            "staging": "Staging",
+            "production": "Production",
+            "description": {
+                "development": "Environment for development and testing",
+                "test": "Environment for QA and testing",
+                "staging": "Environment for production verification",
+                "production": "Live environment (Caution)"
+            },
+            "message": {
+                "development": "Connected to Development Environment",
+                "test": "Connected to Test Environment",
+                "staging": "Connected to Staging Environment. Not production data.",
+                "production": "⚠️ Connected to PRODUCTION Environment. Proceed with caution."
+            }
+        }
+    },
+    "connection": {
+        "actions": {
+            "browseData": "Browse Data",
+            "mutation": "Data Mutation",
+            "queryBuilder": "Query Builder",
+            "connect": "Connect"
+        },
+        "fields": {
+            "host": "Host",
+            "database": "Database"
+        },
+        "colorPicker": {
+            "presetLabel": "Preset Colors",
+            "primary": "Primary Color",
+            "background": "Background Color",
+            "previewHint": "This color applies to the environment header"
+        },
+        "themePreview": {
+            "title": "Theme Preview",
+            "sampleName": "Sample Connection Name"
+        },
+        "form": {
+            "title": {
+                "new": "New Connection",
+                "edit": "Edit Connection"
+            },
+            "description": {
+                "new": "Create a new connection",
+                "edit": "Edit existing connection"
+            },
+            "validation": {
+                "nameRequired": "Connection name is required",
+                "typeRequired": "Database type is required",
+                "envRequired": "Environment is required",
+                "hostRequired": "Host is required",
+                "hostPattern": "Invalid host name format",
+                "portRequired": "Port is required",
+                "portRange": "Port must be between 1 and 65535",
+                "dbRequired": "Database name is required",
+                "userRequired": "Username is required"
+            },
+            "fields": {
+                "name": "Connection Name",
+                "namePlaceholder": "e.g. Dev MySQL",
+                "type": "Database Type",
+                "port": "Port",
+                "userPlaceholder": "db_user",
+                "dbPlaceholder": "sample_db",
+                "password": "Password (Optional)",
+                "passwordPlaceholder": "Enter if needed",
+                "envColor": "Environment Color",
+                "useCustomColor": "Custom Color"
+            },
+            "actions": {
+                "test": "Test Connection",
+                "connecting": "Loading connection info..."
+            },
+            "messages": {
+                "testSuccess": "Connection test successful",
+                "testFailed": "Connection test failed",
+                "saveFailed": "Failed to save connection"
+            }
+        }
+    },
     "settings": {
+        "header": {
+            "title": "Settings",
+            "description": "Manage application behavior",
+            "backHome": "Back to Home",
+            "loadError": "Failed to load settings"
+        },
+        "tabs": {
+            "general": "General",
+            "safety": "Safety",
+            "security": "Security",
+            "about": "About"
+        },
         "general": {
             "title": "General Settings",
             "saving": "Saving...",

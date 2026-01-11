@@ -8,6 +8,7 @@ const props = withDefaults(defineProps<{
   showToggle: false
 })
 
+const { t } = useI18n()
 const { getEnvironmentLabel, getEnvironmentColors } = useEnvironment()
 const { toggleColorMode, isDark } = useTheme()
 
@@ -40,7 +41,7 @@ const badgeColor = computed(() => badgeColors[props.environment])
           size="lg"
           variant="solid"
         >
-          {{ environmentLabel }} 環境
+          {{ environmentLabel }} {{ t('common.envSuffix') }}
         </UBadge>
       </div>
 
@@ -50,7 +51,7 @@ const badgeColor = computed(() => badgeColors[props.environment])
           variant="ghost"
           @click="toggleColorMode"
         >
-          {{ isDark ? 'ダーク' : 'ライト' }}モード
+          {{ isDark ? t('common.theme.dark') : t('common.theme.light') }} {{ t('common.mode') }}
         </UButton>
       </div>
     </div>

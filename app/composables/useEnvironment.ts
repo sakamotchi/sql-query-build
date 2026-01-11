@@ -53,12 +53,7 @@ export const useEnvironment = () => {
     ).toString(16).slice(1)
   }
 
-  const labels: Record<Environment, string> = {
-    development: '開発',
-    test: 'テスト',
-    staging: 'ステージング',
-    production: '本番'
-  }
+  const { t } = useI18n()
 
   const getEnvironmentColors = (env: Environment, customColor?: { primary: string; background: string }) => {
     // カスタムカラーがある場合はそちらを優先
@@ -85,7 +80,7 @@ export const useEnvironment = () => {
 
   const environmentClass = computed(() => `env-${currentEnvironment.value}`)
 
-  const getEnvironmentLabel = (env: Environment) => labels[env]
+  const getEnvironmentLabel = (env: Environment) => t(`common.environment.${env}`)
 
   const environmentLabel = computed(() => getEnvironmentLabel(currentEnvironment.value))
 

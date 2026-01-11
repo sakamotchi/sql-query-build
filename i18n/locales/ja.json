@@ -1,5 +1,161 @@
 {
+    "launcher": {
+        "title": "接続一覧",
+        "newConnection": "新規接続",
+        "searchPlaceholder": "接続名、ホスト、データベース名で検索...",
+        "noConnections": "接続が見つかりませんでした",
+        "noConnectionsDesc": "新しい接続を追加するか、検索条件を変更してください。",
+        "filterApplied": "フィルター適用中",
+        "allEnvironments": "すべての環境",
+        "stats": "{count}件の接続",
+        "statsDetail": "全{total}件 • 開発: {dev}件 • テスト: {test}件 • ステージング: {staging}件 • 本番: {prod}件",
+        "addNewConnection": "新規接続を追加",
+        "toasts": {
+            "focus": "既存のウィンドウにフォーカスしました",
+            "focusDesc": "{name} のウィンドウが既に開いています",
+            "open": "クエリビルダーを起動しました",
+            "openDesc": "{name} に接続しています",
+            "openMutation": "データ変更ビルダーを起動しました",
+            "error": "ウィンドウの起動に失敗しました",
+            "unknownError": "不明なエラーが発生しました"
+        }
+    },
+    "common": {
+        "ok": "OK",
+        "cancel": "キャンセル",
+        "save": "保存",
+        "delete": "削除",
+        "close": "閉じる",
+        "error": "エラー",
+        "warning": "警告",
+        "success": "成功",
+        "info": "情報",
+        "loading": "読み込み中...",
+        "edit": "編集",
+        "update": "更新",
+        "create": "作成",
+        "add": "追加",
+        "back": "戻る",
+        "next": "次へ",
+        "confirm": "確認",
+        "settings": "設定",
+        "refresh": "更新",
+        "list": "リスト",
+        "grid": "グリッド",
+        "reset": "リセット",
+        "preview": "プレビュー",
+        "sampleText": "サンプルテキスト",
+        "resetDefault": "デフォルトに戻す",
+        "envSuffix": "環境",
+        "mode": "モード",
+        "colors": {
+            "green": "緑",
+            "blue": "青",
+            "orange": "オレンジ",
+            "red": "赤",
+            "purple": "紫",
+            "brown": "茶色"
+        },
+        "theme": {
+            "light": "ライト",
+            "dark": "ダーク"
+        },
+        "environment": {
+            "development": "開発",
+            "test": "テスト",
+            "staging": "ステージング",
+            "production": "本番",
+            "description": {
+                "development": "開発・テスト用の環境",
+                "test": "品質保証・テスト用の環境",
+                "staging": "本番前の検証用環境",
+                "production": "実運用環境（要注意）"
+            },
+            "message": {
+                "development": "開発環境に接続しています",
+                "test": "テスト環境に接続しています",
+                "staging": "ステージング環境に接続しています。本番データではありません。",
+                "production": "⚠️ 本番環境に接続しています。操作には十分注意してください。"
+            }
+        }
+    },
+    "connection": {
+        "actions": {
+            "browseData": "データ参照",
+            "mutation": "データ変更",
+            "queryBuilder": "クエリビルダー",
+            "connect": "接続"
+        },
+        "fields": {
+            "host": "ホスト",
+            "database": "データベース"
+        },
+        "colorPicker": {
+            "presetLabel": "プリセットカラー",
+            "primary": "プライマリカラー",
+            "background": "背景カラー",
+            "previewHint": "この色が環境ヘッダーに適用されます"
+        },
+        "themePreview": {
+            "title": "テーマプレビュー",
+            "sampleName": "接続名サンプル"
+        },
+        "form": {
+            "title": {
+                "new": "新規接続",
+                "edit": "接続を編集"
+            },
+            "description": {
+                "new": "新しい接続を作成します",
+                "edit": "既存接続を編集します"
+            },
+            "validation": {
+                "nameRequired": "接続名は必須です",
+                "typeRequired": "データベースタイプは必須です",
+                "envRequired": "環境は必須です",
+                "hostRequired": "ホストは必須です",
+                "hostPattern": "ホスト名の形式が不正です",
+                "portRequired": "ポートは必須です",
+                "portRange": "ポートは1〜65535で指定してください",
+                "dbRequired": "データベース名は必須です",
+                "userRequired": "ユーザー名は必須です"
+            },
+            "fields": {
+                "name": "接続名",
+                "namePlaceholder": "例: 開発用MySQL",
+                "type": "データベースタイプ",
+                "port": "ポート",
+                "userPlaceholder": "db_user",
+                "dbPlaceholder": "sample_db",
+                "password": "パスワード (任意)",
+                "passwordPlaceholder": "必要に応じて入力",
+                "envColor": "環境カラー",
+                "useCustomColor": "カスタムカラー"
+            },
+            "actions": {
+                "test": "接続テスト",
+                "connecting": "接続情報を読み込み中..."
+            },
+            "messages": {
+                "testSuccess": "接続テストに成功しました",
+                "testFailed": "接続テストに失敗しました",
+                "saveFailed": "接続の保存に失敗しました"
+            }
+        }
+    },
     "settings": {
+        "header": {
+            "title": "設定",
+            "description": "アプリ全体の動作を管理します",
+            "backHome": "ホームに戻る",
+            "loadError": "設定の読み込みに失敗しました"
+        },
+        "tabs": {
+            "general": "一般設定",
+            "safety": "安全設定",
+            "security": "セキュリティ",
+            "about": "について"
+        },
         "general": {
             "title": "一般設定",
             "saving": "保存中",

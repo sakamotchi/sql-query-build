@@ -9,17 +9,12 @@ const props = withDefaults(defineProps<{
 })
 
 const { getEnvironmentLabel } = useEnvironment()
+const { t } = useI18n()
 
 const isDismissed = ref(false)
 
 const warningMessage = computed(() => {
-  const messages: Record<Environment, string> = {
-    development: '開発環境に接続しています',
-    test: 'テスト環境に接続しています',
-    staging: 'ステージング環境に接続しています。本番データではありません。',
-    production: '⚠️ 本番環境に接続しています。操作には十分注意してください。'
-  }
-  return messages[props.environment]
+  return t(`common.environment.message.${props.environment}`)
 })
 
 type AlertColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
@@ -34,7 +29,7 @@ const alertColor = computed(() => {
   return colors[props.environment]
 })
 
-const title = computed(() => `${getEnvironmentLabel(props.environment)}環境`)
+const title = computed(() => `${getEnvironmentLabel(props.environment)} ${t('common.envSuffix')}`)
 
 const dismiss = () => {
   isDismissed.value = true

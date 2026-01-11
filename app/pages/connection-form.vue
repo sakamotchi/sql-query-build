@@ -6,6 +6,7 @@ import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const connectionStore = useConnectionStore()
 const { connections, loading } = storeToRefs(connectionStore)
@@ -49,20 +50,20 @@ const resetErrors = () => {
 const validateForm = () => {
   resetErrors()
 
-  if (!form.name) errors.name = '接続名は必須です'
-  if (!form.type) errors.type = 'データベースタイプは必須です'
-  if (!form.environment) errors.environment = '環境は必須です'
-  if (!form.host) errors.host = 'ホストは必須です'
-  if (!/^[a-zA-Z0-9.-]+$/.test(form.host)) errors.host = 'ホスト名の形式が不正です'
+  if (!form.name) errors.name = t('connection.form.validation.nameRequired')
+  if (!form.type) errors.type = t('connection.form.validation.typeRequired')
+  if (!form.environment) errors.environment = t('connection.form.validation.envRequired')
+  if (!form.host) errors.host = t('connection.form.validation.hostRequired')
+  if (!/^[a-zA-Z0-9.-]+$/.test(form.host)) errors.host = t('connection.form.validation.hostPattern')
 
   if (!form.port || Number.isNaN(form.port)) {
-    errors.port = 'ポートは必須です'
+    errors.port = t('connection.form.validation.portRequired')
   } else if (form.port < 1 || form.port > 65535) {
-    errors.port = 'ポートは1〜65535で指定してください'
+    errors.port = t('connection.form.validation.portRange')
   }
 
-  if (!form.database) errors.database = 'データベース名は必須です'
-  if (!form.username) errors.username = 'ユーザー名は必須です'
+  if (!form.database) errors.database = t('connection.form.validation.dbRequired')
+  if (!form.username) errors.username = t('connection.form.validation.userRequired')
 
   return Object.keys(errors).length === 0
 }
@@ -114,7 +115,7 @@ const testConnection = async () => {
     testResult.value = result
     showTestResultDialog.value = true
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '接続テストに失敗しました'
+    const errorMessage = error instanceof Error ? error.message : t('connection.form.messages.testFailed')
     testResult.value = {
       success: false,
       message: errorMessage,
@@ -141,7 +142,7 @@ const submitForm = async () => {
   } catch (error) {
     testResult.value = {
       success: false,
-      message: error instanceof Error ? error.message : '接続の保存に失敗しました'
+      message: error instanceof Error ? error.message : t('connection.form.messages.saveFailed')
     }
   } finally {
     saving.value = false
@@ -192,16 +193,16 @@ watch(() => form.type, (newType) => {
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ isEditMode ? '既存接続を編集します' : '新しい接続を作成します' }}
+            {{ isEditMode ? t('connection.form.description.edit') : t('connection.form.description.new') }}
           </p>
           <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-            {{ isEditMode ? '接続を編集' : '新規接続' }}
+            {{ isEditMode ? t('connection.form.title.edit') : t('connection.form.title.new') }}
           </h1>
         </div>
 
         <div class="flex gap-2">
           <UButton variant="outline" color="neutral" :disabled="loadingConnection" @click="cancel">
-            キャンセル
+            {{ t('common.cancel') }}
           </UButton>
           <UButton
             color="secondary"
@@ -209,7 +210,7 @@ watch(() => form.type, (newType) => {
             :disabled="loadingConnection"
             @click="testConnection"
           >
-            接続テスト
+            {{ t('connection.form.actions.test') }}
           </UButton>
           <UButton
             color="primary"
@@ -217,7 +218,7 @@ watch(() => form.type, (newType) => {
             :disabled="loadingConnection"
             @click="submitForm"
           >
-            {{ isEditMode ? '更新' : '作成' }}
+            {{ isEditMode ? t('common.update') : t('common.create') }}
           </UButton>
         </div>
       </div>
@@ -226,48 +227,48 @@ watch(() => form.type, (newType) => {
         <div v-if="loadingConnection" class="flex items-center justify-center py-12">
           <div class="text-center space-y-3">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">接続情報を読み込み中...</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('connection.form.actions.connecting') }}</p>
           </div>
         </div>
         <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField label="接続名" required :error="errors.name">
-                <UInput v-model="form.name" placeholder="例: 開発用MySQL" v-bind="sqlIdentifierAttrs" />
+              <UFormField :label="t('connection.form.fields.name')" required :error="errors.name">
+                <UInput v-model="form.name" :placeholder="t('connection.form.fields.namePlaceholder')" v-bind="sqlIdentifierAttrs" />
               </UFormField>
 
-              <UFormField label="データベースタイプ" required :error="errors.type">
+              <UFormField :label="t('connection.form.fields.type')" required :error="errors.type">
                 <USelect v-model="form.type" :items="databaseOptions" />
               </UFormField>
             </div>
 
-            <UFormField label="環境" required :error="errors.environment">
+            <UFormField :label="t('common.envSuffix')" required :error="errors.environment">
               <EnvironmentSelector v-model="form.environment" />
             </UFormField>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField label="ホスト" required :error="errors.host">
+              <UFormField :label="t('connection.form.fields.host')" required :error="errors.host">
                 <UInput v-model="form.host" placeholder="localhost" v-bind="sqlIdentifierAttrs" />
               </UFormField>
-              <UFormField label="ポート" required :error="errors.port">
+              <UFormField :label="t('connection.form.fields.port')" required :error="errors.port">
                 <UInput v-model.number="form.port" type="number" min="1" max="65535" />
               </UFormField>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField label="データベース名" required :error="errors.database">
-                <UInput v-model="form.database" placeholder="sample_db" v-bind="sqlIdentifierAttrs" />
+              <UFormField :label="t('connection.fields.database')" required :error="errors.database">
+                <UInput v-model="form.database" :placeholder="t('connection.form.fields.dbPlaceholder')" v-bind="sqlIdentifierAttrs" />
               </UFormField>
-              <UFormField label="ユーザー名" required :error="errors.username">
-                <UInput v-model="form.username" placeholder="db_user" v-bind="sqlIdentifierAttrs" />
+              <UFormField :label="t('connection.fields.username')" required :error="errors.username">
+                <UInput v-model="form.username" :placeholder="t('connection.form.fields.userPlaceholder')" v-bind="sqlIdentifierAttrs" />
               </UFormField>
             </div>
 
-            <UFormField label="パスワード (任意)">
+            <UFormField :label="t('connection.form.fields.password')">
               <UInput
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="必要に応じて入力"
+                :placeholder="t('connection.form.fields.passwordPlaceholder')"
               >
                 <template #trailing>
                   <UButton
@@ -285,8 +286,8 @@ watch(() => form.type, (newType) => {
           <div class="space-y-4">
             <UCard>
               <div class="flex items-center justify-between">
-                <h3 class="font-semibold text-gray-900 dark:text-white">環境カラー</h3>
-                <USwitch v-model="useCustomColor" label="カスタムカラー" />
+                <h3 class="font-semibold text-gray-900 dark:text-white">{{ t('connection.form.fields.envColor') }}</h3>
+                <USwitch v-model="useCustomColor" :label="t('connection.form.fields.useCustomColor')" />
               </div>
               <div v-if="useCustomColor" class="mt-4 space-y-4">
                 <EnvironmentColorPicker

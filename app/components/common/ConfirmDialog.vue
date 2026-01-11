@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const { t } = useI18n()
+
 type ButtonColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
 
 const props = defineProps<{
@@ -39,10 +41,10 @@ const handleCancel = () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="handleCancel">
-          {{ cancelLabel || 'キャンセル' }}
+          {{ cancelLabel || t('common.cancel') }}
         </UButton>
         <UButton :color="confirmColor || 'error'" @click="handleConfirm">
-          {{ confirmLabel || '削除' }}
+          {{ confirmLabel || t('common.delete') }}
         </UButton>
       </div>
     </template>

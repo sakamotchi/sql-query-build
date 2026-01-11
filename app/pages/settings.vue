@@ -8,16 +8,17 @@ type SettingsTab = 'general' | 'safety' | 'security' | 'about'
 const settingsStore = useSettingsStore()
 const securityStore = useSecurityStore()
 const { currentEnvironment } = useEnvironment()
+const { t } = useI18n()
 
 const { loading: settingsLoading, error: settingsError } = storeToRefs(settingsStore)
 const { loading: securityLoading, error: securityError } = storeToRefs(securityStore)
 
-const tabs: { key: SettingsTab; value: SettingsTab; label: string; icon: string }[] = [
-  { key: 'general', value: 'general', label: '一般設定', icon: 'i-heroicons-cog-6-tooth' },
-  { key: 'safety', value: 'safety', label: '安全設定', icon: 'i-heroicons-shield-check' },
-  { key: 'security', value: 'security', label: 'セキュリティ', icon: 'i-heroicons-lock-closed' },
-  { key: 'about', value: 'about', label: 'について', icon: 'i-heroicons-information-circle' }
-]
+const tabs = computed<{ key: SettingsTab; value: SettingsTab; label: string; icon: string }[]>(() => [
+  { key: 'general', value: 'general', label: t('settings.tabs.general'), icon: 'i-heroicons-cog-6-tooth' },
+  { key: 'safety', value: 'safety', label: t('settings.tabs.safety'), icon: 'i-heroicons-shield-check' },
+  { key: 'security', value: 'security', label: t('settings.tabs.security'), icon: 'i-heroicons-lock-closed' },
+  { key: 'about', value: 'about', label: t('settings.tabs.about'), icon: 'i-heroicons-information-circle' }
+])
 
 const selectedTab = ref<SettingsTab>('general')
 const isLoading = computed(() => settingsLoading.value || securityLoading.value)
@@ -38,12 +39,12 @@ onMounted(async () => {
     <main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div class="flex items-center justify-between gap-4">
         <div>
-          <p class="text-sm text-gray-500 dark:text-gray-400">アプリ全体の動作を管理します</p>
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">設定</h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settings.header.description') }}</p>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ t('settings.header.title') }}</h1>
         </div>
 
         <UButton to="/" variant="outline" color="neutral" size="sm">
-          ホームに戻る
+          {{ t('settings.header.backHome') }}
         </UButton>
       </div>
 
@@ -52,7 +53,7 @@ onMounted(async () => {
         color="error"
         variant="soft"
         icon="i-heroicons-exclamation-triangle"
-        title="設定の読み込みに失敗しました"
+        :title="t('settings.header.loadError')"
       >
         {{ errorMessage }}
       </UAlert>

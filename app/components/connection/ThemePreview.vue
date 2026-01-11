@@ -9,6 +9,7 @@ const props = defineProps<{
   }
 }>()
 
+const { t } = useI18n()
 const { getEnvironmentColors, adjustColorBrightness } = useEnvironment()
 const { isDark } = useTheme()
 
@@ -35,7 +36,7 @@ const previewColors = computed(() => {
 <template>
   <div class="space-y-4">
     <label class="text-sm font-medium text-gray-700 dark:text-gray-300 block">
-      テーマプレビュー
+      {{ t('connection.themePreview.title') }}
     </label>
 
     <div
@@ -58,7 +59,7 @@ const previewColors = computed(() => {
               }"
               size="sm"
             >
-              {{ environment }} 環境
+              {{ environment }} {{ t('common.envSuffix') }}
             </UBadge>
           </div>
           <UIcon name="i-heroicons-sun" class="text-gray-600" />
@@ -83,12 +84,12 @@ const previewColors = computed(() => {
           >
             {{ environment }}
           </UBadge>
-          <span class="text-sm font-semibold">接続名サンプル</span>
+          <span class="text-sm font-semibold">{{ t('connection.themePreview.sampleName') }}</span>
         </div>
 
         <div class="text-sm text-gray-600 dark:text-gray-400">
-          <div>ホスト: localhost:3306</div>
-          <div>データベース: sample_db</div>
+          <div>{{ t('connection.fields.host') }}: localhost:3306</div>
+          <div>{{ t('connection.fields.database') }}: sample_db</div>
         </div>
 
         <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -100,7 +101,7 @@ const previewColors = computed(() => {
             size="sm"
             block
           >
-            接続
+            {{ t('connection.actions.connect') }}
           </UButton>
         </div>
       </div>
@@ -112,14 +113,14 @@ const previewColors = computed(() => {
           class="w-4 h-4 rounded border border-gray-300"
           :style="{ backgroundColor: previewColors.primary }"
         />
-        <span>プライマリ: {{ previewColors.primary }}</span>
+        <span>{{ t('connection.colorPicker.primary') }}: {{ previewColors.primary }}</span>
       </div>
       <div class="flex items-center gap-2">
         <div
           class="w-4 h-4 rounded border border-gray-300"
           :style="{ backgroundColor: previewColors.bg }"
         />
-        <span>背景: {{ previewColors.bg }}</span>
+        <span>{{ t('connection.colorPicker.background') }}: {{ previewColors.bg }}</span>
       </div>
     </div>
   </div>
