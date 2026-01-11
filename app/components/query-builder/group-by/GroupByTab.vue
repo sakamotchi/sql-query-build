@@ -4,6 +4,7 @@ import { useQueryBuilderStore } from '@/stores/query-builder'
 import GroupByRow from './GroupByRow.vue'
 import draggable from 'vuedraggable'
 
+const { t } = useI18n()
 const queryBuilderStore = useQueryBuilderStore()
 
 // 選択されたテーブルがない場合
@@ -56,14 +57,14 @@ const removeGroupByColumn = (id: string) => {
   <div class="h-full flex flex-col">
     <div v-if="isEmpty" class="flex flex-col items-center justify-center h-full text-gray-500">
        <UIcon name="i-heroicons-table-cells" class="text-4xl mb-2" />
-       <p>テーブルを選択してください</p>
+       <p>{{ t('queryBuilder.groupByTab.noTables.title') }}</p>
     </div>
 
     <template v-else>
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-        <span class="text-sm font-medium">GROUP BY条件</span>
+        <span class="text-sm font-medium">{{ t('queryBuilder.groupByTab.title') }}</span>
         <UButton
-          label="カラム追加"
+          :label="t('queryBuilder.groupByTab.addColumn')"
           icon="i-heroicons-plus"
           size="sm"
           variant="soft"
@@ -94,7 +95,7 @@ const removeGroupByColumn = (id: string) => {
         </draggable>
 
         <div v-if="groupByColumns.length === 0" class="text-center text-gray-400 mt-8 text-sm">
-           グループ化するカラムを追加してください
+           {{ t('queryBuilder.groupByTab.empty') }}
         </div>
       </div>
     </template>

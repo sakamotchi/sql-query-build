@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
+const { t } = useI18n()
+
 type CorrelatedCondition = {
   id?: string
   column: string
@@ -34,10 +36,10 @@ const selectedParentColumnItem = computed({
   set: (newItem) => updateModel({ value: newItem?.value ?? '' }),
 })
 
-const valueTypes = [
-  { value: 'literal', label: 'リテラル値' },
-  { value: 'parent_column', label: '外部カラム参照（相関）' },
-]
+const valueTypes = computed(() => [
+  { value: 'literal', label: t('queryBuilder.correlatedConditionEditor.types.literal') },
+  { value: 'parent_column', label: t('queryBuilder.correlatedConditionEditor.types.parentColumn') },
+])
 
 const operators = [
   { value: '=', label: '=' },
@@ -74,7 +76,7 @@ function onValueTypeChange() {
       :items="tableColumns"
       by="value"
       searchable
-      placeholder="カラム..."
+      :placeholder="t('queryBuilder.correlatedConditionEditor.placeholders.column')"
       class="w-40"
     />
 
@@ -96,7 +98,7 @@ function onValueTypeChange() {
       v-if="valueType === 'literal'"
       :model-value="modelValue.value"
       @update:model-value="updateModel({ value: $event })"
-      placeholder="値..."
+      :placeholder="t('queryBuilder.correlatedConditionEditor.placeholders.value')"
       class="flex-1"
     />
 
@@ -106,7 +108,7 @@ function onValueTypeChange() {
       :items="parentColumns"
       by="value"
       searchable
-      placeholder="外部カラムを選択..."
+      :placeholder="t('queryBuilder.correlatedConditionEditor.placeholders.selectParentColumn')"
       class="flex-1"
     />
   </div>

@@ -5,6 +5,8 @@ import { exportQueryResult } from '@/api/export'
 import type { QueryExecuteResult } from '@/types/query-result'
 import type { ExportFormatType } from '@/types/export'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   open: boolean
   queryResult: QueryExecuteResult | null
@@ -59,8 +61,8 @@ const handleExport = async () => {
 
     if (result.success) {
       toast.add({
-        title: 'エクスポート成功',
-        description: `${result.rowsAffected}件のデータをエクスポートしました`,
+        title: t('queryBuilder.exportDialog.toast.successTitle'),
+        description: t('queryBuilder.exportDialog.toast.successDesc', { count: result.rowsAffected }),
         color: 'success',
         icon: 'i-heroicons-check-circle'
       })
@@ -70,7 +72,7 @@ const handleExport = async () => {
     }
   } catch (e: any) {
     toast.add({
-      title: 'エクスポート失敗',
+      title: t('queryBuilder.exportDialog.toast.errorTitle'),
       description: e.message,
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
@@ -82,15 +84,15 @@ const handleExport = async () => {
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" title="データエクスポート" description="クエリ実行結果をファイルに出力します。">
+  <UModal v-model:open="isOpen" :title="t('queryBuilder.exportDialog.title')" :description="t('queryBuilder.exportDialog.description')">
     <template #body>
       <div class="space-y-4">
-        <UFormField label="ファイル形式">
+        <UFormField :label="t('queryBuilder.exportDialog.format')">
           <USelect v-model="format" :items="formatOptions" />
         </UFormField>
         
         <div class="text-sm text-gray-500">
-          対象件数: {{ queryResult?.rowCount ?? 0 }} 件
+          {{ t('queryBuilder.exportDialog.rowCount', { count: queryResult?.rowCount ?? 0 }) }}
         </div>
       </div>
     </template>
@@ -98,10 +100,10 @@ const handleExport = async () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="isOpen = false" :disabled="isExporting">
-          キャンセル
+          {{ t('common.actions.cancel') }}
         </UButton>
         <UButton color="primary" @click="handleExport" :loading="isExporting">
-          エクスポート
+          {{ t('common.actions.export') }}
         </UButton>
       </div>
     </template>

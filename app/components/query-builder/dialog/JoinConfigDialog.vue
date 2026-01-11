@@ -7,6 +7,8 @@ import JoinSuggestionList from '../join/JoinSuggestionList.vue'
 import type { JoinClause, JoinCondition, SelectedTable } from '@/types/query-model'
 import type { JoinSuggestion } from '@/types/join-suggestion'
 
+const { t } = useI18n()
+
 interface Props {
   join?: JoinClause  // 編集時は既存JOIN、追加時はundefined
 }
@@ -237,15 +239,15 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
 <template>
   <UModal
     v-model:open="isOpen"
-    :title="isEdit ? 'JOINの編集' : 'JOINの追加'"
-    :description="'JOINの種類、対象テーブル、結合条件を設定してください。'"
+    :title="isEdit ? t('queryBuilder.joinConfigDialog.editTitle') : t('queryBuilder.joinConfigDialog.addTitle')"
+    :description="t('queryBuilder.joinConfigDialog.description')"
     :ui="{ content: 'w-[calc(100vw-2rem)] max-w-3xl' }"
   >
 
     <template #body>
       <div class="space-y-4">
         <!-- JOIN種別 -->
-        <UFormField label="JOIN種別" required>
+        <UFormField :label="t('queryBuilder.joinConfigDialog.joinType')" required>
           <USelect
             v-model="state.type"
             :items="joinTypes"
@@ -254,7 +256,7 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
         </UFormField>
 
         <!-- 結合テーブル -->
-        <UFormField label="結合テーブル" required>
+        <UFormField :label="t('queryBuilder.joinConfigDialog.table')" required>
           <USelect
             :model-value="state.selectedTable?.alias"
             :items="tableOptions"
@@ -264,23 +266,23 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
           />
           <template v-if="isEdit" #hint>
             <p class="text-xs text-gray-500 mt-1">
-              ※テーブルは変更できません。変更する場合はJOINを削除して再作成してください。
+              {{ t('queryBuilder.joinConfigDialog.hint.tableChange') }}
             </p>
           </template>
         </UFormField>
 
         <!-- エイリアス -->
-        <UFormField label="エイリアス" required>
+        <UFormField :label="t('queryBuilder.joinConfigDialog.alias')" required>
           <UInput
             v-model="state.tableAlias"
             size="md"
-            placeholder="例: u, p, o"
+            :placeholder="t('queryBuilder.joinConfigDialog.hint.aliasExample')"
           />
         </UFormField>
 
         <!-- CROSS JOIN以外の場合のみON条件を表示 -->
         <template v-if="state.type !== 'CROSS'">
-          <UFormField label="ON条件" required>
+          <UFormField :label="t('queryBuilder.joinConfigDialog.onCondition')" required>
             <div class="space-y-2">
               <JoinConditionRow
                 v-for="(condition, index) in state.conditions"
@@ -295,14 +297,14 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
                 size="xs"
                 color="neutral"
                 variant="soft"
-                label="条件を追加"
+                :label="t('queryBuilder.joinConfigDialog.addCondition')"
                 @click="addCondition"
               />
             </div>
           </UFormField>
 
           <!-- 条件の結合方法 -->
-          <UFormField v-if="state.conditions.length > 1" label="条件の結合">
+          <UFormField v-if="state.conditions.length > 1" :label="t('queryBuilder.joinConfigDialog.logic')">
             <URadioGroup
               v-model="state.conditionLogic"
               :items="[
@@ -330,13 +332,13 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton
-          label="キャンセル"
+          :label="t('common.actions.cancel')"
           color="neutral"
           variant="soft"
           @click="close"
         />
         <UButton
-          label="保存"
+          :label="t('common.actions.save')"
           color="primary"
           :disabled="!isValid"
           @click="save"

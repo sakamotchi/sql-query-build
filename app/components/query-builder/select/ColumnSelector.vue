@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useQueryBuilderStore, type AvailableColumn } from '@/stores/query-builder'
 
+const { t } = useI18n()
+
 const props = withDefaults(
   defineProps<{
     modelValue: AvailableColumn[]
@@ -34,7 +36,7 @@ const selected = computed({
     :search-attributes="['label', 'tableName', 'columnName']"
     searchable
     :multiple="props.multiple"
-    placeholder="カラムを選択"
+    :placeholder="t('queryBuilder.columnSelect.placeholder')"
     class="w-full"
   >
     <template #item="{ item }">

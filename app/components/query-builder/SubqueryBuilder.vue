@@ -6,6 +6,8 @@ import { useQueryBuilderStore } from '~/stores/query-builder'
 import { sqlIdentifierAttrs } from '~/composables/useSqlIdentifierInput'
 import CorrelatedConditionEditor from './CorrelatedConditionEditor.vue'
 
+const { t } = useI18n()
+
 type CorrelatedCondition = {
   id: string
   column: string
@@ -89,18 +91,18 @@ const parentColumns = computed(() => {
     )
 })
 
-const selectTypes = [
-  { value: 'column', label: '単一カラム' },
-  { value: 'aggregate', label: '集計関数' },
-]
+const selectTypes = computed(() => [
+  { value: 'column', label: t('queryBuilder.subqueryBuilder.selectTypes.column') },
+  { value: 'aggregate', label: t('queryBuilder.subqueryBuilder.selectTypes.aggregate') },
+])
 
-const aggregateFunctions = [
-  { value: 'COUNT', label: 'COUNT - 行数' },
-  { value: 'SUM', label: 'SUM - 合計' },
-  { value: 'AVG', label: 'AVG - 平均' },
-  { value: 'MIN', label: 'MIN - 最小値' },
-  { value: 'MAX', label: 'MAX - 最大値' },
-]
+const aggregateFunctions = computed(() => [
+  { value: 'COUNT', label: `COUNT - ${t('queryBuilder.subqueryBuilder.aggregateTypes.count')}` },
+  { value: 'SUM', label: `SUM - ${t('queryBuilder.subqueryBuilder.aggregateTypes.sum')}` },
+  { value: 'AVG', label: `AVG - ${t('queryBuilder.subqueryBuilder.aggregateTypes.avg')}` },
+  { value: 'MIN', label: `MIN - ${t('queryBuilder.subqueryBuilder.aggregateTypes.min')}` },
+  { value: 'MAX', label: `MAX - ${t('queryBuilder.subqueryBuilder.aggregateTypes.max')}` },
+])
 
 const supportsStar = computed(() => aggregateFunction.value === 'COUNT')
 
@@ -454,58 +456,58 @@ const previewSql = computed(() => {
 <template>
   <UCard>
     <template #header>
-      <h3 class="text-lg font-semibold">サブクエリビルダー</h3>
+      <h3 class="text-lg font-semibold">{{ t('queryBuilder.subqueryBuilder.title') }}</h3>
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        スカラー値を返すサブクエリを構築します
+        {{ t('queryBuilder.subqueryBuilder.description') }}
       </p>
     </template>
 
     <div class="space-y-4">
-      <UFormField label="テーブル" name="table" required>
+      <UFormField :label="t('queryBuilder.subqueryBuilder.table')" name="table" required>
         <USelectMenu
           v-model="selectedTableValue"
           :items="tableOptions"
           value-key="value"
           searchable
-          placeholder="テーブルを選択..."
+          :placeholder="t('queryBuilder.subqueryBuilder.tablePlaceholder')"
           class="w-full"
         />
       </UFormField>
 
-      <UFormField label="エイリアス（オプション）" name="alias">
-        <UInput v-model="tableAlias" placeholder="例: o" v-bind="sqlIdentifierAttrs" />
+      <UFormField :label="t('queryBuilder.subqueryBuilder.alias')" name="alias">
+        <UInput v-model="tableAlias" :placeholder="t('queryBuilder.subqueryBuilder.aliasPlaceholder')" v-bind="sqlIdentifierAttrs" />
       </UFormField>
 
       <div v-if="selectedTableValue">
-        <UFormField label="SELECT句" name="selectType">
+        <UFormField :label="t('queryBuilder.subqueryBuilder.selectClause')" name="selectType">
           <USelect v-model="selectType" :items="selectTypes" />
         </UFormField>
 
         <div v-if="selectType === 'aggregate'" class="mt-2 space-y-2">
-          <UFormField label="集計関数" name="aggregateFunction">
+          <UFormField :label="t('queryBuilder.subqueryBuilder.aggregateFunction')" name="aggregateFunction">
             <USelect v-model="aggregateFunction" :items="aggregateFunctions" />
           </UFormField>
 
-          <UFormField label="カラム" name="aggregateColumn">
+          <UFormField :label="t('queryBuilder.subqueryBuilder.column')" name="aggregateColumn">
             <USelectMenu
               v-model="aggregateColumnValue"
               :items="aggregateColumnOptions"
               value-key="value"
               searchable
-              placeholder="カラムを選択..."
+              :placeholder="t('queryBuilder.subqueryBuilder.columnPlaceholder')"
               class="w-full"
             />
           </UFormField>
         </div>
 
         <div v-else class="mt-2">
-          <UFormField label="カラム" name="column">
+          <UFormField :label="t('queryBuilder.subqueryBuilder.column')" name="column">
             <USelectMenu
               v-model="selectedColumnValue"
               :items="tableColumns"
               value-key="value"
               searchable
-              placeholder="カラムを選択..."
+              :placeholder="t('queryBuilder.subqueryBuilder.columnPlaceholder')"
               class="w-full"
             />
           </UFormField>
@@ -514,8 +516,8 @@ const previewSql = computed(() => {
 
       <div v-if="selectedTableValue">
         <div class="flex justify-between items-center mb-2">
-          <label class="text-sm font-medium">WHERE条件</label>
-          <UButton size="xs" @click="addWhereCondition">条件を追加</UButton>
+          <label class="text-sm font-medium">{{ t('queryBuilder.subqueryBuilder.whereConditions') }}</label>
+          <UButton size="xs" @click="addWhereCondition">{{ t('queryBuilder.subqueryBuilder.addCondition') }}</UButton>
         </div>
 
         <div class="space-y-2">
@@ -542,7 +544,7 @@ const previewSql = computed(() => {
       </div>
 
       <div v-if="previewSql" class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">プレビュー:</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('queryBuilder.subqueryBuilder.preview') }}</p>
         <code class="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">
           {{ previewSql }}
         </code>
@@ -552,15 +554,15 @@ const previewSql = computed(() => {
         v-if="selectType === 'column'"
         color="warning"
         variant="soft"
-        title="注意"
-        description="サブクエリは必ずスカラー値（単一の値）を返す必要があります。複数行が返される場合はエラーになります。"
+        :title="t('queryBuilder.subqueryBuilder.warning.title')"
+        :description="t('queryBuilder.subqueryBuilder.warning.desc')"
       />
     </div>
 
     <template v-if="props.showFooter" #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="ghost" @click="emit('cancel')">キャンセル</UButton>
-        <UButton :disabled="!canSubmit" @click="buildSubquery">追加</UButton>
+        <UButton variant="ghost" @click="emit('cancel')">{{ t('common.actions.cancel') }}</UButton>
+        <UButton :disabled="!canSubmit" @click="buildSubquery">{{ t('common.actions.add') }}</UButton>
       </div>
     </template>
   </UCard>

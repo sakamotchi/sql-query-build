@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   currentPage: number
   pageSize: number
@@ -36,10 +38,10 @@ function onPageSizeChange(size: number) {
   <div class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800">
     <!-- 左側: 表示件数 -->
     <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-      <span>表示:</span>
+      <span>{{ t('queryBuilder.resultPagination.show') }}</span>
       <USelectMenu
         :model-value="pageSize"
-        :items="pageSizeOptions.map(n => ({ value: n, label: `${n}件` }))"
+        :items="pageSizeOptions.map(n => ({ value: n, label: t('queryBuilder.resultPagination.count', { count: n }) }))"
         value-key="value"
         
         size="xs"
@@ -47,7 +49,7 @@ function onPageSizeChange(size: number) {
         @update:model-value="(v) => onPageSizeChange(Number(v))"
       />
       <span class="text-gray-500 whitespace-nowrap ml-2">
-        {{ startRow }} - {{ endRow }} / {{ totalRows }}件
+        {{ t('queryBuilder.resultPagination.range', { start: startRow, end: endRow, total: totalRows }) }}
       </span>
     </div>
 

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n' // Added this import
 import ColumnSelect from './ColumnSelect.vue'
 import OperatorSelect from './OperatorSelect.vue'
 import ValueInput from './ValueInput.vue'
 import MultiValueInput from './MultiValueInput.vue'
 import RangeInput from './RangeInput.vue'
 import type { WhereCondition, WhereOperator } from '@/types/query'
+
+const { t } = useI18n() // Added this line
 
 interface AvailableColumn {
   id: string
@@ -189,8 +192,8 @@ const checkValidity = (value: any): boolean => {
     <div
       class="min-w-[150px]"
       :class="[
-        valueInputType === 'range' 
-          ? 'w-full basis-full mt-2' 
+        valueInputType === 'range'
+          ? 'w-full basis-full mt-2'
           : 'flex-2 w-full sm:w-auto'
       ]"
     >
@@ -219,7 +222,7 @@ const checkValidity = (value: any): boolean => {
       </template>
 
       <div v-else class="text-sm text-gray-500 italic py-1.5 px-2">
-        （値不要）
+        {{ t('queryBuilder.conditionRow.valueNotRequired') }}
       </div>
     </div>
 

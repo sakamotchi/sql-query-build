@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const store = useQueryHistoryStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const isOpen = computed({
   get: () => props.open,
@@ -50,19 +51,19 @@ const handleLoad = async (history: QueryHistoryMetadata) => {
   try {
     const loadedHistory = await store.loadToBuilder(history.id)
     if (loadedHistory) {
-        toast.add({
-        title: '復元成功',
-        description: `履歴（${formatDate(history.executedAt)}）を復元しました`,
+      toast.add({
+        title: t('queryBuilder.history.toasts.restoreSuccess'),
+        description: t('queryBuilder.history.toasts.restoreSuccessDesc', { date: formatDate(history.executedAt) }),
         color: 'success',
         icon: 'i-heroicons-check-circle'
-        })
-        emit('loaded', history.id)
-        isOpen.value = false
+      })
+      emit('loaded', history.id)
+      isOpen.value = false
     }
   } catch (error) {
     toast.add({
-      title: '復元失敗',
-      description: '履歴の復元に失敗しました',
+      title: t('queryBuilder.history.toasts.restoreFailed'),
+      description: t('queryBuilder.history.toasts.restoreFailedDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
@@ -70,20 +71,20 @@ const handleLoad = async (history: QueryHistoryMetadata) => {
 }
 
 const handleSave = async (historyMeta: QueryHistoryMetadata) => {
-    try {
-        const history = await store.loadHistory(historyMeta.id)
-        if (history) {
-            historyToSave.value = history
-            showSaveDialog.value = true
-        }
-    } catch(e) {
-        toast.add({
-            title: 'エラー',
-            description: '履歴の読み込みに失敗しました',
-            color: 'error',
-            icon: 'i-heroicons-exclamation-circle'
-        })
+  try {
+    const history = await store.loadHistory(historyMeta.id)
+    if (history) {
+      historyToSave.value = history
+      showSaveDialog.value = true
     }
+  } catch (e) {
+    toast.add({
+      title: t('queryBuilder.history.toasts.loadError'),
+      description: t('queryBuilder.history.toasts.loadErrorDesc'),
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle'
+    })
+  }
 }
 
 const handleDelete = (history: QueryHistoryMetadata) => {
@@ -96,8 +97,8 @@ const executeDelete = async () => {
 
   await store.deleteHistory(historyToDelete.value.id)
   toast.add({
-    title: '削除成功',
-    description: '履歴を削除しました',
+    title: t('queryBuilder.history.toasts.deleteSuccess'),
+    description: t('queryBuilder.history.toasts.deleteSuccessDesc'),
     color: 'success',
     icon: 'i-heroicons-trash'
   })
@@ -113,14 +114,14 @@ const formatDate = (dateStr: string) => {
 }
 
 const formatExecutionTime = (ms?: number) => {
-    if (ms === undefined || ms === null) return '-'
-    if (ms < 1000) return `${ms}ms`
-    return `${(ms / 1000).toFixed(2)}s`
+  if (ms === undefined || ms === null) return '-'
+  if (ms < 1000) return `${ms}ms`
+  return `${(ms / 1000).toFixed(2)}s`
 }
 </script>
 
 <template>
-  <USlideover v-model:open="isOpen" title="クエリ履歴" description="実行したクエリの履歴です。">
+  <USlideover v-model:open="isOpen" :title="t('queryBuilder.history.title')" :description="t('queryBuilder.history.description')">
     <template #body>
       <div class="flex flex-col h-full">
         <!-- 検索・フィルタ -->
@@ -128,11 +129,11 @@ const formatExecutionTime = (ms?: number) => {
           <UInput
             v-model="searchQuery"
             icon="i-heroicons-magnifying-glass"
-            placeholder="SQLを検索..."
+            :placeholder="t('queryBuilder.history.searchPlaceholder')"
             clearable
           />
           <div class="flex items-center">
-            <UCheckbox v-model="successOnly" label="成功のみ表示" />
+            <UCheckbox v-model="successOnly" :label="t('queryBuilder.history.successOnly')" />
           </div>
         </div>
 
@@ -143,7 +144,7 @@ const formatExecutionTime = (ms?: number) => {
           </div>
           
           <div v-else-if="store.filteredHistories.length === 0" class="text-center py-8 text-gray-500">
-            履歴はありません
+            {{ t('queryBuilder.history.empty') }}
           </div>
 
           <UCard
@@ -154,16 +155,16 @@ const formatExecutionTime = (ms?: number) => {
             <div class="flex justify-between items-start">
               <div @click="handleLoad(history)" class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                    <UBadge :color="history.success ? 'success' : 'error'" variant="subtle" size="xs">
-                        {{ history.success ? '成功' : '失敗' }}
-                    </UBadge>
-                    <span class="text-xs text-gray-500">
-                        {{ formatDate(history.executedAt) }}
-                    </span>
+                  <UBadge :color="history.success ? 'success' : 'error'" variant="subtle" size="xs">
+                    {{ history.success ? t('queryBuilder.history.success') : t('queryBuilder.history.failure') }}
+                  </UBadge>
+                  <span class="text-xs text-gray-500">
+                    {{ formatDate(history.executedAt) }}
+                  </span>
                 </div>
 
                 <div class="font-mono text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 p-2 rounded line-clamp-3 mb-2">
-                    {{ history.sql }}
+                  {{ history.sql }}
                 </div>
                 
                 <div class="flex gap-4 text-xs text-gray-500">
@@ -203,9 +204,9 @@ const formatExecutionTime = (ms?: number) => {
 
   <ConfirmDialog
     v-model:open="confirmDialogOpen"
-    title="履歴の削除"
-    description="この履歴を削除してもよろしいですか？（元に戻せません）"
-    confirm-label="削除"
+    :title="t('queryBuilder.history.deleteConfirm.title')"
+    :description="t('queryBuilder.history.deleteConfirm.desc')"
+    :confirm-label="t('common.actions.delete')"
     @confirm="executeDelete"
   />
 

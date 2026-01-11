@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 
+const { t } = useI18n()
 const queryBuilderStore = useQueryBuilderStore()
 
 const limit = computed({
@@ -18,17 +19,17 @@ const offset = computed({
 <template>
   <div class="h-full p-4 flex flex-col gap-6">
     <div class="p-4 border rounded-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-      <h3 class="text-sm font-medium mb-4 text-gray-700 dark:text-gray-200">取得制限オプション</h3>
+      <h3 class="text-sm font-medium mb-4 text-gray-700 dark:text-gray-200">{{ t('queryBuilder.limitTab.title') }}</h3>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- LIMIT -->
-        <UFormField label="LIMIT (取得件数)" help="取得する最大レコード数">
-          <UInput type="number" v-model.number="limit" placeholder="例: 100" min="0" />
+        <UFormField :label="t('queryBuilder.limitTab.limit.label')" :help="t('queryBuilder.limitTab.limit.help')">
+          <UInput type="number" v-model.number="limit" :placeholder="t('queryBuilder.limitTab.limit.placeholder')" min="0" />
         </UFormField>
 
         <!-- OFFSET -->
-        <UFormField label="OFFSET (開始位置)" help="スキップするレコード数">
-           <UInput type="number" v-model.number="offset" placeholder="例: 0" min="0" />
+        <UFormField :label="t('queryBuilder.limitTab.offset.label')" :help="t('queryBuilder.limitTab.offset.help')">
+           <UInput type="number" v-model.number="offset" :placeholder="t('queryBuilder.limitTab.offset.placeholder')" min="0" />
         </UFormField>
       </div>
     </div>

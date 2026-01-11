@@ -8,6 +8,7 @@ import ExportDialog from './dialog/ExportDialog.vue'
 import { ref } from 'vue'
 
 const store = useQueryBuilderStore()
+const { t } = useI18n()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -52,15 +53,15 @@ const showExportDialog = ref(false)
       <div class="flex items-center gap-2">
         <UIcon :name="headerIcon" class="text-lg" :class="headerIconClass" />
         <span class="text-sm font-medium" :class="{ 'text-red-500': hasError }">
-          {{ hasError ? '実行エラー' : '実行結果' }}
+          {{ hasError ? t('queryBuilder.resultPanel.errorTitle') : t('queryBuilder.resultPanel.title') }}
         </span>
         <!-- 実行情報 -->
         <template v-if="executionInfo && !hasError">
           <span class="text-xs text-gray-500">
-            {{ executionInfo.rowCount }}行
+            {{ t('queryBuilder.resultPanel.rowCount', { count: executionInfo.rowCount }) }}
           </span>
           <span class="text-xs text-gray-400">
-            ({{ executionInfo.executionTimeMs }}ms)
+            {{ t('queryBuilder.resultPanel.executionTime', { time: executionInfo.executionTimeMs }) }}
           </span>
         </template>
       </div>
@@ -70,7 +71,7 @@ const showExportDialog = ref(false)
           size="xs"
           color="neutral"
           variant="ghost"
-          title="エクスポート"
+          :title="t('queryBuilder.resultPanel.export')"
           :disabled="!hasResult"
           @click="showExportDialog = true"
         />
@@ -79,7 +80,7 @@ const showExportDialog = ref(false)
           size="xs"
           color="neutral"
           variant="ghost"
-          title="閉じる"
+          :title="t('queryBuilder.resultPanel.close')"
           @click="emit('close')"
         />
       </div>
@@ -90,7 +91,7 @@ const showExportDialog = ref(false)
       <!-- ローディング -->
       <div v-if="isLoading" class="flex-1 flex items-center justify-center">
         <UIcon name="i-heroicons-arrow-path" class="animate-spin text-2xl text-gray-400" />
-        <span class="ml-2 text-gray-500">実行中...</span>
+        <span class="ml-2 text-gray-500">{{ t('queryBuilder.resultPanel.executing') }}</span>
       </div>
 
       <!-- エラー -->
@@ -104,7 +105,7 @@ const showExportDialog = ref(false)
       <!-- 結果なし -->
       <div v-else-if="!hasResult" class="flex-1 flex flex-col items-center justify-center">
         <UIcon name="i-heroicons-table-cells" class="text-4xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">クエリを実行してください</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-2">{{ t('queryBuilder.resultPanel.noResult') }}</p>
       </div>
 
       <!-- 結果表示 -->

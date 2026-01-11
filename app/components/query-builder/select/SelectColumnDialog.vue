@@ -7,6 +7,7 @@ import ColumnSelector from './ColumnSelector.vue'
 import FunctionBuilder from '../FunctionBuilder.vue'
 import SubqueryBuilder from '../SubqueryBuilder.vue'
 
+const { t } = useI18n()
 const props = defineProps<{
   parentTables?: string[]
 }>()
@@ -35,27 +36,27 @@ interface TypeOption {
 const typeOptions: TypeOption[] = [
   {
     value: 'table',
-    label: 'テーブルから選択',
+    label: t('queryBuilder.selectColumnDialog.types.table'),
     icon: 'i-heroicons-table-cells',
-    description: 'テーブルのカラムを選択します',
+    description: t('queryBuilder.selectColumnDialog.types.tableDesc'),
   },
   {
     value: 'function',
-    label: 'データベース関数',
+    label: t('queryBuilder.selectColumnDialog.types.function'),
     icon: 'i-heroicons-calculator',
-    description: 'UPPER、CONCAT等の関数を使用します',
+    description: t('queryBuilder.selectColumnDialog.types.functionDesc'),
   },
   {
     value: 'subquery',
-    label: 'サブクエリ',
+    label: t('queryBuilder.selectColumnDialog.types.subquery'),
     icon: 'i-heroicons-queue-list',
-    description: 'サブクエリで値を取得します',
+    description: t('queryBuilder.selectColumnDialog.types.subqueryDesc'),
   },
   {
     value: 'expression',
-    label: '式の組み合わせ（自由入力）',
+    label: t('queryBuilder.selectColumnDialog.types.expression'),
     icon: 'i-heroicons-code-bracket',
-    description: 'SQL式を直接入力します（例: price * quantity）',
+    description: t('queryBuilder.selectColumnDialog.types.expressionDesc'),
   },
 ]
 
@@ -100,9 +101,9 @@ const aliasDisabled = computed(
 
 const aliasDescription = computed(() => {
   if (aliasDisabled.value) {
-    return '複数選択時はエイリアスを指定できません'
+    return t('queryBuilder.selectColumnDialog.aliasMultiHint')
   }
-  return 'AS句で指定する別名'
+  return t('queryBuilder.selectColumnDialog.aliasDesc')
 })
 
 function handleApply() {
@@ -140,13 +141,13 @@ watch(isOpen, (newValue) => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="SELECT項目を追加"
-    description="SELECT句に追加する項目を選択してください。"
+    :title="t('queryBuilder.selectColumnDialog.title')"
+    :description="t('queryBuilder.selectColumnDialog.description')"
     :ui="{ content: 'w-[calc(100vw-2rem)] max-w-4xl' }"
   >
     <template #body>
       <div class="space-y-4">
-        <UFormField label="項目タイプ" name="type">
+        <UFormField :label="t('queryBuilder.selectColumnDialog.itemType')" name="type">
           <div class="space-y-2">
             <USelectMenu
               v-model="selectedTypeOption"
@@ -168,10 +169,10 @@ watch(isOpen, (newValue) => {
 
         <div class="border-t pt-4">
           <div v-if="selectedType === 'table'" class="space-y-2">
-            <label class="text-sm font-medium">カラムを選択</label>
+            <label class="text-sm font-medium">{{ t('queryBuilder.selectColumnDialog.selectColumn') }}</label>
             <ColumnSelector v-model="selectedColumns" :multiple="true" />
             <p class="text-xs text-gray-500">
-              複数選択可能です。Ctrl/Cmd+クリックで複数選択できます。
+              {{ t('queryBuilder.selectColumnDialog.multiSelectHint') }}
             </p>
           </div>
 
@@ -193,29 +194,28 @@ watch(isOpen, (newValue) => {
 
           <div v-else-if="selectedType === 'expression'" class="space-y-2">
             <UFormField
-              label="SQL式"
+              :label="t('queryBuilder.selectColumnDialog.sqlExpression')"
               name="expression"
-              description="例: price * quantity, CASE WHEN ... END"
+              :description="t('queryBuilder.selectColumnDialog.expressionExample')"
             >
               <UTextarea v-model="expressionText" placeholder="price * quantity" :rows="4" />
             </UFormField>
             <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
               <p class="text-xs text-gray-600 dark:text-gray-400">
-                <strong>ヒント:</strong> 式の組み合わせでは、算術演算子（+, -, *, /）や
-                CASE文などの複雑なSQL式を直接入力できます。
+                <strong>{{ t('common.labels.hint') }}:</strong> {{ t('queryBuilder.selectColumnDialog.expressionHint') }}
               </p>
             </div>
           </div>
         </div>
 
         <UFormField
-          label="エイリアス（オプション）"
+          :label="t('queryBuilder.selectColumnDialog.alias')"
           name="alias"
           :description="aliasDescription"
         >
           <UInput
             v-model="alias"
-            placeholder="例: total_price, upper_name"
+            :placeholder="t('queryBuilder.selectColumnDialog.aliasPlaceholder')"
             :disabled="aliasDisabled"
             v-bind="sqlIdentifierAttrs"
           />
@@ -226,10 +226,10 @@ watch(isOpen, (newValue) => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton variant="ghost" @click="emit('cancel')">
-          キャンセル
+          {{ t('common.actions.cancel') }}
         </UButton>
         <UButton :disabled="!canSubmit" @click="handleApply">
-          追加
+          {{ t('common.actions.add') }}
         </UButton>
       </div>
     </template>

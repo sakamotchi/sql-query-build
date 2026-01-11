@@ -43,6 +43,16 @@
         "list": "List",
         "grid": "Grid",
         "reset": "Reset",
+        "actions": {
+            "cancel": "Cancel",
+            "add": "Add",
+            "save": "Save",
+            "export": "Export",
+            "delete": "Delete"
+        },
+        "labels": {
+            "hint": "Hint"
+        },
         "preview": "Preview",
         "sampleText": "Sample Text",
         "resetDefault": "Reset to Default",
@@ -141,6 +151,394 @@
                 "testFailed": "Connection test failed",
                 "saveFailed": "Failed to save connection"
             }
+        }
+    },
+    "queryBuilder": {
+        "pageTitle": "Query Builder",
+        "toolbar": {
+            "structurePanel": "DB Structure",
+            "execute": "Execute",
+            "save": "Save",
+            "open": "Open",
+            "new": "New",
+            "history": "History",
+            "resultPanel": "Result Panel",
+            "sqlPanel": "SQL Preview",
+            "toMutation": "To Mutation",
+            "errors": {
+                "dropForbidden": "DROP queries are disabled in this environment",
+                "truncateForbidden": "TRUNCATE queries are disabled in this environment",
+                "executionFailed": "Execution Error"
+            }
+        },
+        "leftPanel": {
+            "title": "Database Structure",
+            "refresh": "Refresh",
+            "searchPlaceholder": "Search tables/cols..."
+        },
+        "rightPanel": {
+            "title": "SQL Preview",
+            "smartQuote": "Smart Quotes",
+            "copy": "Copy",
+            "infoTitle": "Query Info",
+            "copied": "Copied to clipboard"
+        },
+        "resultPanel": {
+            "title": "Result",
+            "errorTitle": "Error",
+            "export": "Export",
+            "close": "Close",
+            "executing": "Executing...",
+            "noResult": "Please execute query",
+            "rowCount": "{count} rows",
+            "executionTime": "({time}ms)"
+        },
+        "relationArea": {
+            "addJoin": "Add JOIN",
+            "dropHint": "Drop tables here to add",
+            "ariaLabel": "Table Relation Diagram",
+            "emptyTitle": "Add Table",
+            "emptyDesc": "Drag and drop tables from the left panel\nor double-click to add"
+        },
+        "databaseTree": {
+            "loading": "Loading...",
+            "retry": "Retry",
+            "connect": "Please connect to a database",
+            "noResults": "No results found for \"{query}\""
+        },
+        "tabs": {
+            "select": "SELECT",
+            "join": "JOIN",
+            "where": "WHERE",
+            "group": "GROUP BY",
+            "order": "ORDER BY",
+            "limit": "LIMIT"
+        },
+        "sqlPreview": {
+            "errorPosition": "Error at line {line}",
+            "errorColumn": ", column {col}",
+            "risk": {
+                "danger": "Dangerous Query",
+                "warning": "Warning: Potentially Unsafe"
+            },
+            "placeholderTitle": "SQL Preview",
+            "placeholderDesc": "Query will appear here"
+        },
+        "joinPanel": {
+            "notEnoughTables": {
+                "title": "At least 2 tables are required for JOIN",
+                "desc": "Please add tables from the left panel"
+            },
+            "newJoin": "New JOIN",
+            "smartJoin": "Smart JOIN",
+            "noJoins": {
+                "title": "No JOINs configured",
+                "desc": "Add a JOIN from the button above"
+            },
+            "conditions": {
+                "none": "(No conditions)"
+            }
+        },
+        "savedQueries": {
+            "title": "Saved Queries",
+            "description": "List of saved queries.",
+            "searchPlaceholder": "Search queries...",
+            "empty": "No saved queries",
+            "updated": "Updated: {date}",
+            "deleteConfirm": {
+                "title": "Delete Query",
+                "desc": "Are you sure you want to delete query \"{name}\"?"
+            },
+            "toasts": {
+                "noConnection": "No connection selected",
+                "noConnectionDesc": "Please select a connection before opening a query",
+                "connMismatch": "Connection mismatch",
+                "loadFailed": "Load failed",
+                "loadFailedDesc": "Failed to load query",
+                "loadSuccess": "Load successful",
+                "loadSuccessDesc": "Loaded query \"{name}\"",
+                "screenSwitch": "Switched screen",
+                "screenSwitchDesc": "Moved to {label} screen",
+                "deleteSuccess": "Delete successful",
+                "deleteSuccessDesc": "Query deleted"
+            }
+        },
+        "history": {
+            "title": "Query History",
+            "description": "History of executed queries.",
+            "searchPlaceholder": "Search SQL...",
+            "successOnly": "Success only",
+            "empty": "No history",
+            "success": "Success",
+            "failure": "Failure",
+            "deleteConfirm": {
+                "title": "Delete History",
+                "desc": "Are you sure you want to delete this history? (Cannot be undone)"
+            },
+            "toasts": {
+                "restoreSuccess": "Restore successful",
+                "restoreSuccessDesc": "Restored history ({date})",
+                "restoreFailed": "Restore failed",
+                "restoreFailedDesc": "Failed to restore history",
+                "loadError": "Error",
+                "loadErrorDesc": "Failed to load history",
+                "deleteSuccess": "Delete successful",
+                "deleteSuccessDesc": "History deleted"
+            }
+        },
+        "info": {
+            "rows": "Rows:",
+            "executionTime": "Execution Time:",
+            "lastExecuted": "Last Executed:"
+        },
+        "selectTab": {
+            "title": "SELECT Clause Items",
+            "addItem": "Add Item",
+            "empty": "Please add items to the SELECT clause using the \"Add Item\" button",
+            "noTables": {
+                "title": "Please select tables",
+                "desc": "Drag and drop tables from the left panel"
+            }
+        },
+        "whereTab": {
+            "title": "WHERE Conditions",
+            "addCondition": "Add Condition",
+            "addGroup": "Add Group",
+            "empty": "No conditions. Please add a condition.",
+            "noTables": {
+                "title": "Please select tables",
+                "desc": "Tables are required to set WHERE conditions"
+            }
+        },
+        "groupByTab": {
+            "title": "GROUP BY Conditions",
+            "addColumn": "Add Column",
+            "empty": "Please add columns to group by",
+            "noTables": {
+                "title": "Please select tables"
+            }
+        },
+        "orderByTab": {
+            "title": "ORDER BY Conditions",
+            "addColumn": "Add Column",
+            "empty": "Please add columns for sorting",
+            "noTables": {
+                "title": "Please select tables"
+            },
+            "asc": "Ascending (ASC)",
+            "desc": "Descending (DESC)"
+        },
+        "limitTab": {
+            "title": "Limit Options",
+            "limit": {
+                "label": "LIMIT (Count)",
+                "help": "Maximum number of records to retrieve",
+                "placeholder": "Ex: 100"
+            },
+            "offset": {
+                "label": "OFFSET (Start)",
+                "help": "Number of records to skip",
+                "placeholder": "Ex: 0"
+            }
+        },
+        "selectColumnDialog": {
+            "title": "Add SELECT Item",
+            "description": "Select an item to add to the SELECT clause.",
+            "itemType": "Item Type",
+            "types": {
+                "table": "Select from Table",
+                "tableDesc": "Select columns from table",
+                "function": "Database Function",
+                "functionDesc": "Use functions like UPPER, CONCAT, etc.",
+                "subquery": "Subquery",
+                "subqueryDesc": "Get value via subquery",
+                "expression": "Expression (Free Input)",
+                "expressionDesc": "Input SQL expression directly (e.g. price * quantity)"
+            },
+            "selectColumn": "Select Column",
+            "multiSelectHint": "Multiple selection allowed. Cmd/Ctrl+Click to select multiple.",
+            "sqlExpression": "SQL Expression",
+            "expressionExample": "Ex: price * quantity, CASE WHEN ... END",
+            "expressionHint": "Hint: You can input complex SQL expressions using arithmetic operators (+, -, *, /), CASE statements, etc.",
+            "alias": "Alias (Optional)",
+            "aliasPlaceholder": "Ex: total_price, upper_name",
+            "aliasMultiHint": "Alias cannot be specified when selecting multiple columns",
+            "aliasDesc": "Alias for AS clause"
+        },
+        "conditionGroup": {
+            "groupLabel": "{logic} Group",
+            "addCondition": "Add Condition"
+        },
+        "functionBuilder": {
+            "title": "Function Builder",
+            "category": "Category",
+            "function": "Function",
+            "functionPlaceholder": "Select function...",
+            "arguments": "Arguments",
+            "paramCount": "Arguments: {count}",
+            "example": "Ex: {example}",
+            "addArgument": "Add Argument",
+            "alias": "Alias",
+            "aliasPlaceholder": "Ex: upper_name",
+            "preview": "Preview:",
+            "invalidArgs": "Invalid number of arguments",
+            "categories": {
+                "string": "String Functions",
+                "date": "Date Functions",
+                "numeric": "Numeric Functions",
+                "conditional": "Conditional Functions",
+                "aggregate": "Aggregate Functions"
+            }
+        },
+        "subqueryBuilder": {
+            "title": "Subquery Builder",
+            "description": "Build a subquery that returns a scalar value",
+            "table": "Table",
+            "tablePlaceholder": "Select table...",
+            "alias": "Alias (Optional)",
+            "aliasPlaceholder": "Ex: o",
+            "selectClause": "SELECT Clause",
+            "selectTypes": {
+                "column": "Single Column",
+                "aggregate": "Aggregate Function"
+            },
+            "aggregateFunction": "Aggregate Function",
+            "aggregateTypes": {
+                "count": "Rows",
+                "sum": "Sum",
+                "avg": "Average",
+                "min": "Min",
+                "max": "Max"
+            },
+            "column": "Column",
+            "columnPlaceholder": "Select column...",
+            "whereConditions": "WHERE Conditions",
+            "addCondition": "Add Condition",
+            "preview": "Preview:",
+            "warning": {
+                "title": "Warning",
+                "desc": "Subqueries must return a scalar value (single value). Returning multiple rows will result in an error."
+            }
+        },
+        "conditionRow": {
+            "valueNotRequired": "(Value not required)"
+        },
+        "columnSelect": {
+            "placeholder": "Select Column"
+        },
+        "saveQueryDialog": {
+            "title": "Save Query",
+            "description": "Enter query information to save.",
+            "queryName": "Query Name",
+            "queryNamePlaceholder": "Ex: Get User List",
+            "desc": "Description",
+            "descPlaceholder": "Enter query description...",
+            "tags": "Tags",
+            "tagsPlaceholder": "users, report, daily",
+            "tagsHelp": "Multiple tags can be specified separated by commas",
+            "errors": {
+                "nameRequired": "Query name is required",
+                "nameLength": "Query name must be within 200 characters",
+                "descLength": "Description must be within 1000 characters",
+                "tagsCount": "Up to 20 tags allowed",
+                "tagLength": "Each tag must be within 50 characters"
+            },
+            "toast": {
+                "successTitle": "Save Successful",
+                "successDesc": "Query saved successfully",
+                "errorTitle": "Save Failed",
+                "errorDesc": "Failed to save query"
+            }
+        },
+        "exportDialog": {
+            "title": "Data Export",
+            "description": "Output query results to a file.",
+            "format": "File Format",
+            "rowCount": "Target Rows: {count}",
+            "toast": {
+                "successTitle": "Export Successful",
+                "successDesc": "Exported {count} rows",
+                "errorTitle": "Export Failed"
+            }
+        },
+        "joinConfigDialog": {
+            "editTitle": "Edit JOIN",
+            "addTitle": "Add JOIN",
+            "description": "Configure JOIN type, target table, and join conditions.",
+            "joinType": "JOIN Type",
+            "table": "Join Table",
+            "alias": "Alias",
+            "onCondition": "ON Condition",
+            "logic": "Condition Logic",
+            "hint": {
+                "tableChange": "Table cannot be changed. Delete and re-create JOIN to change table.",
+                "aliasExample": "Ex: u, p, o"
+            },
+            "addCondition": "Add Condition"
+        },
+        "resultPagination": {
+            "show": "Show:",
+            "count": "{count}",
+            "range": "{start} - {end} / {total}"
+        },
+        "queryErrorDisplay": {
+            "target": "Target:",
+            "line": "Line: {line}",
+            "column": ", Col: {column}",
+            "position": "Position: {position}",
+            "technicalDetails": "Technical Details",
+            "errorCode": "Error Code: {code}",
+            "retry": "Retry"
+        },
+        "queryValidationDialog": {
+            "title": {
+                "error": "Cannot Open Query",
+                "warning": "Some Tables Not Found",
+                "confirm": "Confirm"
+            },
+            "connectionQuery": "Query Connection:",
+            "connectionCurrent": "Current Connection:",
+            "missingTables": "Missing Tables:",
+            "warningMessage": "If you proceed, missing tables may not display correctly.",
+            "actions": {
+                "close": "Close",
+                "open": "Open"
+            }
+        },
+        "argumentEditor": {
+            "types": {
+                "column": "Column",
+                "literal": "Literal",
+                "function": "Function"
+            },
+            "labels": {
+                "string": "String",
+                "number": "Number"
+            },
+            "placeholders": {
+                "selectColumn": "Select Column...",
+                "selectFunction": "Select Function...",
+                "inputVal": "Enter Value..."
+            },
+            "nested": {
+                "title": "Add Nested Function",
+                "desc": "Build function for argument."
+            }
+        },
+        "correlatedConditionEditor": {
+            "types": {
+                "literal": "Literal",
+                "parentColumn": "Parent Column (Correlated)"
+            },
+            "placeholders": {
+                "column": "Column...",
+                "value": "Value...",
+                "selectParentColumn": "Select Parent Column..."
+            }
+        },
+        "joinConditionRow": {
+            "tablePlaceholder": "Table",
+            "columnPlaceholder": "Column"
         }
     },
     "settings": {

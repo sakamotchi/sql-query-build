@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import type { OrderByColumn } from '@/types/query'
 import ColumnSelect from '../where/ColumnSelect.vue'
 
+const { t } = useI18n()
+
 // ColumnOption definition matching ColumnSelect's expectation
 interface ColumnOption {
   id: string
@@ -25,10 +27,10 @@ const emit = defineEmits<{
   (e: 'change'): void
 }>()
 
-const directions = [
-  { label: '昇順 (ASC)', value: 'ASC' },
-  { label: '降順 (DESC)', value: 'DESC' }
-]
+const directions = computed(() => [
+  { label: t('queryBuilder.orderByTab.asc'), value: 'ASC' },
+  { label: t('queryBuilder.orderByTab.desc'), value: 'DESC' }
+])
 
 const selectedColumnModel = computed({
   get: () => {

@@ -3,6 +3,8 @@ import { useQueryBuilderStore } from '@/stores/query-builder'
 import ConditionRow from './ConditionRow.vue'
 import type { WhereCondition, ConditionGroup as ConditionGroupType } from '@/types/query'
 
+const { t } = useI18n()
+
 interface AvailableColumn {
   id: string
   label: string
@@ -85,7 +87,7 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
   >
     <!-- グループヘッダー（ネストされている場合） -->
     <div v-if="!isRoot" class="flex items-center justify-between mb-2">
-      <span class="text-xs font-bold text-gray-500 uppercase">{{ logic }} グループ</span>
+      <span class="text-xs font-bold text-gray-500 uppercase">{{ t('queryBuilder.conditionGroup.groupLabel', { logic: logic }) }}</span>
       <UButton
         icon="i-heroicons-x-mark"
         color="error"
@@ -145,7 +147,7 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
     <!-- グループ内追加ボタン（ネストされている場合） -->
     <div v-if="!isRoot" class="mt-2">
       <UButton
-        label="条件追加"
+        :label="t('queryBuilder.conditionGroup.addCondition')"
         icon="i-heroicons-plus"
         size="xs"
         variant="ghost"

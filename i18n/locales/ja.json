@@ -43,6 +43,16 @@
         "list": "リスト",
         "grid": "グリッド",
         "reset": "リセット",
+        "actions": {
+            "cancel": "キャンセル",
+            "add": "追加",
+            "save": "保存",
+            "export": "エクスポート",
+            "delete": "削除"
+        },
+        "labels": {
+            "hint": "ヒント"
+        },
         "preview": "プレビュー",
         "sampleText": "サンプルテキスト",
         "resetDefault": "デフォルトに戻す",
@@ -141,6 +151,393 @@
                 "testFailed": "接続テストに失敗しました",
                 "saveFailed": "接続の保存に失敗しました"
             }
+        }
+    },
+    "queryBuilder": {
+        "toolbar": {
+            "structurePanel": "DB構造パネル",
+            "execute": "実行",
+            "save": "保存",
+            "open": "開く",
+            "new": "新規",
+            "history": "クエリ履歴",
+            "resultPanel": "結果パネル",
+            "sqlPanel": "SQLプレビューパネル",
+            "toMutation": "データ変更へ",
+            "errors": {
+                "dropForbidden": "現在の環境ではDROPクエリの実行は禁止されています",
+                "truncateForbidden": "現在の環境ではTRUNCATEクエリの実行は禁止されています",
+                "executionFailed": "実行エラー"
+            }
+        },
+        "leftPanel": {
+            "title": "データベース構造",
+            "refresh": "更新",
+            "searchPlaceholder": "テーブル・カラムを検索..."
+        },
+        "rightPanel": {
+            "title": "SQLプレビュー",
+            "smartQuote": "スマート引用符",
+            "copy": "コピー",
+            "infoTitle": "クエリ情報",
+            "copied": "クリップボードにコピーしました"
+        },
+        "resultPanel": {
+            "title": "実行結果",
+            "errorTitle": "実行エラー",
+            "export": "エクスポート",
+            "close": "閉じる",
+            "executing": "実行中...",
+            "noResult": "クエリを実行してください",
+            "rowCount": "{count}行",
+            "executionTime": "({time}ms)"
+        },
+        "relationArea": {
+            "addJoin": "JOINを追加",
+            "dropHint": "ここにテーブルをドロップして追加",
+            "ariaLabel": "テーブル関係図",
+            "emptyTitle": "テーブルを追加",
+            "emptyDesc": "左パネルからテーブルをドラッグ＆ドロップ\nまたはダブルクリックで追加できます"
+        },
+        "databaseTree": {
+            "loading": "読み込み中...",
+            "retry": "再試行",
+            "connect": "データベースに接続してください",
+            "noResults": "\"{query}\" に一致する結果がありません"
+        },
+        "tabs": {
+            "select": "SELECT",
+            "join": "JOIN",
+            "where": "WHERE",
+            "group": "GROUP BY",
+            "order": "ORDER BY",
+            "limit": "LIMIT"
+        },
+        "sqlPreview": {
+            "errorPosition": "エラー位置: {line}行目",
+            "errorColumn": ", {col}列目",
+            "risk": {
+                "danger": "危険なクエリ",
+                "warning": "注意が必要なクエリ"
+            },
+            "placeholderTitle": "SQLプレビュー",
+            "placeholderDesc": "クエリを構築すると表示されます"
+        },
+        "joinPanel": {
+            "notEnoughTables": {
+                "title": "JOINを設定するには2つ以上のテーブルが必要です",
+                "desc": "左パネルからテーブルを追加してください"
+            },
+            "newJoin": "新規JOIN",
+            "smartJoin": "スマートJOIN追加",
+            "noJoins": {
+                "title": "JOINが設定されていません",
+                "desc": "上のボタンからJOINを追加してください"
+            },
+            "conditions": {
+                "none": "(条件なし)"
+            }
+        },
+        "savedQueries": {
+            "title": "保存済みクエリ",
+            "description": "保存されたクエリの一覧です。",
+            "searchPlaceholder": "クエリを検索...",
+            "empty": "保存されたクエリはありません",
+            "updated": "更新: {date}",
+            "deleteConfirm": {
+                "title": "クエリの削除",
+                "desc": "クエリ「{name}」を本当に削除してもよろしいですか？"
+            },
+            "toasts": {
+                "noConnection": "接続が選択されていません",
+                "noConnectionDesc": "接続を選択してからクエリを開いてください",
+                "connMismatch": "接続が異なります",
+                "loadFailed": "読み込み失敗",
+                "loadFailedDesc": "クエリの読み込みに失敗しました",
+                "loadSuccess": "読み込み成功",
+                "loadSuccessDesc": "クエリ「{name}」を読み込みました",
+                "screenSwitch": "画面を切り替えました",
+                "screenSwitchDesc": "{label}画面に移動しました",
+                "deleteSuccess": "削除成功",
+                "deleteSuccessDesc": "クエリを削除しました"
+            }
+        },
+        "history": {
+            "title": "クエリ履歴",
+            "description": "実行したクエリの履歴です。",
+            "searchPlaceholder": "SQLを検索...",
+            "successOnly": "成功のみ表示",
+            "empty": "履歴はありません",
+            "success": "成功",
+            "failure": "失敗",
+            "deleteConfirm": {
+                "title": "履歴の削除",
+                "desc": "この履歴を削除してもよろしいですか？（元に戻せません）"
+            },
+            "toasts": {
+                "restoreSuccess": "復元成功",
+                "restoreSuccessDesc": "履歴（{date}）を復元しました",
+                "restoreFailed": "復元失敗",
+                "restoreFailedDesc": "履歴の復元に失敗しました",
+                "loadError": "エラー",
+                "loadErrorDesc": "履歴の読み込みに失敗しました",
+                "deleteSuccess": "削除成功",
+                "deleteSuccessDesc": "履歴を削除しました"
+            }
+        },
+        "info": {
+            "rows": "行数:",
+            "executionTime": "実行時間:",
+            "lastExecuted": "最終実行:"
+        },
+        "selectTab": {
+            "title": "SELECT句の項目",
+            "addItem": "項目を追加",
+            "empty": "「項目を追加」ボタンから SELECT 句の項目を追加してください",
+            "noTables": {
+                "title": "テーブルを選択してください",
+                "desc": "左パネルからテーブルをドラッグ＆ドロップ"
+            }
+        },
+        "whereTab": {
+            "title": "WHERE条件",
+            "addCondition": "条件追加",
+            "addGroup": "グループ追加",
+            "empty": "条件がありません。「条件追加」で追加してください。",
+            "noTables": {
+                "title": "テーブルを選択してください",
+                "desc": "WHERE条件を設定するにはテーブルが必要です"
+            }
+        },
+        "groupByTab": {
+            "title": "GROUP BY条件",
+            "addColumn": "カラム追加",
+            "empty": "グループ化するカラムを追加してください",
+            "noTables": {
+                "title": "テーブルを選択してください"
+            }
+        },
+        "orderByTab": {
+            "title": "ORDER BY条件",
+            "addColumn": "カラム追加",
+            "empty": "ソート順を適用するカラムを追加してください",
+            "noTables": {
+                "title": "テーブルを選択してください"
+            },
+            "asc": "昇順 (ASC)",
+            "desc": "降順 (DESC)"
+        },
+        "limitTab": {
+            "title": "取得制限オプション",
+            "limit": {
+                "label": "LIMIT (取得件数)",
+                "help": "取得する最大レコード数",
+                "placeholder": "例: 100"
+            },
+            "offset": {
+                "label": "OFFSET (開始位置)",
+                "help": "スキップするレコード数",
+                "placeholder": "例: 0"
+            }
+        },
+        "selectColumnDialog": {
+            "title": "SELECT項目を追加",
+            "description": "SELECT句に追加する項目を選択してください。",
+            "itemType": "項目タイプ",
+            "types": {
+                "table": "テーブルから選択",
+                "tableDesc": "テーブルのカラムを選択します",
+                "function": "データベース関数",
+                "functionDesc": "UPPER、CONCAT等の関数を使用します",
+                "subquery": "サブクエリ",
+                "subqueryDesc": "サブクエリで値を取得します",
+                "expression": "式の組み合わせ（自由入力）",
+                "expressionDesc": "SQL式を直接入力します（例: price * quantity）"
+            },
+            "selectColumn": "カラムを選択",
+            "multiSelectHint": "複数選択可能です。Ctrl/Cmd+クリックで複数選択できます。",
+            "sqlExpression": "SQL式",
+            "expressionExample": "例: price * quantity, CASE WHEN ... END",
+            "expressionHint": "ヒント: 式の組み合わせでは、算術演算子（+, -, *, /）やCASE文などの複雑なSQL式を直接入力できます。",
+            "alias": "エイリアス（オプション）",
+            "aliasPlaceholder": "例: total_price, upper_name",
+            "aliasMultiHint": "複数選択時はエイリアスを指定できません",
+            "aliasDesc": "AS句で指定する別名"
+        },
+        "conditionGroup": {
+            "groupLabel": "{logic} グループ",
+            "addCondition": "条件追加"
+        },
+        "functionBuilder": {
+            "title": "関数ビルダー",
+            "category": "カテゴリ",
+            "function": "関数",
+            "functionPlaceholder": "関数を選択...",
+            "arguments": "引数",
+            "paramCount": "引数: {count} 個",
+            "example": "例: {example}",
+            "addArgument": "引数を追加",
+            "alias": "エイリアス",
+            "aliasPlaceholder": "例: upper_name",
+            "preview": "プレビュー:",
+            "invalidArgs": "引数の数が正しくありません",
+            "categories": {
+                "string": "文字列関数",
+                "date": "日付関数",
+                "numeric": "数値関数",
+                "conditional": "条件関数",
+                "aggregate": "集計関数"
+            }
+        },
+        "subqueryBuilder": {
+            "title": "サブクエリビルダー",
+            "description": "スカラー値を返すサブクエリを構築します",
+            "table": "テーブル",
+            "tablePlaceholder": "テーブルを選択...",
+            "alias": "エイリアス（オプション）",
+            "aliasPlaceholder": "例: o",
+            "selectClause": "SELECT句",
+            "selectTypes": {
+                "column": "単一カラム",
+                "aggregate": "集計関数"
+            },
+            "aggregateFunction": "集計関数",
+            "aggregateTypes": {
+                "count": "行数",
+                "sum": "合計",
+                "avg": "平均",
+                "min": "最小値",
+                "max": "最大値"
+            },
+            "column": "カラム",
+            "columnPlaceholder": "カラムを選択...",
+            "whereConditions": "WHERE条件",
+            "addCondition": "条件を追加",
+            "preview": "プレビュー:",
+            "warning": {
+                "title": "注意",
+                "desc": "サブクエリは必ずスカラー値（単一の値）を返す必要があります。複数行が返される場合はエラーになります。"
+            }
+        },
+        "conditionRow": {
+            "valueNotRequired": "（値不要）"
+        },
+        "columnSelect": {
+            "placeholder": "カラムを選択"
+        },
+        "saveQueryDialog": {
+            "title": "クエリを保存",
+            "description": "クエリの情報を入力して保存してください。",
+            "queryName": "クエリ名",
+            "queryNamePlaceholder": "例: ユーザー一覧取得",
+            "desc": "説明",
+            "descPlaceholder": "クエリの説明を入力...",
+            "tags": "タグ",
+            "tagsPlaceholder": "users, report, daily",
+            "tagsHelp": "カンマ区切りで複数のタグを指定できます",
+            "errors": {
+                "nameRequired": "クエリ名は必須です",
+                "nameLength": "クエリ名は200文字以内で入力してください",
+                "descLength": "説明は1000文字以内で入力してください",
+                "tagsCount": "タグは20個までです",
+                "tagLength": "各タグは50文字以内で入力してください"
+            },
+            "toast": {
+                "successTitle": "保存成功",
+                "successDesc": "クエリを保存しました",
+                "errorTitle": "保存失敗",
+                "errorDesc": "クエリの保存に失敗しました"
+            }
+        },
+        "exportDialog": {
+            "title": "データエクスポート",
+            "description": "クエリ実行結果をファイルに出力します。",
+            "format": "ファイル形式",
+            "rowCount": "対象件数: {count} 件",
+            "toast": {
+                "successTitle": "エクスポート成功",
+                "successDesc": "{count}件のデータをエクスポートしました",
+                "errorTitle": "エクスポート失敗"
+            }
+        },
+        "joinConfigDialog": {
+            "editTitle": "JOINの編集",
+            "addTitle": "JOINの追加",
+            "description": "JOINの種類、対象テーブル、結合条件を設定してください。",
+            "joinType": "JOIN種別",
+            "table": "結合テーブル",
+            "alias": "エイリアス",
+            "onCondition": "ON条件",
+            "logic": "条件の結合",
+            "hint": {
+                "tableChange": "※テーブルは変更できません。変更する場合はJOINを削除して再作成してください。",
+                "aliasExample": "例: u, p, o"
+            },
+            "addCondition": "条件を追加"
+        },
+        "resultPagination": {
+            "show": "表示:",
+            "count": "{count}件",
+            "range": "{start} - {end} / {total}件"
+        },
+        "queryErrorDisplay": {
+            "target": "対象:",
+            "line": "行: {line}",
+            "column": ", 列: {column}",
+            "position": "文字位置: {position}",
+            "technicalDetails": "技術的な詳細",
+            "errorCode": "エラーコード: {code}",
+            "retry": "再実行"
+        },
+        "queryValidationDialog": {
+            "title": {
+                "error": "クエリを開けません",
+                "warning": "一部のテーブルが見つかりません",
+                "confirm": "確認"
+            },
+            "connectionQuery": "クエリの接続:",
+            "connectionCurrent": "現在の接続:",
+            "missingTables": "見つからないテーブル:",
+            "warningMessage": "それでも開く場合、見つからないテーブルは正しく表示されない可能性があります。",
+            "actions": {
+                "close": "閉じる",
+                "open": "開く"
+            }
+        },
+        "argumentEditor": {
+            "types": {
+                "column": "カラム",
+                "literal": "リテラル値",
+                "function": "関数"
+            },
+            "labels": {
+                "string": "文字列",
+                "number": "数値"
+            },
+            "placeholders": {
+                "selectColumn": "カラムを選択...",
+                "selectFunction": "関数を選択...",
+                "inputVal": "値を入力..."
+            },
+            "nested": {
+                "title": "ネスト関数を追加",
+                "desc": "引数用の関数を構築します。"
+            }
+        },
+        "correlatedConditionEditor": {
+            "types": {
+                "literal": "リテラル値",
+                "parentColumn": "外部カラム参照（相関）"
+            },
+            "placeholders": {
+                "column": "カラム...",
+                "value": "値...",
+                "selectParentColumn": "外部カラムを選択..."
+            }
+        },
+        "joinConditionRow": {
+            "tablePlaceholder": "テーブル",
+            "columnPlaceholder": "カラム"
         }
     },
     "settings": {

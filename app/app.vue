@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useSecurityStore } from '~/stores/security'
 import { useWindowStore } from '~/stores/window'
+import { useSettingsStore } from '~/stores/settings'
 
 useHead({
   title: 'SQL Query Build',
@@ -12,7 +13,9 @@ useHead({
 
 const securityStore = useSecurityStore()
 const windowStore = useWindowStore()
+const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(securityStore)
+const { setLocale } = useI18n()
 
 const showVerifyDialog = ref(false)
 const isReady = ref(false)
@@ -25,7 +28,14 @@ onMounted(async () => {
   // ウィンドウストアを初期化
   await windowStore.initialize()
 
+  // セキュリティ設定をロード
   await securityStore.loadSettings()
+  
+  // アプリケーション設定をロードして言語を適用
+  await settingsStore.loadSettings()
+  if (settingsStore.currentLanguage) {
+    await setLocale(settingsStore.currentLanguage)
+  }
 
   if (isMasterPasswordProvider.value && settings.value.masterPasswordSet) {
     showVerifyDialog.value = true

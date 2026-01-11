@@ -8,39 +8,41 @@ import LimitTab from './limit/LimitTab.vue'
 import JoinPanel from './JoinPanel.vue'
 import type { JoinClause } from '@/types/query-model'
 
+const { t } = useI18n()
+
 // タブアイテム
-const items = [
+const items = computed(() => [
   {
     key: 'select',
-    label: 'SELECT',
+    label: t('queryBuilder.tabs.select'),
     value: 'select',
   },
   {
     key: 'join',
-    label: 'JOIN',
+    label: t('queryBuilder.tabs.join'),
     value: 'join',
   },
   {
     key: 'where',
-    label: 'WHERE',
+    label: t('queryBuilder.tabs.where'),
     value: 'where',
   },
   {
     key: 'group',
-    label: 'GROUP BY',
+    label: t('queryBuilder.tabs.group'),
     value: 'group',
   },
   {
     key: 'order',
-    label: 'ORDER BY',
+    label: t('queryBuilder.tabs.order'),
     value: 'order',
   },
   {
     key: 'limit',
-    label: 'LIMIT',
+    label: t('queryBuilder.tabs.limit'),
     value: 'limit',
   },
-]
+])
 
 // 選択中のタブ
 const selectedTab = ref('select')

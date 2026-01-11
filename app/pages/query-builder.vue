@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import QueryBuilderLayout from '@/components/query-builder/QueryBuilderLayout.vue'
 
+const { t } = useI18n()
+
+useHead({
+  title: t('queryBuilder.pageTitle')
+})
+
 // ページメタデータ
 definePageMeta({
-  title: 'クエリビルダー',
   layout: false,
 })
 </script>

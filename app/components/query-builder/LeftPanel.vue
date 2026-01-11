@@ -16,6 +16,7 @@ const { addTable } = useTableSelection()
 // 検索クエリ
 const searchQuery = ref('')
 const databaseTreeRef = ref<InstanceType<typeof DatabaseTree> | null>(null)
+const { t } = useI18n()
 
 /**
  * ツリーを更新
@@ -58,13 +59,13 @@ const handleColumnDragStart = (column: Column, table: Table) => {
   <div class="flex flex-col h-full bg-white dark:bg-gray-900">
     <!-- ヘッダー -->
     <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
-      <span class="text-sm font-medium">データベース構造</span>
+      <span class="text-sm font-medium">{{ t('queryBuilder.leftPanel.title') }}</span>
       <UButton
         icon="i-heroicons-arrow-path"
         size="xs"
         color="neutral"
         variant="ghost"
-        title="更新"
+        :title="t('queryBuilder.leftPanel.refresh')"
         @click="refreshTree"
       />
     </div>
@@ -74,7 +75,7 @@ const handleColumnDragStart = (column: Column, table: Table) => {
       <UInput
         v-model="searchQuery"
         size="sm"
-        placeholder="テーブル・カラムを検索..."
+        :placeholder="t('queryBuilder.leftPanel.searchPlaceholder')"
         icon="i-heroicons-magnifying-glass"
       />
     </div>

@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import type { JoinSuggestion } from '@/types/join-suggestion'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   suggestion: JoinSuggestion
 }>()
@@ -55,7 +57,7 @@ const conditionText = computed(() => {
         icon="i-heroicons-check"
         @click="emit('apply', suggestion)"
       >
-        追加
+        {{ t('common.actions.add') }}
       </UButton>
     </div>
   </div>

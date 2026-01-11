@@ -5,7 +5,7 @@
       <USelect
         :model-value="condition.left.tableAlias"
         :items="tableOptions"
-        placeholder="Table"
+        :placeholder="t('queryBuilder.joinConditionRow.tablePlaceholder')"
         size="sm"
         class="w-full"
         @update:model-value="updateLeftTable"
@@ -19,7 +19,7 @@
       <USelect
         :model-value="condition.left.columnName"
         :items="leftColumnOptions"
-        placeholder="Column"
+        :placeholder="t('queryBuilder.joinConditionRow.columnPlaceholder')"
         searchable
         size="sm"
         class="w-full"
@@ -43,7 +43,7 @@
       <USelect
         :model-value="condition.right.tableAlias"
         :items="tableOptions"
-        placeholder="Table"
+        :placeholder="t('queryBuilder.joinConditionRow.tablePlaceholder')"
         size="sm"
         class="w-full"
         @update:model-value="updateRightTable"
@@ -57,7 +57,7 @@
       <USelect
         :model-value="condition.right.columnName"
         :items="rightColumnOptions"
-        placeholder="Column"
+        :placeholder="t('queryBuilder.joinConditionRow.columnPlaceholder')"
         searchable
         size="sm"
         class="w-full"
@@ -81,6 +81,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { JoinCondition, SelectedTable } from '~/types/query-model'
+
+const { t } = useI18n()
 
 interface Props {
   condition: JoinCondition

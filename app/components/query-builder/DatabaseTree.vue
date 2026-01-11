@@ -19,6 +19,7 @@ const emit = defineEmits<{
 
 const databaseStructureStore = useDatabaseStructureStore()
 const windowStore = useWindowStore()
+const { t } = useI18n()
 
 // 状態
 const isLoading = ref(false)
@@ -192,7 +193,7 @@ defineExpose({
     <!-- ローディング -->
     <div v-if="isLoading" class="tree-loading flex flex-col items-center justify-center p-6 h-full text-center">
       <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin mb-2" />
-      <span class="text-sm">読み込み中...</span>
+      <span class="text-sm">{{ t('queryBuilder.databaseTree.loading') }}</span>
     </div>
 
     <!-- エラー -->
@@ -205,14 +206,14 @@ defineExpose({
         variant="ghost"
         @click="refreshStructure"
       >
-        再試行
+        {{ t('queryBuilder.databaseTree.retry') }}
       </UButton>
     </div>
 
     <!-- 空状態 -->
     <div v-else-if="!databaseStructure" class="tree-empty flex flex-col items-center justify-center p-6 h-full text-center">
       <UIcon name="i-heroicons-circle-stack" class="w-8 h-8 text-gray-400 mb-2" />
-      <p class="text-sm text-gray-500 dark:text-gray-400">データベースに接続してください</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('queryBuilder.databaseTree.connect') }}</p>
     </div>
 
     <!-- 検索結果なし -->
@@ -222,7 +223,7 @@ defineExpose({
     >
       <UIcon name="i-heroicons-magnifying-glass" class="w-8 h-8 text-gray-400 mb-2" />
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        "{{ searchQuery }}" に一致する結果がありません
+        {{ t('queryBuilder.databaseTree.noResults', { query: searchQuery }) }}
       </p>
     </div>
 
