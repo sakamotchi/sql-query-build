@@ -5,6 +5,7 @@ import { useMutationBuilderStore } from '@/stores/mutation-builder'
 import SqlPreview from '@/components/query-builder/SqlPreview.vue'
 
 const store = useMutationBuilderStore()
+const { t } = useI18n()
 
 const generatedSql = computed(() => store.generatedSql)
 const analysisResult = computed(() => store.analysisResult)
@@ -41,22 +42,22 @@ const showWarning = computed(() => {
 <template>
   <div class="flex flex-col h-full bg-white dark:bg-gray-900">
     <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
-      <span class="text-sm font-medium">SQLプレビュー</span>
+      <span class="text-sm font-medium">{{ t('mutationBuilder.sqlPreview.title') }}</span>
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-1.5" title="必要な場合のみ引用符をつける">
+        <div class="flex items-center gap-1.5" :title="t('mutationBuilder.sqlPreview.smartQuote')">
           <USwitch
             :model-value="smartQuote"
             @update:model-value="(val) => store.setSmartQuote(val)"
             size="sm"
           />
-          <span class="text-xs text-gray-500 dark:text-gray-400">スマート引用符</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('mutationBuilder.sqlPreview.smartQuote') }}</span>
         </div>
         <UButton
           icon="i-heroicons-clipboard-document"
           size="xs"
           color="neutral"
           variant="ghost"
-          title="コピー"
+          :title="t('mutationBuilder.sqlPreview.copy')"
           :disabled="!generatedSql"
           @click="copyToClipboard"
         />
@@ -69,7 +70,7 @@ const showWarning = computed(() => {
 
     <div v-else-if="queryError" class="border-b border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2">
       <p class="text-xs text-red-700 dark:text-red-300">
-        実行エラー: {{ queryError.message }}
+        {{ t('mutationBuilder.sqlPreview.executionError', { message: queryError.message }) }}
       </p>
     </div>
 
@@ -80,7 +81,7 @@ const showWarning = computed(() => {
       <div class="flex items-start gap-2">
         <UIcon name="i-heroicons-exclamation-triangle" class="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5" />
         <div class="text-xs text-orange-800 dark:text-orange-200">
-          WHERE句がありません。このクエリは全ての行を{{ mutationType === 'DELETE' ? '削除' : '更新' }}します。
+          {{ t('mutationBuilder.sqlPreview.warning.allRows', { action: mutationType === 'DELETE' ? t('mutationBuilder.sqlPreview.actions.delete') : t('mutationBuilder.sqlPreview.actions.update') }) }}
         </div>
       </div>
     </div>
@@ -93,23 +94,23 @@ const showWarning = computed(() => {
 
     <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-800">
       <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-800">
-        <span class="text-sm font-medium">クエリ情報</span>
+        <span class="text-sm font-medium">{{ t('mutationBuilder.sqlPreview.queryInfo.title') }}</span>
       </div>
       <div class="p-3 text-sm text-gray-600 dark:text-gray-400 space-y-1">
         <div class="flex justify-between">
-          <span>影響行数:</span>
+          <span>{{ t('mutationBuilder.sqlPreview.queryInfo.affectedRows') }}</span>
           <span class="font-medium text-gray-900 dark:text-gray-100">
             {{ queryInfo.affectedRows ?? '-' }}
           </span>
         </div>
         <div class="flex justify-between">
-          <span>実行時間:</span>
+          <span>{{ t('mutationBuilder.sqlPreview.queryInfo.executionTime') }}</span>
           <span class="font-medium text-gray-900 dark:text-gray-100">
             {{ formattedExecutionTime }}
           </span>
         </div>
         <div class="flex justify-between">
-          <span>最終実行:</span>
+          <span>{{ t('mutationBuilder.sqlPreview.queryInfo.lastExecuted') }}</span>
           <span class="font-medium text-gray-900 dark:text-gray-100">
             {{ formattedLastExecuted }}
           </span>

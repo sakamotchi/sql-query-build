@@ -13,6 +13,8 @@ const databaseStructureStore = useDatabaseStructureStore()
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 
+const { t } = useI18n()
+
 const connectionId = computed(() =>
   connectionStore.activeConnection?.id || windowStore.currentConnectionId
 )
@@ -105,26 +107,26 @@ const addGroup = () => {
   <div class="h-full overflow-hidden flex flex-col">
     <div v-if="isEmpty" class="flex flex-col items-center justify-center h-full p-6 text-center">
       <UIcon name="i-heroicons-table-cells" class="text-5xl text-gray-300 dark:text-gray-600" />
-      <p class="text-gray-500 dark:text-gray-400 mt-4">テーブルを選択してください</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('mutationBuilder.whereTab.selectPrompt') }}</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        WHERE条件を設定するにはテーブルが必要です
+        {{ t('mutationBuilder.whereTab.selectPromptDesc') }}
       </p>
     </div>
 
     <template v-else>
       <div v-if="!hasColumns" class="flex flex-col items-center justify-center h-full p-6 text-center">
         <UIcon name="i-heroicons-circle-stack" class="text-5xl text-gray-300 dark:text-gray-600" />
-        <p class="text-gray-500 dark:text-gray-400 mt-4">カラム情報が見つかりません</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('mutationBuilder.whereTab.noColumns') }}</p>
         <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-          テーブル情報を更新して再度お試しください
+          {{ t('mutationBuilder.whereTab.noColumnsDesc') }}
         </p>
       </div>
 
       <template v-else>
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">WHERE条件</span>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ t('mutationBuilder.whereTab.title') }}</span>
         <UButton
-          label="条件追加"
+          :label="t('mutationBuilder.whereTab.addCondition')"
           icon="i-heroicons-plus"
           size="sm"
           variant="soft"
@@ -140,7 +142,7 @@ const addGroup = () => {
         >
           <UIcon name="i-heroicons-funnel" class="text-3xl text-gray-300 dark:text-gray-600" />
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            条件がありません。「条件追加」で追加してください。
+            {{ t('mutationBuilder.whereTab.emptyDesc') }}
           </p>
         </div>
 
@@ -154,7 +156,7 @@ const addGroup = () => {
 
           <div class="mt-4">
             <UButton
-              label="グループ追加"
+              :label="t('mutationBuilder.whereTab.addGroup')"
               icon="i-heroicons-folder-plus"
               size="sm"
               variant="ghost"

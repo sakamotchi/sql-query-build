@@ -32,13 +32,15 @@ const updateValue = (columnName: string, value: any) => {
 const updateIsNull = (columnName: string, value: boolean) => {
   ensureCell(columnName).isNull = value
 }
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900">
     <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800">
       <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
-        行 {{ rowIndex + 1 }}
+        {{ t('mutationBuilder.inputField.rowLabel', { index: rowIndex + 1 }) }}
       </span>
       <UButton
         v-if="canRemove"

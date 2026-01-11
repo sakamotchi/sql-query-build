@@ -17,6 +17,8 @@ const panelConstraints = {
   preview: { min: 180, max: 420 },
 }
 
+const { t } = useI18n()
+
 const handlePreviewResize = (height: number) => {
   previewHeight.value = Math.max(
     panelConstraints.preview.min,
@@ -36,7 +38,7 @@ const handlePreviewResize = (height: number) => {
         <UpdatePanel v-else-if="mutationType === 'UPDATE'" />
         <DeletePanel v-else-if="mutationType === 'DELETE'" />
         <div v-else class="flex-1 flex items-center justify-center p-6 text-sm text-gray-500 dark:text-gray-400">
-          {{ mutationType }} は実装予定です
+          {{ t('mutationBuilder.layout.notImplemented', { type: mutationType }) }}
         </div>
       </div>
 

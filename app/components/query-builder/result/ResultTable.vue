@@ -4,6 +4,8 @@ import ResultColumnHeader from './ResultColumnHeader.vue'
 import ResultRow from './ResultRow.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 
+const { t } = useI18n()
+
 defineProps<{
   columns: QueryResultColumn[]
   rows: QueryResultRow[]
@@ -40,7 +42,7 @@ const { getColumnWidth, startResize } = useColumnResize()
             :colspan="columns.length"
             class="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
           >
-            結果が0件です
+            {{ t('queryBuilder.resultPanel.noResultsMessage') }}
           </td>
         </tr>
       </tbody>

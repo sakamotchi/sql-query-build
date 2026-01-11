@@ -59,12 +59,26 @@
         "envSuffix": "Environment",
         "mode": "Mode",
         "colors": {
-            "green": "Green",
-            "blue": "Blue",
-            "orange": "Orange",
             "red": "Red",
+            "orange": "Orange",
+            "amber": "Amber",
+            "yellow": "Yellow",
+            "lime": "Lime",
+            "green": "Green",
+            "emerald": "Emerald",
+            "teal": "Teal",
+            "cyan": "Cyan",
+            "sky": "Sky",
+            "blue": "Blue",
+            "indigo": "Indigo",
+            "violet": "Violet",
             "purple": "Purple",
-            "brown": "Brown"
+            "fuchsia": "Fuchsia",
+            "pink": "Pink",
+            "rose": "Rose"
+        },
+        "units": {
+            "bytes": "bytes"
         },
         "theme": {
             "light": "Light",
@@ -184,12 +198,13 @@
             "copied": "Copied to clipboard"
         },
         "resultPanel": {
-            "title": "Result",
-            "errorTitle": "Error",
+            "title": "Query Result",
+            "errorTitle": "Error Occurred",
             "export": "Export",
             "close": "Close",
             "executing": "Executing...",
-            "noResult": "Please execute query",
+            "noResult": "Results will appear here",
+            "noResultsMessage": "No results found",
             "rowCount": "{count} rows",
             "executionTime": "({time}ms)"
         },
@@ -589,6 +604,103 @@
                 "successTitle": "Success"
             },
             "saveButton": "Save Settings"
+        }
+    },
+    "mutationBuilder": {
+        "pageTitle": "Data Mutation",
+        "toolbar": {
+            "execute": "Execute",
+            "save": "Save",
+            "open": "Open",
+            "history": "History",
+            "toQueryBuilder": "To Data Query",
+            "errors": {
+                "executionFailed": "Execution Error",
+                "dropForbidden": "DROP queries are disabled in this environment",
+                "truncateForbidden": "TRUNCATE queries are disabled in this environment"
+            }
+        },
+        "layout": {
+            "notImplemented": "{type} is not implemented yet"
+        },
+        "insertPanel": {
+            "modes": {
+                "form": "Form Mode",
+                "grid": "Grid Mode"
+            },
+            "gridNotImplemented": "Grid mode is planned"
+        },
+        "updatePanel": {
+            "tabs": {
+                "set": "SET",
+                "where": "WHERE"
+            }
+        },
+        "deletePanel": {
+            "warning": {
+                "title": "Warning: No WHERE clause",
+                "desc": "If no WHERE clause is specified, all rows in the table will be deleted. Only execute if you really intend to delete all rows."
+            }
+        },
+        "formInput": {
+            "selectPrompt": "Please select a table",
+            "noColumns": "Column information not found",
+            "addRow": "Add Row"
+        },
+        "setTab": {
+            "selectPrompt": "Please select a table",
+            "noColumns": "Column information not found",
+            "addColumn": "Add Column",
+            "noSelectionWarning": {
+                "title": "No column selected",
+                "desc": "Please select at least one column"
+            }
+        },
+        "whereTab": {
+            "selectPrompt": "Please select a table",
+            "selectPromptDesc": "Table selection is required to set WHERE conditions",
+            "noColumns": "Column information not found",
+            "noColumnsDesc": "Please update table information and try again",
+            "title": "WHERE Conditions",
+            "addCondition": "Add Condition",
+            "addGroup": "Add Group",
+            "emptyDesc": "No conditions. Please add using \"Add Condition\"."
+        },
+        "sqlPreview": {
+            "title": "SQL Preview",
+            "smartQuote": "Smart Quotes",
+            "copy": "Copy",
+            "executionError": "Execution Error: {message}",
+            "warning": {
+                "allRows": "No WHERE clause. This query will {action} ALL rows."
+            },
+            "queryInfo": {
+                "title": "Query Info",
+                "affectedRows": "Affected Rows:",
+                "executionTime": "Execution Time:",
+                "lastExecuted": "Last Executed:"
+            },
+            "actions": {
+                "delete": "delete",
+                "update": "update"
+            }
+        },
+        "tableSelector": {
+            "label": "Table",
+            "placeholder": "Select Table",
+            "refresh": "Refresh",
+            "noConnection": "No connection selected"
+        },
+        "conditionGroup": {
+            "groupSuffix": "Group"
+        },
+        "inputField": {
+            "selectDate": "Select Date",
+            "selectDateTime": "Select Date/Time",
+            "generate": "Generate",
+            "invalidUuid": "Invalid UUID format",
+            "autoIncrementHint": "Auto Increment (Excluded on INSERT)",
+            "rowLabel": "Row {index}"
         }
     }
 }

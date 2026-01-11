@@ -4,6 +4,7 @@ import { useMutationBuilderStore } from '@/stores/mutation-builder'
 import MutationWhereTab from './MutationWhereTab.vue'
 
 const mutationStore = useMutationBuilderStore()
+const { t } = useI18n()
 
 const showWarning = computed(() => {
   return mutationStore.selectedTable && !mutationStore.hasWhereConditions
@@ -17,8 +18,8 @@ const showWarning = computed(() => {
         color="error"
         variant="soft"
         icon="i-heroicons-exclamation-triangle"
-        title="警告: WHERE句がありません"
-        description="WHERE句を指定しないと、テーブルの全行が削除されます。本当に全行削除する場合のみ実行してください。"
+        :title="t('mutationBuilder.deletePanel.warning.title')"
+        :description="t('mutationBuilder.deletePanel.warning.desc')"
       />
     </div>
 

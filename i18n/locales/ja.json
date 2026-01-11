@@ -59,12 +59,26 @@
         "envSuffix": "環境",
         "mode": "モード",
         "colors": {
-            "green": "緑",
-            "blue": "青",
+            "red": "レッド",
             "orange": "オレンジ",
-            "red": "赤",
-            "purple": "紫",
-            "brown": "茶色"
+            "amber": "アンバー",
+            "yellow": "イエロー",
+            "lime": "ライム",
+            "green": "グリーン",
+            "emerald": "エメラルド",
+            "teal": "ティール",
+            "cyan": "シアン",
+            "sky": "スカイ",
+            "blue": "ブルー",
+            "indigo": "インディゴ",
+            "violet": "バイオレット",
+            "purple": "パープル",
+            "fuchsia": "フクシア",
+            "pink": "ピンク",
+            "rose": "ローズ"
+        },
+        "units": {
+            "bytes": "バイト"
         },
         "theme": {
             "light": "ライト",
@@ -184,13 +198,14 @@
         },
         "resultPanel": {
             "title": "実行結果",
-            "errorTitle": "実行エラー",
+            "errorTitle": "エラーが発生しました",
+            "rowCount": "{count}行",
+            "executionTime": "({time}ms)",
             "export": "エクスポート",
             "close": "閉じる",
             "executing": "実行中...",
-            "noResult": "クエリを実行してください",
-            "rowCount": "{count}行",
-            "executionTime": "({time}ms)"
+            "noResult": "結果がここに表示されます",
+            "noResultsMessage": "結果が0件です"
         },
         "relationArea": {
             "addJoin": "JOINを追加",
@@ -588,6 +603,103 @@
                 "successTitle": "完了"
             },
             "saveButton": "設定を保存"
+        }
+    },
+    "mutationBuilder": {
+        "pageTitle": "データ変更",
+        "toolbar": {
+            "execute": "実行",
+            "save": "保存",
+            "open": "開く",
+            "history": "履歴",
+            "toQueryBuilder": "データ参照へ",
+            "errors": {
+                "executionFailed": "実行エラー",
+                "dropForbidden": "現在の環境ではDROPクエリの実行は禁止されています",
+                "truncateForbidden": "現在の環境ではTRUNCATEクエリの実行は禁止されています"
+            }
+        },
+        "layout": {
+            "notImplemented": "{type} は実装予定です"
+        },
+        "insertPanel": {
+            "modes": {
+                "form": "フォーム形式",
+                "grid": "表形式"
+            },
+            "gridNotImplemented": "表形式は実装予定です"
+        },
+        "updatePanel": {
+            "tabs": {
+                "set": "SET",
+                "where": "WHERE"
+            }
+        },
+        "deletePanel": {
+            "warning": {
+                "title": "警告: WHERE句がありません",
+                "desc": "WHERE句を指定しないと、テーブルの全行が削除されます。本当に全行削除する場合のみ実行してください。"
+            }
+        },
+        "formInput": {
+            "selectPrompt": "テーブルを選択してください",
+            "noColumns": "カラム情報が見つかりません",
+            "addRow": "行を追加"
+        },
+        "setTab": {
+            "selectPrompt": "テーブルを選択してください",
+            "noColumns": "カラム情報が見つかりません",
+            "addColumn": "カラムを追加",
+            "noSelectionWarning": {
+                "title": "カラムが選択されていません",
+                "desc": "少なくとも1つのカラムを選択してください"
+            }
+        },
+        "whereTab": {
+            "selectPrompt": "テーブルを選択してください",
+            "selectPromptDesc": "WHERE条件を設定するにはテーブルが必要です",
+            "noColumns": "カラム情報が見つかりません",
+            "noColumnsDesc": "テーブル情報を更新して再度お試しください",
+            "title": "WHERE条件",
+            "addCondition": "条件追加",
+            "addGroup": "グループ追加",
+            "emptyDesc": "条件がありません。「条件追加」で追加してください。"
+        },
+        "sqlPreview": {
+            "title": "SQLプレビュー",
+            "smartQuote": "スマート引用符",
+            "copy": "コピー",
+            "executionError": "実行エラー: {message}",
+            "warning": {
+                "allRows": "WHERE句がありません。このクエリは全ての行を{action}します。"
+            },
+            "queryInfo": {
+                "title": "クエリ情報",
+                "affectedRows": "影響行数:",
+                "executionTime": "実行時間:",
+                "lastExecuted": "最終実行:"
+            },
+            "actions": {
+                "delete": "削除",
+                "update": "更新"
+            }
+        },
+        "tableSelector": {
+            "label": "テーブル",
+            "placeholder": "テーブルを選択",
+            "refresh": "更新",
+            "noConnection": "接続が選択されていません"
+        },
+        "conditionGroup": {
+            "groupSuffix": "グループ"
+        },
+        "inputField": {
+            "selectDate": "日付を選択",
+            "selectDateTime": "日時を選択",
+            "generate": "生成",
+            "invalidUuid": "無効なUUID形式です",
+            "autoIncrementHint": "自動採番（INSERT時は除外されます）",
+            "rowLabel": "行 {index}"
         }
     }
 }

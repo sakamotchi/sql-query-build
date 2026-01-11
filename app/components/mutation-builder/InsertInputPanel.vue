@@ -4,12 +4,13 @@ import { useMutationBuilderStore } from '@/stores/mutation-builder'
 import FormInputTab from './FormInputTab.vue'
 
 const store = useMutationBuilderStore()
+const { t } = useI18n()
 const mutationType = computed(() => store.mutationType)
 
-const items = [
-  { key: 'form', label: 'フォーム形式', value: 'form' },
-  { key: 'grid', label: '表形式', value: 'grid' },
-]
+const items = computed(() => [
+  { key: 'form', label: t('mutationBuilder.insertPanel.modes.form'), value: 'form' },
+  { key: 'grid', label: t('mutationBuilder.insertPanel.modes.grid'), value: 'grid' },
+])
 
 const selectedTab = computed({
   get: () => store.insertInputMode,
@@ -33,14 +34,14 @@ const selectedTab = computed({
 
         <div v-else class="h-full flex items-center justify-center">
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            表形式は実装予定です
+            {{ t('mutationBuilder.insertPanel.gridNotImplemented') }}
           </div>
         </div>
       </div>
     </template>
 
     <div v-else class="flex-1 flex items-center justify-center p-6 text-sm text-gray-500 dark:text-gray-400">
-      {{ mutationType }} は実装予定です
+      {{ t('mutationBuilder.layout.notImplemented', { type: mutationType }) }}
     </div>
   </div>
 </template>

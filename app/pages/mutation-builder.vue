@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import MutationBuilderLayout from '@/components/mutation-builder/MutationBuilderLayout.vue'
 
+const { t } = useI18n()
+
+useHead({
+  title: t('mutationBuilder.pageTitle')
+})
+
 definePageMeta({
-  title: 'データ変更',
   layout: false,
 })
 </script>
