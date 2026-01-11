@@ -168,6 +168,7 @@
         }
     },
     "queryBuilder": {
+        "pageTitle": "SQLクエリビルダー",
         "toolbar": {
             "structurePanel": "DB構造パネル",
             "execute": "実行",
