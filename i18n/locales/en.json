@@ -559,6 +559,12 @@
         "joinConditionRow": {
             "tablePlaceholder": "Table",
             "columnPlaceholder": "Column"
+        },
+        "valueInput": {
+            "enterValue": "Enter value",
+            "enterNumber": "Enter number",
+            "selectDate": "Select date",
+            "selectDateTime": "Select date/time"
         }
     },
     "settings": {

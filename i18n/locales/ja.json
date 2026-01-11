@@ -559,6 +559,12 @@
         "joinConditionRow": {
             "tablePlaceholder": "テーブル",
             "columnPlaceholder": "カラム"
+        },
+        "valueInput": {
+            "enterValue": "値を入力",
+            "enterNumber": "数値を入力",
+            "selectDate": "日付を選択",
+            "selectDateTime": "日時を選択"
         }
     },
     "settings": {
