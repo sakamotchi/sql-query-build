@@ -7,6 +7,8 @@ import type { Environment } from '~/types'
 export const useEnvironment = () => {
   const currentEnvironment = useState<Environment>('currentEnvironment', () => 'development')
 
+  const colorMode = useColorMode()
+
   const colors: Record<Environment, { primary: string; bg: string; border: string }> = {
     development: {
       primary: '#4CAF50',
@@ -30,6 +32,29 @@ export const useEnvironment = () => {
     }
   }
 
+  const darkColors: Record<Environment, { primary: string; bg: string; border: string }> = {
+    development: {
+      primary: '#4CAF50',
+      bg: '#1B5E20', // Dark Green
+      border: '#4CAF50'
+    },
+    test: {
+      primary: '#2196F3',
+      bg: '#0D47A1', // Dark Blue
+      border: '#2196F3'
+    },
+    staging: {
+      primary: '#FF9800',
+      bg: '#3E2723', // Dark Brown/Orange
+      border: '#FF9800'
+    },
+    production: {
+      primary: '#F44336',
+      bg: '#B71C1C', // Dark Red
+      border: '#F44336'
+    }
+  }
+
   const labels: Record<Environment, string> = {
     development: '開発',
     test: 'テスト',
@@ -37,7 +62,9 @@ export const useEnvironment = () => {
     production: '本番'
   }
 
-  const getEnvironmentColors = (env: Environment) => colors[env]
+  const getEnvironmentColors = (env: Environment) => {
+    return colorMode.value === 'dark' ? darkColors[env] : colors[env]
+  }
 
   const environmentColors = computed(() => getEnvironmentColors(currentEnvironment.value))
 
