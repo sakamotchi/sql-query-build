@@ -84,11 +84,12 @@ defineExpose({
 
 // JOIN条件をフォーマットして表示
 const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
-  if (conditions.length === 0) return '(条件なし)'
+  if (conditions.length === 0) return t('queryBuilder.joinPanel.conditions.none')
   return conditions
     .map(c => `${c.left.tableAlias}.${c.left.columnName} ${c.operator} ${c.right.tableAlias}.${c.right.columnName}`)
     .join(` ${logic} `)
 }
+const { t } = useI18n()
 </script>
 
 <template>
@@ -96,9 +97,9 @@ const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
     <!-- テーブルが不足している場合 -->
     <div v-if="!hasEnoughTables" class="flex flex-col items-center justify-center h-full p-6 text-center">
       <UIcon name="i-heroicons-link-slash" class="text-5xl text-gray-300 dark:text-gray-600" />
-      <p class="text-gray-500 dark:text-gray-400 mt-4">JOINを設定するには2つ以上のテーブルが必要です</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('queryBuilder.joinPanel.notEnoughTables.title') }}</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        左パネルからテーブルを追加してください
+        {{ t('queryBuilder.joinPanel.notEnoughTables.desc') }}
       </p>
     </div>
 
@@ -113,7 +114,7 @@ const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
             color="primary"
             variant="soft"
             class="flex-1"
-            label="新規JOIN"
+            :label="t('queryBuilder.joinPanel.newJoin')"
             @click="handleAddJoin"
           />
           <UButton
@@ -122,7 +123,7 @@ const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
             color="primary"
             variant="outline"
             class="flex-1"
-            label="スマートJOIN追加"
+            :label="t('queryBuilder.joinPanel.smartJoin')"
             :loading="smartJoinBusy"
             :disabled="smartJoinBusy"
             @click="handleSmartJoin"
@@ -132,9 +133,9 @@ const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
         <!-- 空状態 -->
         <div v-if="store.joins.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
           <UIcon name="i-heroicons-link" class="text-4xl text-gray-300 dark:text-gray-600 mb-3" />
-          <p class="text-sm text-gray-500 dark:text-gray-400">JOINが設定されていません</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('queryBuilder.joinPanel.noJoins.title') }}</p>
           <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            上のボタンからJOINを追加してください
+            {{ t('queryBuilder.joinPanel.noJoins.desc') }}
           </p>
         </div>
 

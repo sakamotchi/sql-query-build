@@ -2,14 +2,16 @@
 const primaryColor = defineModel<string>('primaryColor', { default: '#4CAF50' })
 const backgroundColor = defineModel<string>('backgroundColor', { default: '#F1F8E9' })
 
-const presetColors = [
-  { primary: '#4CAF50', bg: '#F1F8E9', name: '緑' },
-  { primary: '#2196F3', bg: '#E3F2FD', name: '青' },
-  { primary: '#FF9800', bg: '#FFF3E0', name: 'オレンジ' },
-  { primary: '#F44336', bg: '#FFEBEE', name: '赤' },
-  { primary: '#9C27B0', bg: '#F3E5F5', name: '紫' },
-  { primary: '#795548', bg: '#EFEBE9', name: '茶色' }
-]
+const { t } = useI18n()
+
+const presetColors = computed(() => [
+  { primary: '#4CAF50', bg: '#F1F8E9', name: t('common.colors.green') },
+  { primary: '#2196F3', bg: '#E3F2FD', name: t('common.colors.blue') },
+  { primary: '#FF9800', bg: '#FFF3E0', name: t('common.colors.orange') },
+  { primary: '#F44336', bg: '#FFEBEE', name: t('common.colors.red') },
+  { primary: '#9C27B0', bg: '#F3E5F5', name: t('common.colors.purple') },
+  { primary: '#795548', bg: '#EFEBE9', name: t('common.colors.brown') }
+])
 
 const applyPreset = (preset: { primary: string; bg: string }) => {
   primaryColor.value = preset.primary
@@ -26,7 +28,7 @@ const resetToDefault = () => {
   <div class="space-y-4">
     <div>
       <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-        プリセットカラー
+        {{ t('connection.colorPicker.presetLabel') }}
       </label>
       <div class="flex flex-wrap gap-2">
         <button
@@ -46,7 +48,7 @@ const resetToDefault = () => {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <UFormField label="プライマリカラー">
+      <UFormField :label="t('connection.colorPicker.primary')">
         <div class="flex gap-2">
           <input
             v-model="primaryColor"
@@ -61,7 +63,7 @@ const resetToDefault = () => {
         </div>
       </UFormField>
 
-      <UFormField label="背景カラー">
+      <UFormField :label="t('connection.colorPicker.background')">
         <div class="flex gap-2">
           <input
             v-model="backgroundColor"
@@ -79,7 +81,7 @@ const resetToDefault = () => {
 
     <div>
       <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-        プレビュー
+        {{ t('common.preview') }}
       </label>
       <div
         class="p-4 rounded-lg border-4 transition-all"
@@ -89,17 +91,17 @@ const resetToDefault = () => {
         }"
       >
         <p class="font-semibold" :style="{ color: primaryColor }">
-          サンプルテキスト
+          {{ t('common.sampleText') }}
         </p>
         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          この色が環境ヘッダーに適用されます
+          {{ t('connection.colorPicker.previewHint') }}
         </p>
       </div>
     </div>
 
     <div class="flex justify-end">
       <UButton variant="outline" color="neutral" @click="resetToDefault">
-        デフォルトに戻す
+        {{ t('common.resetDefault') }}
       </UButton>
     </div>
   </div>

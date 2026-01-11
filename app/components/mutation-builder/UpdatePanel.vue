@@ -3,10 +3,12 @@ import { ref } from 'vue'
 import SetTab from './SetTab.vue'
 import MutationWhereTab from './MutationWhereTab.vue'
 
-const items = [
-  { key: 'set', label: 'SET', value: 'set' },
-  { key: 'where', label: 'WHERE', value: 'where' },
-]
+const { t } = useI18n()
+
+const items = computed(() => [
+  { key: 'set', label: t('mutationBuilder.updatePanel.tabs.set'), value: 'set' },
+  { key: 'where', label: t('mutationBuilder.updatePanel.tabs.where'), value: 'where' },
+])
 
 const selectedTab = ref('set')
 </script>

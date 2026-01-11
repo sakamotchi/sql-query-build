@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { QueryResultColumn, QueryResultRow, QueryValue } from '@/types/query-result'
 
+const { t } = useI18n()
+
 defineProps<{
   row: QueryResultRow
   columns: QueryResultColumn[]
@@ -20,7 +22,7 @@ function formatValue(value: QueryValue, column: QueryResultColumn | undefined): 
   }
   if (Array.isArray(value)) {
     // バイナリデータ
-    return `[${value.length} bytes]`
+    return `[${value.length} ${t('common.units.bytes')}]`
   }
   // JSON型などの場合
   if (column?.dataType.includes('JSON')) {

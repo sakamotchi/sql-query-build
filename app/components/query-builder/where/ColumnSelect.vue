@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const { t } = useI18n()
+
 interface ColumnOption {
   id: string
   label: string
@@ -17,14 +19,10 @@ const props = defineProps<{
   columns: ColumnOption[]
 }>()
 
-// デバッグ用
-// console.log('ColumnSelect columns:', props.columns)
-
 const emit = defineEmits<{
   (e: 'update:modelValue', value: { tableAlias: string; columnName: string } | null): void
 }>()
 
-// 選択値
 const selected = computed({
   get: () => {
     if (!props.modelValue) return undefined
@@ -49,16 +47,12 @@ const selected = computed({
 
 <template>
   <div class="w-full">
-    <!-- デバッグ用: カラム数表示 -->
-    <!-- <div class="text-[10px] text-gray-400 mb-1">Cols: {{ columns?.length }}</div> -->
-    
     <USelectMenu
       v-model="selected"
       :items="columns"
       by="id"
       :search-attributes="['displayName', 'tableName', 'columnName']"
-      
-      placeholder="カラムを選択"
+      :placeholder="t('queryBuilder.columnSelect.placeholder')"
       searchable
       clearable
       class="w-full"

@@ -1,16 +1,19 @@
 <script setup lang="ts">
-const appInfo = {
+const { t } = useI18n()
+
+const appInfo = computed(() => ({
   name: 'SQL Query Build',
   version: '0.1.0',
-  description: 'データベース接続とSQLクエリ編集を支援するデスクトップアプリ'
-}
+  description: t('settings.about.appInfo.description')
+}))
 
-const stack = [
-  { label: 'フロント', value: 'Vue 3 + Nuxt 4 + TypeScript' },
-  { label: 'UI', value: 'Nuxt UI / Tailwind CSS' },
-  { label: 'デスクトップ', value: 'Tauri 2.x (Rust)' },
-  { label: '状態管理', value: 'Pinia' }
-]
+const stack = computed(() => [
+  { label: t('settings.about.stack.frontend'), value: 'Vue 3 + Nuxt 4 + TypeScript' },
+  { label: 'UI', value: 'Nuxt UI / Tailwind CSS' }, // UI lib names usually don't need translation, but label does
+  { label: t('settings.about.stack.desktop'), value: 'Tauri 2.x (Rust)' },
+  { label: t('settings.about.stack.state'), value: 'Pinia' }
+])
+// Note: "UI" label works for both. 
 </script>
 
 <template>
@@ -18,7 +21,7 @@ const stack = [
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm text-gray-500 dark:text-gray-400">アプリ情報</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('settings.about.appInfo.label') }}</p>
           <h3 class="text-xl font-semibold">{{ appInfo.name }}</h3>
         </div>
         <UBadge color="neutral" variant="solid">v{{ appInfo.version }}</UBadge>
@@ -49,7 +52,7 @@ const stack = [
       </div>
 
       <UAlert color="neutral" variant="soft" icon="i-heroicons-light-bulb">
-        最新の変更点や詳細設計は `docs/` 配下のドキュメントを参照してください。
+        {{ t('settings.about.documentation') }}
       </UAlert>
     </div>
   </UCard>

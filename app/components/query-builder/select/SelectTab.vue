@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useQueryBuilderStore, type AvailableColumn } from '@/stores/query-builder'
 import draggable from 'vuedraggable'
 import SelectColumnDialog from './SelectColumnDialog.vue'
 import type { FunctionCall, SubqueryExpression } from '@/types/expression-node'
 
+const { t } = useI18n()
 const queryBuilderStore = useQueryBuilderStore()
 
 const dialogOpen = ref(false)
@@ -134,18 +135,18 @@ const handleDialogCancel = () => {
   <div class="h-full overflow-hidden">
     <div v-if="!hasTables" class="flex flex-col items-center justify-center h-full p-6 text-center">
       <UIcon name="i-heroicons-table-cells" class="text-5xl text-gray-300 dark:text-gray-600" />
-      <p class="text-gray-500 dark:text-gray-400 mt-4">テーブルを選択してください</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('queryBuilder.selectTab.noTables.title') }}</p>
       <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-        左パネルからテーブルをドラッグ＆ドロップ
+        {{ t('queryBuilder.selectTab.noTables.desc') }}
       </p>
     </div>
 
     <div v-else class="h-full overflow-y-auto p-4">
       <div class="space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">SELECT句の項目</h3>
+          <h3 class="text-lg font-semibold">{{ t('queryBuilder.selectTab.title') }}</h3>
           <UButton icon="i-heroicons-plus" @click="openDialog">
-            項目を追加
+            {{ t('queryBuilder.selectTab.addItem') }}
           </UButton>
         </div>
 
@@ -188,7 +189,7 @@ const handleDialogCancel = () => {
           </draggable>
 
           <div v-if="localItems.length === 0" class="text-center py-8 text-gray-500">
-            「項目を追加」ボタンから SELECT 句の項目を追加してください
+            {{ t('queryBuilder.selectTab.empty') }}
           </div>
         </div>
       </div>

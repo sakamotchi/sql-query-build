@@ -1,14 +1,15 @@
 <script setup lang="ts">
 const searchQuery = defineModel<string>('searchQuery', { default: '' })
 const environmentFilter = defineModel<string | 'all'>('environmentFilter', { default: 'all' })
+const { t } = useI18n()
 
-const environmentOptions = [
-  { label: 'すべての環境', value: 'all' },
-  { label: '開発環境', value: 'development' },
-  { label: 'テスト環境', value: 'test' },
-  { label: 'ステージング環境', value: 'staging' },
-  { label: '本番環境', value: 'production' }
-]
+const environmentOptions = computed(() => [
+  { label: t('launcher.allEnvironments'), value: 'all' },
+  { label: t('common.environment.development'), value: 'development' },
+  { label: t('common.environment.test'), value: 'test' },
+  { label: t('common.environment.staging'), value: 'staging' },
+  { label: t('common.environment.production'), value: 'production' }
+])
 
 const clearSearch = () => {
   searchQuery.value = ''
@@ -30,7 +31,7 @@ const hasActiveFilters = computed(() => searchQuery.value !== '' || environmentF
           v-model="searchQuery"
           icon="i-heroicons-magnifying-glass"
           size="lg"
-          placeholder="接続名、ホスト、データベース名で検索..."
+          :placeholder="t('launcher.searchPlaceholder')"
         >
           <template v-if="searchQuery" #trailing>
             <UButton
@@ -55,10 +56,10 @@ const hasActiveFilters = computed(() => searchQuery.value !== '' || environmentF
     <div v-if="hasActiveFilters" class="flex items-center justify-between">
       <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <UIcon name="i-heroicons-funnel" />
-        <span>フィルター適用中</span>
+        <span>{{ t('launcher.filterApplied') }}</span>
       </div>
       <UButton variant="ghost" color="neutral" size="sm" @click="resetFilters">
-        リセット
+        {{ t('common.reset') }}
       </UButton>
     </div>
   </div>

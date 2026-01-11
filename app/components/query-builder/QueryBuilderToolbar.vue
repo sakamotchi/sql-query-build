@@ -25,6 +25,7 @@ const { toggleColorMode, isDark } = useTheme()
 const safetyStore = useSafetyStore()
 const { getEnvironmentColors } = useEnvironment()
 const toast = useToast()
+const { t } = useI18n()
 
 // Tauriから取得した環境（初期化時に設定）
 const fetchedEnvironment = ref<Environment | null>(null)
@@ -94,8 +95,8 @@ const executeQuery = () => {
     // 禁止操作チェック
     if (config.disableDrop && analysis?.queryType === 'drop') {
         toast.add({
-            title: '実行エラー',
-            description: '現在の環境ではDROPクエリの実行は禁止されています',
+            title: t('queryBuilder.toolbar.errors.executionFailed'),
+            description: t('queryBuilder.toolbar.errors.dropForbidden'),
             color: 'error',
             icon: 'i-heroicons-exclamation-circle'
         })
@@ -103,8 +104,8 @@ const executeQuery = () => {
     }
     if (config.disableTruncate && analysis?.queryType === 'truncate') {
         toast.add({
-            title: '実行エラー',
-            description: '現在の環境ではTRUNCATEクエリの実行は禁止されています',
+            title: t('queryBuilder.toolbar.errors.executionFailed'),
+            description: t('queryBuilder.toolbar.errors.truncateForbidden'),
             color: 'error',
             icon: 'i-heroicons-exclamation-circle'
         })
@@ -186,7 +187,7 @@ const openHistory = () => {
       size="sm"
       color="neutral"
       variant="ghost"
-      title="DB構造パネル"
+      :title="t('queryBuilder.toolbar.structurePanel')"
       @click="emit('toggle-left-panel')"
     />
 
@@ -203,7 +204,7 @@ const openHistory = () => {
       <template #leading>
         <UIcon name="i-heroicons-play" />
       </template>
-      実行
+      {{ t('queryBuilder.toolbar.execute') }}
     </UButton>
 
     <UButton
@@ -215,7 +216,7 @@ const openHistory = () => {
       <template #leading>
         <UIcon name="i-heroicons-document-arrow-down" />
       </template>
-      保存
+      {{ t('queryBuilder.toolbar.save') }}
     </UButton>
 
     <UButton
@@ -227,7 +228,7 @@ const openHistory = () => {
       <template #leading>
         <UIcon name="i-heroicons-folder-open" />
       </template>
-      開く
+      {{ t('queryBuilder.toolbar.open') }}
     </UButton>
 
     <UButton
@@ -239,7 +240,7 @@ const openHistory = () => {
       <template #leading>
         <UIcon name="i-heroicons-document-plus" />
       </template>
-      新規
+      {{ t('queryBuilder.toolbar.new') }}
     </UButton>
 
     <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
@@ -250,7 +251,7 @@ const openHistory = () => {
       size="sm"
       color="neutral"
       variant="ghost"
-      title="クエリ履歴"
+      :title="t('queryBuilder.toolbar.history')"
       @click="openHistory"
     />
 
@@ -262,7 +263,7 @@ const openHistory = () => {
       size="sm"
       color="neutral"
       variant="ghost"
-      title="結果パネル"
+      :title="t('queryBuilder.toolbar.resultPanel')"
       @click="emit('toggle-result-panel')"
     />
 
@@ -271,7 +272,7 @@ const openHistory = () => {
       size="sm"
       color="neutral"
       variant="ghost"
-      title="SQLプレビューパネル"
+      :title="t('queryBuilder.toolbar.sqlPanel')"
       @click="emit('toggle-right-panel')"
     />
 
@@ -283,10 +284,10 @@ const openHistory = () => {
       size="sm"
       color="neutral"
       variant="ghost"
-      title="データ変更へ"
+      :title="t('queryBuilder.toolbar.toMutation')"
       to="/mutation-builder"
     >
-      データ変更へ
+      {{ t('queryBuilder.toolbar.toMutation') }}
     </UButton>
 
     <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
@@ -297,7 +298,7 @@ const openHistory = () => {
       size="sm"
       color="neutral"
       variant="ghost"
-      :title="isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'"
+      :title="isDark ? t('common.theme.light') : t('common.theme.dark')"
       @click="toggleColorMode"
     />
 

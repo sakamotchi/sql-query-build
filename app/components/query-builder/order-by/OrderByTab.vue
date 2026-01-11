@@ -4,6 +4,7 @@ import { useQueryBuilderStore } from '@/stores/query-builder'
 import OrderByRow from './OrderByRow.vue'
 import draggable from 'vuedraggable'
 
+const { t } = useI18n()
 const queryBuilderStore = useQueryBuilderStore()
 
 const isEmpty = computed(() => queryBuilderStore.selectedTables.length === 0)
@@ -48,14 +49,14 @@ const removeOrderByColumn = (id: string) => {
   <div class="h-full flex flex-col">
     <div v-if="isEmpty" class="flex flex-col items-center justify-center h-full text-gray-500">
        <UIcon name="i-heroicons-table-cells" class="text-4xl mb-2" />
-       <p>テーブルを選択してください</p>
+       <p>{{ t('queryBuilder.orderByTab.noTables.title') }}</p>
     </div>
 
     <template v-else>
       <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
-        <span class="text-sm font-medium">ORDER BY条件</span>
+        <span class="text-sm font-medium">{{ t('queryBuilder.orderByTab.title') }}</span>
         <UButton
-          label="カラム追加"
+          :label="t('queryBuilder.orderByTab.addColumn')"
           icon="i-heroicons-plus"
           size="sm"
           variant="soft"
@@ -86,7 +87,7 @@ const removeOrderByColumn = (id: string) => {
         </draggable>
 
         <div v-if="orderByColumns.length === 0" class="text-center text-gray-400 mt-8 text-sm">
-           ソート順を適用するカラムを追加してください
+           {{ t('queryBuilder.orderByTab.empty') }}
         </div>
       </div>
     </template>

@@ -36,6 +36,7 @@ const activeTableAlias = ref<string | null>(null)
 const emit = defineEmits<{
   (e: 'open-join-dialog', payload?: { join?: JoinClause }): void
 }>()
+const { t } = useI18n()
 
 const clampZoom = (value: number) => Math.min(200, Math.max(50, value))
 
@@ -314,7 +315,7 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
     >
       <UButton
         icon="i-heroicons-plus"
-        label="JOIN追加"
+        :label="t('queryBuilder.relationArea.addJoin')"
         size="sm"
         color="primary"
         @click="emit('open-join-dialog')"
@@ -354,7 +355,7 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
           v-if="selectedTables.length >= 2"
           class="absolute inset-0 pointer-events-none z-10"
           role="img"
-          aria-label="テーブル関係図"
+          :aria-label="t('queryBuilder.relationArea.ariaLabel')"
           :viewBox="svgViewBox"
         >
           <g :transform="svgTransform">
@@ -399,7 +400,7 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
           class="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 rounded shadow-sm opacity-70 pointer-events-none"
         >
           <UIcon name="i-heroicons-plus" class="w-3 h-3" />
-          テーブルをドロップして追加
+          {{ t('queryBuilder.relationArea.hint') }}
         </div>
       </div>
     </div>

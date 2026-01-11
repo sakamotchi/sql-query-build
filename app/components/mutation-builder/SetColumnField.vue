@@ -166,6 +166,8 @@ const generateUuid = () => {
   }
 }
 
+const { t } = useI18n()
+
 const isValidUuid = computed(() => {
   if (!props.value || props.isNull) return true
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -198,7 +200,7 @@ const isValidUuid = computed(() => {
               icon="i-heroicons-calendar-days-20-solid"
               color="neutral"
               variant="outline"
-              :label="dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : '日付を選択'"
+              :label="dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : t('mutationBuilder.inputField.selectDate')"
               class="w-full justify-start font-normal text-left"
               :class="{ 'text-gray-500 dark:text-gray-400': !dateValue }"
               :disabled="isDisabled"
@@ -221,7 +223,7 @@ const isValidUuid = computed(() => {
               icon="i-heroicons-calendar-days-20-solid"
               color="neutral"
               variant="outline"
-              :label="timestampDate ? `${df.format(timestampDate.toDate(getLocalTimeZone()))} ${timestampTime?.toString() || ''}` : '日時を選択'"
+              :label="timestampDate ? `${df.format(timestampDate.toDate(getLocalTimeZone()))} ${timestampTime?.toString() || ''}` : t('mutationBuilder.inputField.selectDateTime')"
               class="w-full justify-start font-normal text-left"
               :class="{ 'text-gray-500 dark:text-gray-400': !timestampDate }"
               :disabled="isDisabled"
@@ -262,11 +264,11 @@ const isValidUuid = computed(() => {
             :disabled="isDisabled"
             @click="generateUuid"
           >
-            生成
+            {{ t('mutationBuilder.inputField.generate') }}
           </UButton>
         </div>
         <p v-if="!isValidUuid" class="text-xs text-red-500 dark:text-red-400 mt-1">
-          無効なUUID形式です
+          {{ t('mutationBuilder.inputField.invalidUuid') }}
         </p>
       </template>
 

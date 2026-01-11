@@ -4,38 +4,39 @@ import type { Environment } from '~/types'
 const selectedEnvironment = defineModel<Environment>({ required: true })
 
 const { getEnvironmentColors } = useEnvironment()
+const { t } = useI18n()
 
-const environmentOptions: Array<{
+const environmentOptions = computed<Array<{
   value: Environment
   label: string
   icon: string
   description: string
-}> = [
+}>>(() => [
   {
     value: 'development',
-    label: '開発環境',
+    label: t('common.environment.development'),
     icon: 'i-heroicons-code-bracket',
-    description: '開発・テスト用の環境'
+    description: t('common.environment.description.development')
   },
   {
     value: 'test',
-    label: 'テスト環境',
+    label: t('common.environment.test'),
     icon: 'i-heroicons-beaker',
-    description: '品質保証・テスト用の環境'
+    description: t('common.environment.description.test')
   },
   {
     value: 'staging',
-    label: 'ステージング環境',
+    label: t('common.environment.staging'),
     icon: 'i-heroicons-cloud',
-    description: '本番前の検証用環境'
+    description: t('common.environment.description.staging')
   },
   {
     value: 'production',
-    label: '本番環境',
+    label: t('common.environment.production'),
     icon: 'i-heroicons-server',
-    description: '実運用環境（要注意）'
+    description: t('common.environment.description.production')
   }
-]
+])
 
 const selectEnvironment = (env: Environment) => {
   selectedEnvironment.value = env

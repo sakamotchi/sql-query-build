@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Connection } from '~/types'
 
+const { t } = useI18n()
+
 withDefaults(defineProps<{
   connections: Connection[]
   loading?: boolean
@@ -25,13 +27,13 @@ const handleMutation = (connection: Connection) => emit('mutation', connection)
   <div class="space-y-4">
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-heroicons-arrow-path" class="animate-spin text-4xl text-gray-400" />
-      <p class="mt-4 text-gray-600 dark:text-gray-300">読み込み中...</p>
+      <p class="mt-4 text-gray-600 dark:text-gray-300">{{ t('common.loading') }}</p>
     </div>
 
     <div v-else-if="connections.length === 0" class="text-center py-12">
       <UIcon name="i-heroicons-inbox" class="text-6xl text-gray-400" />
       <p class="mt-4 text-gray-600 dark:text-gray-300">
-        接続が見つかりませんでした
+        {{ t('launcher.noConnections') }}
       </p>
     </div>
 
@@ -53,16 +55,16 @@ const handleMutation = (connection: Connection) => emit('mutation', connection)
           </div>
           <div class="grid grid-cols-2 gap-2">
             <UButton color="primary" size="sm" @click="handleConnect(connection)">
-              クエリビルダー
+              {{ t('connection.actions.browseData') }}
             </UButton>
             <UButton color="primary" variant="outline" size="sm" @click="handleMutation(connection)">
-              データ変更
+              {{ t('connection.actions.mutation') }}
             </UButton>
             <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit(connection)">
-              編集
+              {{ t('common.edit') }}
             </UButton>
             <UButton color="error" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete(connection)">
-              削除
+              {{ t('common.delete') }}
             </UButton>
           </div>
         </div>

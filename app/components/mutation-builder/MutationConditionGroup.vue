@@ -23,6 +23,7 @@ const props = defineProps<{
 }>()
 
 const mutationStore = useMutationBuilderStore()
+const { t } = useI18n()
 
 const handleRemove = (id: string) => {
   if (props.groupId) {
@@ -69,7 +70,7 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
     }"
   >
     <div v-if="!isRoot" class="flex items-center justify-between mb-2">
-      <span class="text-xs font-bold text-gray-500 uppercase">{{ logic }} グループ</span>
+      <span class="text-xs font-bold text-gray-500 uppercase">{{ logic }} {{ t('mutationBuilder.conditionGroup.groupSuffix') }}</span>
       <UButton
         icon="i-heroicons-x-mark"
         color="error"

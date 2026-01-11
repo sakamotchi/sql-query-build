@@ -17,6 +17,8 @@ const databaseStructureStore = useDatabaseStructureStore()
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 
+const { t } = useI18n()
+
 const connectionId = computed(() =>
   connectionStore.activeConnection?.id || windowStore.currentConnectionId
 )
@@ -228,12 +230,12 @@ watch(externalQueryModelChange, () => {
   <div class="space-y-4">
     <div v-if="!mutationStore.selectedTable" class="text-center text-gray-500 dark:text-gray-400 py-12">
       <UIcon name="i-heroicons-table-cells" class="w-12 h-12 mx-auto mb-3 opacity-50" />
-      <p class="text-sm">テーブルを選択してください</p>
+      <p class="text-sm">{{ t('mutationBuilder.formInput.selectPrompt') }}</p>
     </div>
 
     <div v-else-if="tableColumns.length === 0" class="text-center text-gray-500 dark:text-gray-400 py-12">
       <UIcon name="i-heroicons-circle-stack" class="w-12 h-12 mx-auto mb-3 opacity-50" />
-      <p class="text-sm">カラム情報が見つかりません</p>
+      <p class="text-sm">{{ t('mutationBuilder.formInput.noColumns') }}</p>
     </div>
 
     <div v-else class="space-y-4">
@@ -253,7 +255,7 @@ watch(externalQueryModelChange, () => {
         variant="soft"
         @click="addRow"
       >
-        行を追加
+        {{ t('mutationBuilder.formInput.addRow') }}
       </UButton>
     </div>
   </div>

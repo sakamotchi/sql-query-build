@@ -5,6 +5,27 @@ import GeneralSettings from '~/components/settings/GeneralSettings.vue'
 import type { AppSettings } from '~/types'
 import { nuxtUiStubs } from '../../utils/nuxt-ui-stubs'
 
+const locale = ref('ja')
+const setLocale = vi.fn(async (newLocale: string) => {
+  locale.value = newLocale
+})
+const t = (key: string) => {
+  const messages: Record<string, string> = {
+    'settings.general.title': '一般設定',
+    'settings.general.saveButton': '設定を保存',
+    'settings.general.saving': '保存中'
+  }
+  return messages[key] ?? key
+}
+
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t,
+    locale,
+    setLocale
+  })
+}))
+
 const updateSettings = vi.fn()
 const settings = ref<AppSettings>({
   theme: 'auto',
@@ -84,8 +105,6 @@ describe('GeneralSettings', () => {
     expect(updateSettings).toHaveBeenCalledWith({
       theme: 'auto',
       language: 'ja',
-      autoSave: true,
-      windowRestore: true,
     })
   })
 })

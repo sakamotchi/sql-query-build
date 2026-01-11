@@ -2,7 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { CalendarDate, Time, DateFormatter, getLocalTimeZone } from '@internationalized/date'
 
-const df = new DateFormatter('ja-JP', { dateStyle: 'short' })
+const { t, locale } = useI18n()
+
+const df = computed(() => new DateFormatter(locale.value === 'ja' ? 'ja-JP' : 'en-US', { dateStyle: 'short' }))
 
 const props = defineProps<{
   modelValue: string
@@ -39,9 +41,9 @@ const inputType = computed(() => {
 
 // プレースホルダー
 const placeholder = computed(() => {
-  if (inputType.value === 'number') return '数値を入力'
-  if (inputType.value === 'date') return '日付を選択'
-  return '値を入力'
+  if (inputType.value === 'number') return t('queryBuilder.valueInput.enterNumber')
+  if (inputType.value === 'date') return t('queryBuilder.valueInput.selectDate')
+  return t('queryBuilder.valueInput.enterValue')
 })
 
 // --- Date Type Handling ---
@@ -154,7 +156,7 @@ const textValue = computed({
             icon="i-heroicons-calendar-days-20-solid"
             color="neutral"
             variant="outline"
-            :label="dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : '日付を選択'"
+            :label="dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : t('queryBuilder.valueInput.selectDate')"
             class="w-full justify-start font-normal text-left"
             :class="{ 'text-gray-500 dark:text-gray-400': !dateValue }"
           />
@@ -176,7 +178,7 @@ const textValue = computed({
             icon="i-heroicons-calendar-days-20-solid"
             color="neutral"
             variant="outline"
-            :label="timestampDate ? `${df.format(timestampDate.toDate(getLocalTimeZone()))} ${timestampTime?.toString() || ''}` : '日時を選択'"
+            :label="timestampDate ? `${df.format(timestampDate.toDate(getLocalTimeZone()))} ${timestampTime?.toString() || ''}` : t('queryBuilder.valueInput.selectDateTime')"
             class="w-full justify-start font-normal text-left"
             :class="{ 'text-gray-500 dark:text-gray-400': !timestampDate }"
           />

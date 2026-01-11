@@ -18,6 +18,8 @@ const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 const mutationStore = useMutationBuilderStore()
 
+const { t } = useI18n()
+
 const connectionId = computed(() =>
   connectionStore.activeConnection?.id || windowStore.currentConnectionId
 )
@@ -99,14 +101,14 @@ onMounted(() => {
 <template>
   <div class="px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
     <div class="flex items-center gap-3">
-      <span class="text-sm font-medium text-gray-700 dark:text-gray-200">テーブル</span>
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ t('mutationBuilder.tableSelector.label') }}</span>
       <USelectMenu
         v-model="selectedOption"
         :items="tableOptions"
         by="id"
         
         :search-attributes="['label', 'schema', 'table']"
-        placeholder="テーブルを選択"
+        :placeholder="t('mutationBuilder.tableSelector.placeholder')"
         searchable
         clearable
         :loading="isLoading"
@@ -118,14 +120,14 @@ onMounted(() => {
         size="xs"
         color="neutral"
         variant="ghost"
-        title="更新"
+        :title="t('mutationBuilder.tableSelector.refresh')"
         :disabled="!connectionId"
         @click="refreshStructure"
       />
     </div>
 
     <p v-if="!connectionId" class="text-xs text-gray-500 mt-2">
-      接続が選択されていません
+      {{ t('mutationBuilder.tableSelector.noConnection') }}
     </p>
     <p v-else-if="error" class="text-xs text-red-600 mt-2">
       {{ error }}

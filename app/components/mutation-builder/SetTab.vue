@@ -19,6 +19,8 @@ const databaseStructureStore = useDatabaseStructureStore()
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 
+const { t } = useI18n()
+
 const connectionId = computed(() =>
   connectionStore.activeConnection?.id || windowStore.currentConnectionId
 )
@@ -211,12 +213,12 @@ watch(externalSetClauseSignature, () => {
   <div class="space-y-4">
     <div v-if="!mutationStore.selectedTable" class="text-center text-gray-500 dark:text-gray-400 py-12">
       <UIcon name="i-heroicons-table-cells" class="w-12 h-12 mx-auto mb-3 opacity-50" />
-      <p class="text-sm">テーブルを選択してください</p>
+      <p class="text-sm">{{ t('mutationBuilder.setTab.selectPrompt') }}</p>
     </div>
 
     <div v-else-if="tableColumns.length === 0" class="text-center text-gray-500 dark:text-gray-400 py-12">
       <UIcon name="i-heroicons-circle-stack" class="w-12 h-12 mx-auto mb-3 opacity-50" />
-      <p class="text-sm">カラム情報が見つかりません</p>
+      <p class="text-sm">{{ t('mutationBuilder.setTab.noColumns') }}</p>
     </div>
 
     <div v-else class="space-y-4">
@@ -239,7 +241,7 @@ watch(externalSetClauseSignature, () => {
         :items="columnsForAdd"
         label-key="name"
         :filter-fields="['name', 'displayType']"
-        placeholder="カラムを追加"
+        :placeholder="t('mutationBuilder.setTab.addColumn')"
         search-input
         class="max-w-xs"
         @update:model-value="addColumn"
@@ -249,8 +251,8 @@ watch(externalSetClauseSignature, () => {
         v-if="setColumns.length === 0"
         color="warning"
         icon="i-heroicons-exclamation-triangle"
-        title="カラムが選択されていません"
-        description="少なくとも1つのカラムを選択してください"
+        :title="t('mutationBuilder.setTab.noSelectionWarning.title')"
+        :description="t('mutationBuilder.setTab.noSelectionWarning.desc')"
       />
     </div>
   </div>

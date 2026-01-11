@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
 const emit = defineEmits<{
   newConnection: []
   refresh: []
@@ -21,7 +23,7 @@ const handleOpenSettings = () => emit('openSettings')
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
       <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
-        接続一覧
+        {{ t('launcher.title') }}
       </h2>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
         <slot name="stats" />
@@ -35,7 +37,7 @@ const handleOpenSettings = () => emit('openSettings')
         color="neutral"
         @click="handleOpenSettings"
       >
-        設定
+        {{ t('common.settings') }}
       </UButton>
 
       <UButton
@@ -44,7 +46,7 @@ const handleOpenSettings = () => emit('openSettings')
         color="neutral"
         @click="handleToggleView"
       >
-        {{ viewMode === 'grid' ? 'リスト' : 'グリッド' }}
+        {{ viewMode === 'grid' ? t('common.list') : t('common.grid') }}
       </UButton>
 
       <UButton
@@ -53,7 +55,7 @@ const handleOpenSettings = () => emit('openSettings')
         color="neutral"
         @click="handleRefresh"
       >
-        更新
+        {{ t('common.refresh') }}
       </UButton>
 
       <UButton
@@ -62,7 +64,7 @@ const handleOpenSettings = () => emit('openSettings')
         size="lg"
         @click="handleNewConnection"
       >
-        新規接続
+        {{ t('launcher.newConnection') }}
       </UButton>
     </div>
   </div>

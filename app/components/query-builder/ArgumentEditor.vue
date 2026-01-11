@@ -4,6 +4,8 @@ import type { ExpressionNode, FunctionCall } from '~/types/expression-node'
 import { useQueryBuilderStore } from '~/stores/query-builder'
 import { generatePreviewSql } from '~/utils/expression-preview'
 
+const { t } = useI18n()
+
 const FunctionBuilder = defineAsyncComponent(() => import('./FunctionBuilder.vue'))
 
 const props = withDefaults(
@@ -33,11 +35,11 @@ const nestedOpen = ref(false)
 
 const argTypes = computed(() => {
   const base = [
-    { value: 'column', label: 'カラム' },
-    { value: 'literal', label: 'リテラル値' },
+    { value: 'column', label: t('queryBuilder.argumentEditor.types.column') },
+    { value: 'literal', label: t('queryBuilder.argumentEditor.types.literal') },
   ]
   if (props.allowFunction) {
-    base.push({ value: 'function', label: '関数' })
+    base.push({ value: 'function', label: t('queryBuilder.argumentEditor.types.function') })
   }
   return base
 })
@@ -147,7 +149,7 @@ function handleNestedCancel() {
       :items="columnItems"
       value-key="value"
       searchable
-      placeholder="カラムを選択..."
+      :placeholder="t('queryBuilder.argumentEditor.placeholders.selectColumn')"
       class="flex-1"
     />
 
@@ -155,8 +157,8 @@ function handleNestedCancel() {
       <USelect
         v-model="literalType"
         :items="[
-          { value: 'string', label: '文字列' },
-          { value: 'number', label: '数値' }
+          { value: 'string', label: t('queryBuilder.argumentEditor.labels.string') },
+          { value: 'number', label: t('queryBuilder.argumentEditor.labels.number') }
         ]"
         value-key="value"
         class="w-24"
@@ -164,19 +166,19 @@ function handleNestedCancel() {
       <UInput
         v-model="literalValue"
         :type="literalType === 'number' ? 'number' : 'text'"
-        placeholder="値を入力..."
+        :placeholder="t('queryBuilder.argumentEditor.placeholders.inputVal')"
         class="flex-1"
       />
     </div>
 
     <div v-else-if="argType === 'function'" class="flex gap-2 flex-1">
       <UButton variant="outline" size="sm" class="flex-1" @click="openNestedBuilder">
-        {{ functionPreview || '関数を選択...' }}
+        {{ functionPreview || t('queryBuilder.argumentEditor.placeholders.selectFunction') }}
       </UButton>
     </div>
   </div>
 
-  <UModal v-model:open="nestedOpen" title="ネスト関数を追加" description="引数用の関数を構築します。">
+  <UModal v-model:open="nestedOpen" :title="t('queryBuilder.argumentEditor.nested.title')" :description="t('queryBuilder.argumentEditor.nested.desc')">
     <template #body>
       <FunctionBuilder
         :model-value="props.modelValue.type === 'function' ? props.modelValue : null"

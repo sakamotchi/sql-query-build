@@ -142,16 +142,6 @@ npm run typecheck
 - **デスクトップ**: Tauri 2.x (Rust)
 - **ビルド**: Vite 6
 
-## コントリビューション
-
-コントリビューションを歓迎します！お気軽にPull Requestを送ってください。
-
-1. リポジトリをフォーク
-2. フィーチャーブランチを作成（`git checkout -b feature/amazing-feature`）
-3. 変更をコミット（`git commit -m 'Add some amazing feature'`）
-4. ブランチをプッシュ（`git push origin feature/amazing-feature`）
-5. Pull Requestを作成
-
 ## ライセンス
 
 このプロジェクトは[MITライセンス](LICENSE)の下で公開されています。

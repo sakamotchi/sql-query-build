@@ -21,8 +21,29 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
     '@nuxt/icon',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@nuxtjs/i18n'
   ],
+
+  // i18n設定
+  i18n: {
+    strategy: 'no_prefix', // URLにロケールを含めない（Tauriアプリ向け）
+    defaultLocale: 'ja',
+    detectBrowserLanguage: false, // ストア設定を優先するためブラウザ判定はオフ
+    langDir: '../i18n/locales', // ロケールファイルのディレクトリ (srcDirがapp/なので親のi18n/localesを参照)
+    locales: [
+      {
+        code: 'ja',
+        file: 'ja.json',
+        name: '日本語'
+      },
+      {
+        code: 'en',
+        file: 'en.json',
+        name: 'English'
+      }
+    ]
+  },
 
   // CSS設定
   css: ['~/assets/css/main.css'],

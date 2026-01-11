@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Connection } from '~/types'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   connection: Connection
 }>()
@@ -31,10 +33,10 @@ const handleDelete = () => emit('delete', props.connection)
 
 <template>
   <UCard class="relative hover:shadow-lg transition-shadow">
-    <EnvironmentIndicator 
-      :environment="connection.environment" 
+    <EnvironmentIndicator
+      :environment="connection.environment"
       :custom-color="connection.customColor"
-      position="top" 
+      position="top"
     />
 
     <div class="space-y-4">
@@ -48,10 +50,10 @@ const handleDelete = () => emit('delete', props.connection)
             </p>
           </div>
         </div>
-        <EnvironmentBadge 
-          :environment="connection.environment" 
+        <EnvironmentBadge
+          :environment="connection.environment"
           :custom-color="connection.customColor"
-          size="sm" 
+          size="sm"
         />
       </div>
 
@@ -78,16 +80,16 @@ const handleDelete = () => emit('delete', props.connection)
 
       <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
         <UButton color="primary" size="sm" @click="handleConnect">
-          データ参照
+          {{ t('connection.actions.browseData') }}
         </UButton>
         <UButton color="primary" variant="outline" size="sm" @click="handleMutation">
-          データ変更
+          {{ t('connection.actions.mutation') }}
         </UButton>
         <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit">
-          編集
+          {{ t('common.edit') }}
         </UButton>
         <UButton color="error" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete">
-          削除
+          {{ t('common.delete') }}
         </UButton>
       </div>
     </div>

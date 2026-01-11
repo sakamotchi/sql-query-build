@@ -14,6 +14,9 @@ const {
   openChangeDialog
 } = useProviderChangeDialog()
 
+const { t } = useI18n()
+const toast = useToast()
+
 // デバッグ: 設定が変更されたらログ出力（immediate は外す）
 watch(() => settings.value.provider, (newProvider, oldProvider) => {
   console.log('[SecuritySettings] Provider changed:', { from: oldProvider, to: newProvider })
@@ -23,28 +26,29 @@ const showMasterPasswordDialog = ref(false)
 const masterPasswordMode = ref<'setup' | 'change'>('setup')
 const showComparison = ref(false)
 const showLevelDetails = ref(false)
-const providerOptions: { label: string; value: SecurityProvider; description: string; recommended?: boolean }[] = [
+
+const providerOptions = computed<{ label: string; value: SecurityProvider; description: string; recommended?: boolean }[]>(() => [
   {
-    label: 'Simple (推奨)',
+    label: t('settings.security.provider.options.simple.label'),
     value: 'simple',
-    description: '固定キーで暗号化。パスワード入力不要。',
+    description: t('settings.security.provider.options.simple.description'),
     recommended: true
   },
   {
-    label: 'マスターパスワード',
+    label: t('settings.security.provider.options.masterPassword.label'),
     value: 'master-password',
-    description: 'ユーザー設定のパスワードで暗号化'
+    description: t('settings.security.provider.options.masterPassword.description')
   }
-]
+])
 
-const levelOptions: { label: string; value: SecurityLevel; hint: string }[] = [
-  { label: '低', value: 'low', hint: '基本的な暗号化' },
-  { label: '中', value: 'medium', hint: '推奨設定' },
-  { label: '高', value: 'high', hint: '最も厳格な設定' }
-]
+const levelOptions = computed<{ label: string; value: SecurityLevel; hint: string }[]>(() => [
+  { label: t('settings.security.level.options.low.label'), value: 'low', hint: t('settings.security.level.options.low.hint') },
+  { label: t('settings.security.level.options.medium.label'), value: 'medium', hint: t('settings.security.level.options.medium.hint') },
+  { label: t('settings.security.level.options.high.label'), value: 'high', hint: t('settings.security.level.options.high.hint') }
+])
 
 const saving = ref(false)
-const message = ref<string | null>(null)
+// message ref no longer needed for success
 
 const updateProvider = (provider: SecurityProvider) => {
   console.log('[SecuritySettings] updateProvider called', {
@@ -52,7 +56,6 @@ const updateProvider = (provider: SecurityProvider) => {
     currentProvider: settings.value.provider,
     willSkip: provider === settings.value.provider
   })
-  message.value = null
   if (provider === settings.value.provider) {
     console.log('[SecuritySettings] Skipping - same provider selected')
     return
@@ -64,12 +67,19 @@ const updateProvider = (provider: SecurityProvider) => {
 
 const updateLevel = async (level: SecurityLevel) => {
   saving.value = true
-  message.value = null
   try {
     await securityStore.setLevel(level)
-    message.value = 'セキュリティレベルを更新しました'
+    toast.add({
+      title: t('settings.security.messages.updated'),
+      icon: 'i-heroicons-check-circle',
+      color: 'primary'
+    })
   } catch (e) {
-    message.value = 'セキュリティレベルの更新に失敗しました'
+    toast.add({
+      title: t('settings.security.messages.updateFailed'),
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'error'
+    })
   } finally {
     saving.value = false
   }
@@ -81,17 +91,24 @@ const openMasterPasswordDialog = () => {
 }
 
 const resetSecurity = async () => {
-  if (!confirm('セキュリティ設定をリセットしますか？\n\n警告: この操作により、すべての接続情報が失われます。')) {
+  if (!confirm(t('settings.security.messages.resetConfirm'))) {
     return
   }
 
   saving.value = true
-  message.value = null
   try {
     await securityStore.resetSecurityConfig()
-    message.value = 'セキュリティ設定をリセットしました'
+    toast.add({
+      title: t('settings.security.messages.resetSuccess'),
+      icon: 'i-heroicons-check-circle',
+      color: 'primary'
+    })
   } catch (e) {
-    message.value = 'リセットに失敗しました'
+    toast.add({
+      title: t('settings.security.messages.resetFailed'),
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'error'
+    })
   } finally {
     saving.value = false
   }
@@ -157,12 +174,12 @@ const resetSecurity = async () => {
         </UFormField>
 
         <UAlert
-          v-if="error || message"
-          :color="error ? 'error' : 'success'"
+          v-if="error"
+          color="error"
           variant="soft"
-          :title="error ? '設定の読み込み/保存でエラーが発生しました' : '完了'"
+          :title="t('settings.security.messages.errorTitle')"
         >
-          {{ error || message }}
+          {{ error }}
         </UAlert>
       </div>
     </UCard>

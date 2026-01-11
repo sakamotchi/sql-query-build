@@ -1,0 +1,822 @@
+{
+    "launcher": {
+        "title": "Connections",
+        "newConnection": "New Connection",
+        "searchPlaceholder": "Search by name, host, or database...",
+        "noConnections": "No connections found",
+        "noConnectionsDesc": "Add a new connection or change search filters.",
+        "filterApplied": "Filter applied",
+        "allEnvironments": "All Environments",
+        "stats": "{count} connections",
+        "statsDetail": "Total {total} • Dev: {dev} • Test: {test} • Staging: {staging} • Prod: {prod}",
+        "addNewConnection": "Add New Connection",
+        "toasts": {
+            "focus": "Focused existing window",
+            "focusDesc": "Window for {name} is already open",
+            "open": "Query Builder launched",
+            "openDesc": "Connecting to {name}",
+            "openMutation": "Mutation Builder launched",
+            "error": "Failed to launch window",
+            "unknownError": "An unknown error occurred"
+        }
+    },
+    "common": {
+        "ok": "OK",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "close": "Close",
+        "error": "Error",
+        "warning": "Warning",
+        "success": "Success",
+        "info": "Info",
+        "loading": "Loading...",
+        "edit": "Edit",
+        "update": "Update",
+        "create": "Create",
+        "add": "Add",
+        "back": "Back",
+        "next": "Next",
+        "confirm": "Confirm",
+        "settings": "Settings",
+        "refresh": "Refresh",
+        "list": "List",
+        "grid": "Grid",
+        "reset": "Reset",
+        "actions": {
+            "cancel": "Cancel",
+            "add": "Add",
+            "save": "Save",
+            "export": "Export",
+            "delete": "Delete"
+        },
+        "labels": {
+            "hint": "Hint"
+        },
+        "preview": "Preview",
+        "sampleText": "Sample Text",
+        "resetDefault": "Reset to Default",
+        "envSuffix": "Environment",
+        "mode": "Mode",
+        "colors": {
+            "red": "Red",
+            "orange": "Orange",
+            "amber": "Amber",
+            "yellow": "Yellow",
+            "lime": "Lime",
+            "green": "Green",
+            "emerald": "Emerald",
+            "teal": "Teal",
+            "cyan": "Cyan",
+            "sky": "Sky",
+            "blue": "Blue",
+            "indigo": "Indigo",
+            "violet": "Violet",
+            "purple": "Purple",
+            "fuchsia": "Fuchsia",
+            "pink": "Pink",
+            "rose": "Rose"
+        },
+        "units": {
+            "bytes": "bytes"
+        },
+        "theme": {
+            "light": "Light",
+            "dark": "Dark"
+        },
+        "environment": {
+            "development": "Development",
+            "test": "Test",
+            "staging": "Staging",
+            "production": "Production",
+            "description": {
+                "development": "Environment for development and testing",
+                "test": "Environment for QA and testing",
+                "staging": "Environment for production verification",
+                "production": "Live environment (Caution)"
+            },
+            "message": {
+                "development": "Connected to Development Environment",
+                "test": "Connected to Test Environment",
+                "staging": "Connected to Staging Environment. Not production data.",
+                "production": "⚠️ Connected to PRODUCTION Environment. Proceed with caution."
+            }
+        }
+    },
+    "connection": {
+        "actions": {
+            "browseData": "Data Reference",
+            "mutation": "Data Mutation",
+            "queryBuilder": "Query Builder",
+            "connect": "Connect"
+        },
+        "fields": {
+            "host": "Host",
+            "database": "Database"
+        },
+        "colorPicker": {
+            "presetLabel": "Preset Colors",
+            "primary": "Primary Color",
+            "background": "Background Color",
+            "previewHint": "This color applies to the environment header"
+        },
+        "themePreview": {
+            "title": "Theme Preview",
+            "sampleName": "Sample Connection Name"
+        },
+        "form": {
+            "title": {
+                "new": "New Connection",
+                "edit": "Edit Connection"
+            },
+            "description": {
+                "new": "Create a new connection",
+                "edit": "Edit existing connection"
+            },
+            "validation": {
+                "nameRequired": "Connection name is required",
+                "typeRequired": "Database type is required",
+                "envRequired": "Environment is required",
+                "hostRequired": "Host is required",
+                "hostPattern": "Invalid host name format",
+                "portRequired": "Port is required",
+                "portRange": "Port must be between 1 and 65535",
+                "dbRequired": "Database name is required",
+                "userRequired": "Username is required"
+            },
+            "fields": {
+                "name": "Connection Name",
+                "namePlaceholder": "e.g. Dev MySQL",
+                "type": "Database Type",
+                "port": "Port",
+                "userPlaceholder": "db_user",
+                "dbPlaceholder": "sample_db",
+                "password": "Password (Optional)",
+                "passwordPlaceholder": "Enter if needed",
+                "envColor": "Environment Color",
+                "useCustomColor": "Custom Color"
+            },
+            "actions": {
+                "test": "Test Connection",
+                "connecting": "Loading connection info..."
+            },
+            "messages": {
+                "testSuccess": "Connection test successful",
+                "testFailed": "Connection test failed",
+                "saveFailed": "Failed to save connection"
+            }
+        }
+    },
+    "queryBuilder": {
+        "pageTitle": "Query Builder",
+        "toolbar": {
+            "structurePanel": "DB Structure",
+            "execute": "Execute",
+            "save": "Save",
+            "open": "Open",
+            "new": "New",
+            "history": "History",
+            "resultPanel": "Result Panel",
+            "sqlPanel": "SQL Preview",
+            "toMutation": "To Mutation",
+            "errors": {
+                "dropForbidden": "DROP queries are disabled in this environment",
+                "truncateForbidden": "TRUNCATE queries are disabled in this environment",
+                "executionFailed": "Execution Error"
+            }
+        },
+        "leftPanel": {
+            "title": "Database Structure",
+            "refresh": "Refresh",
+            "searchPlaceholder": "Search tables/cols..."
+        },
+        "rightPanel": {
+            "title": "SQL Preview",
+            "smartQuote": "Smart Quotes",
+            "copy": "Copy",
+            "infoTitle": "Query Info",
+            "copied": "Copied to clipboard"
+        },
+        "resultPanel": {
+            "title": "Query Result",
+            "errorTitle": "Error Occurred",
+            "export": "Export",
+            "close": "Close",
+            "executing": "Executing...",
+            "noResult": "Results will appear here",
+            "noResultsMessage": "No results found",
+            "rowCount": "{count} rows",
+            "executionTime": "({time}ms)"
+        },
+        "relationArea": {
+            "addJoin": "Add JOIN",
+            "dropHint": "Drop tables here to add",
+            "ariaLabel": "Table Relation Diagram",
+            "emptyTitle": "Add Table",
+            "emptyDesc": "Drag and drop tables from the left panel\nor double-click to add"
+        },
+        "databaseTree": {
+            "loading": "Loading...",
+            "retry": "Retry",
+            "connect": "Please connect to a database",
+            "noResults": "No results found for \"{query}\""
+        },
+        "tabs": {
+            "select": "SELECT",
+            "join": "JOIN",
+            "where": "WHERE",
+            "group": "GROUP BY",
+            "order": "ORDER BY",
+            "limit": "LIMIT"
+        },
+        "sqlPreview": {
+            "errorPosition": "Error at line {line}",
+            "errorColumn": ", column {col}",
+            "risk": {
+                "danger": "Dangerous Query",
+                "warning": "Warning: Potentially Unsafe"
+            },
+            "placeholderTitle": "SQL Preview",
+            "placeholderDesc": "Query will appear here"
+        },
+        "joinPanel": {
+            "notEnoughTables": {
+                "title": "At least 2 tables are required for JOIN",
+                "desc": "Please add tables from the left panel"
+            },
+            "newJoin": "New JOIN",
+            "smartJoin": "Smart JOIN",
+            "noJoins": {
+                "title": "No JOINs configured",
+                "desc": "Add a JOIN from the button above"
+            },
+            "conditions": {
+                "none": "(No conditions)"
+            }
+        },
+        "savedQueries": {
+            "title": "Saved Queries",
+            "description": "List of saved queries.",
+            "searchPlaceholder": "Search queries...",
+            "empty": "No saved queries",
+            "updated": "Updated: {date}",
+            "deleteConfirm": {
+                "title": "Delete Query",
+                "desc": "Are you sure you want to delete query \"{name}\"?"
+            },
+            "toasts": {
+                "noConnection": "No connection selected",
+                "noConnectionDesc": "Please select a connection before opening a query",
+                "connMismatch": "Connection mismatch",
+                "loadFailed": "Load failed",
+                "loadFailedDesc": "Failed to load query",
+                "loadSuccess": "Load successful",
+                "loadSuccessDesc": "Loaded query \"{name}\"",
+                "screenSwitch": "Switched screen",
+                "screenSwitchDesc": "Moved to {label} screen",
+                "deleteSuccess": "Delete successful",
+                "deleteSuccessDesc": "Query deleted"
+            }
+        },
+        "history": {
+            "title": "Query History",
+            "description": "History of executed queries.",
+            "searchPlaceholder": "Search SQL...",
+            "successOnly": "Success only",
+            "empty": "No history",
+            "success": "Success",
+            "failure": "Failure",
+            "deleteConfirm": {
+                "title": "Delete History",
+                "desc": "Are you sure you want to delete this history? (Cannot be undone)"
+            },
+            "toasts": {
+                "restoreSuccess": "Restore successful",
+                "restoreSuccessDesc": "Restored history ({date})",
+                "restoreFailed": "Restore failed",
+                "restoreFailedDesc": "Failed to restore history",
+                "loadError": "Error",
+                "loadErrorDesc": "Failed to load history",
+                "deleteSuccess": "Delete successful",
+                "deleteSuccessDesc": "History deleted"
+            }
+        },
+        "info": {
+            "rows": "Rows:",
+            "executionTime": "Execution Time:",
+            "lastExecuted": "Last Executed:"
+        },
+        "selectTab": {
+            "title": "SELECT Clause Items",
+            "addItem": "Add Item",
+            "empty": "Please add items to the SELECT clause using the \"Add Item\" button",
+            "noTables": {
+                "title": "Please select tables",
+                "desc": "Drag and drop tables from the left panel"
+            }
+        },
+        "whereTab": {
+            "title": "WHERE Conditions",
+            "addCondition": "Add Condition",
+            "addGroup": "Add Group",
+            "empty": "No conditions. Please add a condition.",
+            "noTables": {
+                "title": "Please select tables",
+                "desc": "Tables are required to set WHERE conditions"
+            }
+        },
+        "groupByTab": {
+            "title": "GROUP BY Conditions",
+            "addColumn": "Add Column",
+            "empty": "Please add columns to group by",
+            "noTables": {
+                "title": "Please select tables"
+            }
+        },
+        "orderByTab": {
+            "title": "ORDER BY Conditions",
+            "addColumn": "Add Column",
+            "empty": "Please add columns for sorting",
+            "noTables": {
+                "title": "Please select tables"
+            },
+            "asc": "Ascending (ASC)",
+            "desc": "Descending (DESC)"
+        },
+        "limitTab": {
+            "title": "Limit Options",
+            "limit": {
+                "label": "LIMIT (Count)",
+                "help": "Maximum number of records to retrieve",
+                "placeholder": "Ex: 100"
+            },
+            "offset": {
+                "label": "OFFSET (Start)",
+                "help": "Number of records to skip",
+                "placeholder": "Ex: 0"
+            }
+        },
+        "selectColumnDialog": {
+            "title": "Add SELECT Item",
+            "description": "Select an item to add to the SELECT clause.",
+            "itemType": "Item Type",
+            "types": {
+                "table": "Select from Table",
+                "tableDesc": "Select columns from table",
+                "function": "Database Function",
+                "functionDesc": "Use functions like UPPER, CONCAT, etc.",
+                "subquery": "Subquery",
+                "subqueryDesc": "Get value via subquery",
+                "expression": "Expression (Free Input)",
+                "expressionDesc": "Input SQL expression directly (e.g. price * quantity)"
+            },
+            "selectColumn": "Select Column",
+            "multiSelectHint": "Multiple selection allowed. Cmd/Ctrl+Click to select multiple.",
+            "sqlExpression": "SQL Expression",
+            "expressionExample": "Ex: price * quantity, CASE WHEN ... END",
+            "expressionHint": "Hint: You can input complex SQL expressions using arithmetic operators (+, -, *, /), CASE statements, etc.",
+            "alias": "Alias (Optional)",
+            "aliasPlaceholder": "Ex: total_price, upper_name",
+            "aliasMultiHint": "Alias cannot be specified when selecting multiple columns",
+            "aliasDesc": "Alias for AS clause"
+        },
+        "conditionGroup": {
+            "groupLabel": "{logic} Group",
+            "addCondition": "Add Condition"
+        },
+        "functionBuilder": {
+            "title": "Function Builder",
+            "category": "Category",
+            "function": "Function",
+            "functionPlaceholder": "Select function...",
+            "arguments": "Arguments",
+            "paramCount": "Arguments: {count}",
+            "example": "Ex: {example}",
+            "addArgument": "Add Argument",
+            "alias": "Alias",
+            "aliasPlaceholder": "Ex: upper_name",
+            "preview": "Preview:",
+            "invalidArgs": "Invalid number of arguments",
+            "categories": {
+                "string": "String Functions",
+                "date": "Date Functions",
+                "numeric": "Numeric Functions",
+                "conditional": "Conditional Functions",
+                "aggregate": "Aggregate Functions"
+            }
+        },
+        "subqueryBuilder": {
+            "title": "Subquery Builder",
+            "description": "Build a subquery that returns a scalar value",
+            "table": "Table",
+            "tablePlaceholder": "Select table...",
+            "alias": "Alias (Optional)",
+            "aliasPlaceholder": "Ex: o",
+            "selectClause": "SELECT Clause",
+            "selectTypes": {
+                "column": "Single Column",
+                "aggregate": "Aggregate Function"
+            },
+            "aggregateFunction": "Aggregate Function",
+            "aggregateTypes": {
+                "count": "Rows",
+                "sum": "Sum",
+                "avg": "Average",
+                "min": "Min",
+                "max": "Max"
+            },
+            "column": "Column",
+            "columnPlaceholder": "Select column...",
+            "whereConditions": "WHERE Conditions",
+            "addCondition": "Add Condition",
+            "preview": "Preview:",
+            "warning": {
+                "title": "Warning",
+                "desc": "Subqueries must return a scalar value (single value). Returning multiple rows will result in an error."
+            }
+        },
+        "conditionRow": {
+            "valueNotRequired": "(Value not required)"
+        },
+        "columnSelect": {
+            "placeholder": "Select Column"
+        },
+        "saveQueryDialog": {
+            "title": "Save Query",
+            "description": "Enter query information to save.",
+            "queryName": "Query Name",
+            "queryNamePlaceholder": "Ex: Get User List",
+            "desc": "Description",
+            "descPlaceholder": "Enter query description...",
+            "tags": "Tags",
+            "tagsPlaceholder": "users, report, daily",
+            "tagsHelp": "Multiple tags can be specified separated by commas",
+            "errors": {
+                "nameRequired": "Query name is required",
+                "nameLength": "Query name must be within 200 characters",
+                "descLength": "Description must be within 1000 characters",
+                "tagsCount": "Up to 20 tags allowed",
+                "tagLength": "Each tag must be within 50 characters"
+            },
+            "toast": {
+                "successTitle": "Save Successful",
+                "successDesc": "Query saved successfully",
+                "errorTitle": "Save Failed",
+                "errorDesc": "Failed to save query"
+            }
+        },
+        "exportDialog": {
+            "title": "Data Export",
+            "description": "Output query results to a file.",
+            "format": "File Format",
+            "rowCount": "Target Rows: {count}",
+            "toast": {
+                "successTitle": "Export Successful",
+                "successDesc": "Exported {count} rows",
+                "errorTitle": "Export Failed"
+            }
+        },
+        "joinConfigDialog": {
+            "editTitle": "Edit JOIN",
+            "addTitle": "Add JOIN",
+            "description": "Configure JOIN type, target table, and join conditions.",
+            "joinType": "JOIN Type",
+            "table": "Join Table",
+            "alias": "Alias",
+            "onCondition": "ON Condition",
+            "logic": "Condition Logic",
+            "hint": {
+                "tableChange": "Table cannot be changed. Delete and re-create JOIN to change table.",
+                "aliasExample": "Ex: u, p, o"
+            },
+            "addCondition": "Add Condition"
+        },
+        "joinSuggestion": {
+            "title": "Suggested JOIN Conditions",
+            "loading": "Generating suggestions...",
+            "noSuggestions": "No JOIN suggestions found. Please set conditions manually."
+        },
+        "resultPagination": {
+            "show": "Show:",
+            "count": "{count}",
+            "range": "{start} - {end} / {total}"
+        },
+        "queryErrorDisplay": {
+            "target": "Target:",
+            "line": "Line: {line}",
+            "column": ", Col: {column}",
+            "position": "Position: {position}",
+            "technicalDetails": "Technical Details",
+            "errorCode": "Error Code: {code}",
+            "retry": "Retry"
+        },
+        "queryValidationDialog": {
+            "title": {
+                "error": "Cannot Open Query",
+                "warning": "Some Tables Not Found",
+                "confirm": "Confirm"
+            },
+            "connectionQuery": "Query Connection:",
+            "connectionCurrent": "Current Connection:",
+            "missingTables": "Missing Tables:",
+            "warningMessage": "If you proceed, missing tables may not display correctly.",
+            "actions": {
+                "close": "Close",
+                "open": "Open"
+            }
+        },
+        "argumentEditor": {
+            "types": {
+                "column": "Column",
+                "literal": "Literal",
+                "function": "Function"
+            },
+            "labels": {
+                "string": "String",
+                "number": "Number"
+            },
+            "placeholders": {
+                "selectColumn": "Select Column...",
+                "selectFunction": "Select Function...",
+                "inputVal": "Enter Value..."
+            },
+            "nested": {
+                "title": "Add Nested Function",
+                "desc": "Build function for argument."
+            }
+        },
+        "correlatedConditionEditor": {
+            "types": {
+                "literal": "Literal",
+                "parentColumn": "Parent Column (Correlated)"
+            },
+            "placeholders": {
+                "column": "Column...",
+                "value": "Value...",
+                "selectParentColumn": "Select Parent Column..."
+            }
+        },
+        "joinConditionRow": {
+            "tablePlaceholder": "Table",
+            "columnPlaceholder": "Column"
+        },
+        "valueInput": {
+            "enterValue": "Enter value",
+            "enterNumber": "Enter number",
+            "selectDate": "Select date",
+            "selectDateTime": "Select date/time"
+        }
+    },
+    "settings": {
+        "header": {
+            "title": "Settings",
+            "description": "Manage application behavior",
+            "backHome": "Back to Home",
+            "loadError": "Failed to load settings"
+        },
+        "tabs": {
+            "general": "General",
+            "safety": "Safety",
+            "security": "Security",
+            "about": "About"
+        },
+        "general": {
+            "title": "General Settings",
+            "saving": "Saving...",
+            "theme": {
+                "label": "Theme",
+                "hint": "Color mode for the entire application",
+                "options": {
+                    "light": "Light",
+                    "dark": "Dark",
+                    "auto": "Auto"
+                }
+            },
+            "language": {
+                "label": "Language",
+                "hint": "Change display language",
+                "options": {
+                    "ja": "日本語",
+                    "en": "English"
+                }
+            },
+            "autoSave": {
+                "label": "Auto Save",
+                "hint": "Automatically save queries at regular intervals"
+            },
+            "windowRestore": {
+                "label": "Window Restore",
+                "hint": "Restore previous window position and size on restart"
+            },
+            "messages": {
+                "saved": "Settings saved",
+                "saveFailed": "Failed to save settings",
+                "errorTitle": "Error loading/saving settings",
+                "successTitle": "Success"
+            },
+            "saveButton": "Save Settings"
+        },
+        "about": {
+            "appInfo": {
+                "label": "App Information",
+                "description": "Desktop app for database connection and SQL query building"
+            },
+            "stack": {
+                "frontend": "Frontend",
+                "ui": "UI",
+                "desktop": "Desktop",
+                "state": "State Management"
+            },
+            "documentation": "Please refer to documents under `docs/` for latest changes and detailed design."
+        },
+        "security": {
+            "title": "Security",
+            "provider": {
+                "title": "Security Provider",
+                "label": "Provider",
+                "hint": "Select storage backend and encryption method",
+                "current": "Current Provider: {provider}",
+                "reset": "Reset",
+                "processing": "Processing",
+                "options": {
+                    "simple": {
+                        "label": "Simple (Recommended)",
+                        "description": "Fixed key encryption. No password required."
+                    },
+                    "masterPassword": {
+                        "label": "Master Password",
+                        "description": "Encrypted with user-defined password"
+                    }
+                },
+                "recommended": "Recommended"
+            },
+            "level": {
+                "title": "Security Level Details",
+                "label": "Security Level",
+                "hint": "Select encryption strength",
+                "options": {
+                    "low": {
+                        "label": "Low",
+                        "hint": "Basic encryption"
+                    },
+                    "medium": {
+                        "label": "Medium",
+                        "hint": "Recommended"
+                    },
+                    "high": {
+                        "label": "High",
+                        "hint": "Strictest setting"
+                    }
+                }
+            },
+            "masterPassword": {
+                "title": "Master Password",
+                "description": "Manage password for encrypting connections",
+                "status": "Status: {status}",
+                "statusSet": "Set",
+                "statusUnset": "Not Set",
+                "change": "Change Password",
+                "setup": "Setup",
+                "warning": "Master password is not set. It will be set when switching providers."
+            },
+            "comparison": {
+                "title": "Provider Comparison"
+            },
+            "messages": {
+                "updated": "Security level updated",
+                "updateFailed": "Failed to update security level",
+                "resetConfirm": "Are you sure you want to reset security settings?\n\nWARNING: All connection data will be lost.",
+                "resetSuccess": "Security settings reset",
+                "resetFailed": "Reset failed",
+                "errorTitle": "Error loading/saving settings",
+                "successTitle": "Success"
+            }
+        },
+        "safety": {
+            "title": "Environment Safety Settings",
+            "description": "Configure safety checks for query execution per environment",
+            "resetButton": "Reset to Default",
+            "env": {
+                "development": {
+                    "label": "Development",
+                    "description": "Local development"
+                },
+                "test": {
+                    "label": "Test",
+                    "description": "Automated testing/QA"
+                },
+                "staging": {
+                    "label": "Staging",
+                    "description": "Pre-production verification"
+                },
+                "production": {
+                    "label": "Production",
+                    "description": "Live environment"
+                }
+            },
+            "modal": {
+                "title": "Reset Settings",
+                "body": "Reset all environment safety settings to default?",
+                "cancel": "Cancel",
+                "confirm": "Reset"
+            }
+        }
+    },
+    "mutationBuilder": {
+        "pageTitle": "Data Mutation",
+        "toolbar": {
+            "execute": "Execute",
+            "save": "Save",
+            "open": "Open",
+            "history": "History",
+            "toQueryBuilder": "To Data Query",
+            "errors": {
+                "executionFailed": "Execution Error",
+                "dropForbidden": "DROP queries are disabled in this environment",
+                "truncateForbidden": "TRUNCATE queries are disabled in this environment"
+            }
+        },
+        "layout": {
+            "notImplemented": "{type} is not implemented yet"
+        },
+        "insertPanel": {
+            "modes": {
+                "form": "Form Mode",
+                "grid": "Grid Mode"
+            },
+            "gridNotImplemented": "Grid mode is planned"
+        },
+        "updatePanel": {
+            "tabs": {
+                "set": "SET",
+                "where": "WHERE"
+            }
+        },
+        "deletePanel": {
+            "warning": {
+                "title": "Warning: No WHERE clause",
+                "desc": "If no WHERE clause is specified, all rows in the table will be deleted. Only execute if you really intend to delete all rows."
+            }
+        },
+        "formInput": {
+            "selectPrompt": "Please select a table",
+            "noColumns": "Column information not found",
+            "addRow": "Add Row"
+        },
+        "setTab": {
+            "selectPrompt": "Please select a table",
+            "noColumns": "Column information not found",
+            "addColumn": "Add Column",
+            "noSelectionWarning": {
+                "title": "No column selected",
+                "desc": "Please select at least one column"
+            }
+        },
+        "whereTab": {
+            "selectPrompt": "Please select a table",
+            "selectPromptDesc": "Table selection is required to set WHERE conditions",
+            "noColumns": "Column information not found",
+            "noColumnsDesc": "Please update table information and try again",
+            "title": "WHERE Conditions",
+            "addCondition": "Add Condition",
+            "addGroup": "Add Group",
+            "emptyDesc": "No conditions. Please add using \"Add Condition\"."
+        },
+        "sqlPreview": {
+            "title": "SQL Preview",
+            "smartQuote": "Smart Quotes",
+            "copy": "Copy",
+            "executionError": "Execution Error: {message}",
+            "warning": {
+                "allRows": "No WHERE clause. This query will {action} ALL rows."
+            },
+            "queryInfo": {
+                "title": "Query Info",
+                "affectedRows": "Affected Rows:",
+                "executionTime": "Execution Time:",
+                "lastExecuted": "Last Executed:"
+            },
+            "actions": {
+                "delete": "delete",
+                "update": "update"
+            }
+        },
+        "tableSelector": {
+            "label": "Table",
+            "placeholder": "Select Table",
+            "refresh": "Refresh",
+            "noConnection": "No connection selected"
+        },
+        "conditionGroup": {
+            "groupSuffix": "Group"
+        },
+        "inputField": {
+            "selectDate": "Select Date",
+            "selectDateTime": "Select Date/Time",
+            "generate": "Generate",
+            "invalidUuid": "Invalid UUID format",
+            "autoIncrementHint": "Auto Increment (Excluded on INSERT)",
+            "rowLabel": "Row {index}"
+        }
+    }
+}

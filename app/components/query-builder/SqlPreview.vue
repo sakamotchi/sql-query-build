@@ -8,6 +8,8 @@ const props = defineProps<{
   analysisResult?: QueryAnalysisResult | null
 }>()
 
+const { t } = useI18n()
+
 // SQLを行に分割
 const sqlLines = computed(() => props.sql.split('\n'))
 
@@ -104,7 +106,7 @@ const errorColumn = computed(() => {
         class="flex items-center gap-1 mt-4 pt-2 border-t border-red-200 dark:border-red-900 text-xs text-red-500"
       >
         <UIcon name="i-heroicons-exclamation-triangle" />
-        <span>エラー位置: {{ errorLine }}行目<span v-if="errorColumn">, {{ errorColumn }}列目</span></span>
+        <span>{{ t('queryBuilder.sqlPreview.errorPosition', { line: errorLine }) }}<span v-if="errorColumn">{{ t('queryBuilder.sqlPreview.errorColumn', { col: errorColumn }) }}</span></span>
       </div>
     </div>
 
@@ -125,7 +127,7 @@ const errorColumn = computed(() => {
             :name="analysisResult.riskLevel === 'danger' ? 'i-heroicons-shield-exclamation' : 'i-heroicons-exclamation-triangle'"
             class="text-lg"
           />
-          <span>{{ analysisResult.riskLevel === 'danger' ? '危険なクエリ' : '注意が必要なクエリ' }}</span>
+          <span>{{ analysisResult.riskLevel === 'danger' ? t('queryBuilder.sqlPreview.risk.danger') : t('queryBuilder.sqlPreview.risk.warning') }}</span>
         </div>
         <ul class="list-disc list-inside px-1 space-y-0.5 ml-5">
           <li v-for="factor in analysisResult.riskFactors" :key="factor.code">
@@ -137,8 +139,8 @@ const errorColumn = computed(() => {
     
     <div v-else-if="!sql" class="flex flex-col items-center justify-center h-full p-4">
       <UIcon name="i-heroicons-code-bracket" class="text-3xl text-gray-400" />
-      <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">SQLプレビュー</p>
-      <p class="text-xs text-gray-400 dark:text-gray-500">クエリを構築すると表示されます</p>
+      <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">{{ t('queryBuilder.sqlPreview.placeholderTitle') }}</p>
+      <p class="text-xs text-gray-400 dark:text-gray-500">{{ t('queryBuilder.sqlPreview.placeholderDesc') }}</p>
     </div>
   </div>
 </template>

@@ -19,6 +19,7 @@ const safetyStore = useSafetyStore()
 const connectionStore = useConnectionStore()
 const { getEnvironmentColors } = useEnvironment()
 const toast = useToast()
+const { t } = useI18n()
 
 // Tauriから取得した環境（初期化時に設定）
 const fetchedEnvironment = ref<Environment | null>(null)
@@ -188,7 +189,7 @@ const handleOpenSaved = () => {
           :loading="isExecuting"
           @click="executeMutation"
         >
-          実行
+          {{ t('mutationBuilder.toolbar.execute') }}
         </UButton>
         <UButton
           icon="i-heroicons-bookmark"
@@ -196,7 +197,7 @@ const handleOpenSaved = () => {
           variant="ghost"
           @click="handleSave"
         >
-          保存
+          {{ t('mutationBuilder.toolbar.save') }}
         </UButton>
         <UButton
           icon="i-heroicons-folder-open"
@@ -204,7 +205,7 @@ const handleOpenSaved = () => {
           variant="ghost"
           @click="handleOpenSaved"
         >
-          開く
+          {{ t('mutationBuilder.toolbar.open') }}
         </UButton>
         <UButton
           icon="i-heroicons-clock"
@@ -212,7 +213,7 @@ const handleOpenSaved = () => {
           variant="ghost"
           @click="handleHistory"
         >
-          履歴
+          {{ t('mutationBuilder.toolbar.history') }}
         </UButton>
         <USeparator orientation="vertical" class="h-6" />
         <UButton
@@ -221,7 +222,7 @@ const handleOpenSaved = () => {
           variant="ghost"
           to="/query-builder"
         >
-          データ参照へ
+          {{ t('mutationBuilder.toolbar.toQueryBuilder') }}
         </UButton>
       </div>
     </div>

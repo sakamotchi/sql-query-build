@@ -3,6 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { useSavedQueryStore } from '@/stores/saved-query'
 import type { SerializableBuilderState } from '@/types/saved-query'
 
+const { t } = useI18n()
+
 interface FormError {
   path: string
   message: string
@@ -48,25 +50,25 @@ const validate = (state: any): FormError[] => {
 
   // クエリ名のバリデーション
   if (!state.name || state.name.trim().length === 0) {
-    errors.push({ path: 'name', message: 'クエリ名は必須です' })
+    errors.push({ path: 'name', message: t('queryBuilder.saveQueryDialog.errors.nameRequired') })
   } else if (state.name.length > 200) {
-    errors.push({ path: 'name', message: 'クエリ名は200文字以内で入力してください' })
+    errors.push({ path: 'name', message: t('queryBuilder.saveQueryDialog.errors.nameLength') })
   }
 
   // 説明のバリデーション
   if (state.description && state.description.length > 1000) {
-    errors.push({ path: 'description', message: '説明は1000文字以内で入力してください' })
+    errors.push({ path: 'description', message: t('queryBuilder.saveQueryDialog.errors.descLength') })
   }
 
   // タグのバリデーション
   if (state.tags) {
     const tagsList = state.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t.length > 0)
     if (tagsList.length > 20) {
-      errors.push({ path: 'tags', message: 'タグは20個までです' })
+      errors.push({ path: 'tags', message: t('queryBuilder.saveQueryDialog.errors.tagsCount') })
     }
     const invalidTag = tagsList.find((tag: string) => tag.length > 50)
     if (invalidTag) {
-      errors.push({ path: 'tags', message: '各タグは50文字以内で入力してください' })
+      errors.push({ path: 'tags', message: t('queryBuilder.saveQueryDialog.errors.tagLength') })
     }
   }
 
@@ -90,8 +92,8 @@ const handleSave = async () => {
 
   if (success) {
     toast.add({
-      title: '保存成功',
-      description: 'クエリを保存しました',
+      title: t('queryBuilder.saveQueryDialog.toast.successTitle'),
+      description: t('queryBuilder.saveQueryDialog.toast.successDesc'),
       color: 'success',
       icon: 'i-heroicons-check-circle'
     })
@@ -99,8 +101,8 @@ const handleSave = async () => {
     isOpen.value = false
   } else {
     toast.add({
-      title: '保存失敗',
-      description: savedQueryStore.error || 'クエリの保存に失敗しました',
+      title: t('queryBuilder.saveQueryDialog.toast.errorTitle'),
+      description: savedQueryStore.error || t('queryBuilder.saveQueryDialog.toast.errorDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
@@ -109,19 +111,19 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" title="クエリを保存" description="クエリの情報を入力して保存してください。">
+  <UModal v-model:open="isOpen" :title="t('queryBuilder.saveQueryDialog.title')" :description="t('queryBuilder.saveQueryDialog.description')">
     <template #body>
       <UForm :state="state" :validate="validate" @submit="handleSave" class="space-y-4">
-        <UFormField label="クエリ名" name="name" required>
-          <UInput v-model="state.name" placeholder="例: ユーザー一覧取得" autofocus />
+        <UFormField :label="t('queryBuilder.saveQueryDialog.queryName')" name="name" required>
+          <UInput v-model="state.name" :placeholder="t('queryBuilder.saveQueryDialog.queryNamePlaceholder')" autofocus />
         </UFormField>
 
-        <UFormField label="説明" name="description">
-          <UTextarea v-model="state.description" placeholder="クエリの説明を入力..." />
+        <UFormField :label="t('queryBuilder.saveQueryDialog.desc')" name="description">
+          <UTextarea v-model="state.description" :placeholder="t('queryBuilder.saveQueryDialog.descPlaceholder')" />
         </UFormField>
 
-        <UFormField label="タグ" name="tags" help="カンマ区切りで複数のタグを指定できます">
-          <UInput v-model="state.tags" placeholder="users, report, daily" />
+        <UFormField :label="t('queryBuilder.saveQueryDialog.tags')" name="tags" :help="t('queryBuilder.saveQueryDialog.tagsHelp')">
+          <UInput v-model="state.tags" :placeholder="t('queryBuilder.saveQueryDialog.tagsPlaceholder')" />
         </UFormField>
       </UForm>
     </template>
@@ -129,10 +131,10 @@ const handleSave = async () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="isOpen = false">
-          キャンセル
+          {{ t('common.actions.cancel') }}
         </UButton>
         <UButton color="primary" @click="handleSave">
-          保存
+          {{ t('common.actions.save') }}
         </UButton>
       </div>
     </template>

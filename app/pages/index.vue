@@ -5,6 +5,7 @@ import { useConnectionStore } from '~/stores/connection'
 import { windowApi } from '~/api/window'
 
 const { currentEnvironment } = useEnvironment()
+const { t } = useI18n()
 const toast = useToast()
 
 const connectionStore = useConnectionStore()
@@ -42,7 +43,13 @@ const statsText = computed(() => {
     production: 0
   })
 
-  return `全${connections.value.length}件 • 開発: ${counts.development}件 • テスト: ${counts.test}件 • ステージング: ${counts.staging}件 • 本番: ${counts.production}件`
+  return t('launcher.statsDetail', {
+    total: connections.value.length,
+    dev: counts.development,
+    test: counts.test,
+    staging: counts.staging,
+    prod: counts.production
+  })
 })
 
 const isEmptyState = computed(() => !loading.value && filteredConnections.value.length === 0)
@@ -63,24 +70,24 @@ const handleConnect = async (connection: Connection) => {
       // 既存のウィンドウにフォーカス
       await windowApi.focusWindow(existing.label)
       toast.add({
-        title: '既存のウィンドウにフォーカスしました',
-        description: `${connection.name} のウィンドウが既に開いています`,
+        title: t('launcher.toasts.focus'),
+        description: t('launcher.toasts.focusDesc', { name: connection.name }),
         color: 'primary',
       })
     } else {
       // 新しいウィンドウを開く
       await windowApi.openQueryBuilder(connection.id, connection.name, connection.environment)
       toast.add({
-        title: 'クエリビルダーを起動しました',
-        description: `${connection.name} に接続しています`,
+        title: t('launcher.toasts.open'),
+        description: t('launcher.toasts.openDesc', { name: connection.name }),
         color: 'primary',
       })
     }
   } catch (error) {
     console.error('Failed to open query builder:', error)
     toast.add({
-      title: 'ウィンドウの起動に失敗しました',
-      description: error instanceof Error ? error.message : '不明なエラーが発生しました',
+      title: t('launcher.toasts.error'),
+      description: error instanceof Error ? error.message : t('launcher.toasts.unknownError'),
       color: 'error',
     })
   }
@@ -93,23 +100,23 @@ const handleMutation = async (connection: Connection) => {
     if (existing) {
       await windowApi.focusWindow(existing.label)
       toast.add({
-        title: '既存のウィンドウにフォーカスしました',
-        description: `${connection.name} のデータ変更ウィンドウが既に開いています`,
+        title: t('launcher.toasts.focus'),
+        description: t('launcher.toasts.focusDesc', { name: connection.name }),
         color: 'primary',
       })
     } else {
       await windowApi.openMutationBuilder(connection.id, connection.name, connection.environment)
       toast.add({
-        title: 'データ変更ビルダーを起動しました',
-        description: `${connection.name} に接続しています`,
+        title: t('launcher.toasts.openMutation'),
+        description: t('launcher.toasts.openDesc', { name: connection.name }),
         color: 'primary',
       })
     }
   } catch (error) {
     console.error('Failed to open mutation builder:', error)
     toast.add({
-      title: 'ウィンドウの起動に失敗しました',
-      description: error instanceof Error ? error.message : '不明なエラーが発生しました',
+      title: t('launcher.toasts.error'),
+      description: error instanceof Error ? error.message : t('launcher.toasts.unknownError'),
       color: 'error',
     })
   }
@@ -168,9 +175,7 @@ onMounted(() => {
 
         <div v-else-if="isEmptyState">
           <EmptyState
-            title="接続がありません"
-            description="新しい接続を追加するか、検索条件を変更してください。"
-            action-label="新規接続を追加"
+            :action-label="t('launcher.addNewConnection')"
             @action="handleNewConnection"
           />
         </div>

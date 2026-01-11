@@ -11,6 +11,8 @@ import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 import ArgumentEditor from './ArgumentEditor.vue'
 import type { DatabaseType } from '~/types'
 
+const { t } = useI18n()
+
 const props = withDefaults(
   defineProps<{
     modelValue?: FunctionCall | null
@@ -219,14 +221,8 @@ watch(
 )
 
 function getCategoryLabel(category: string): string {
-  const labels: Record<string, string> = {
-    string: '文字列関数',
-    date: '日付関数',
-    numeric: '数値関数',
-    conditional: '条件関数',
-    aggregate: '集計関数',
-  }
-  return labels[category] || category
+  // Use translations for category labels
+  return t(`queryBuilder.functionBuilder.categories.${category}`)
 }
 
 function createDefaultArgument(): ExpressionNode {
@@ -260,14 +256,12 @@ function removeArgument(index: number) {
 
 function buildFunction() {
   if (!functionDef.value) return
-
   const func: FunctionCall = {
     type: 'function',
     name: selectedFunction.value,
     category: functionDef.value.category,
     arguments: functionArgs.value,
   }
-
   emit('apply', func, props.showAlias ? aliasValue.value.trim() || null : null)
 }
 </script>
@@ -275,20 +269,20 @@ function buildFunction() {
 <template>
   <UCard>
     <template #header>
-      <h3 class="text-base font-semibold">関数ビルダー</h3>
+      <h3 class="text-base font-semibold">{{ t('queryBuilder.functionBuilder.title') }}</h3>
     </template>
 
     <div class="space-y-4">
-      <UFormField label="カテゴリ" name="category">
+      <UFormField :label="t('queryBuilder.functionBuilder.category')" name="category">
         <USelect v-model="selectedCategory" :items="categories" value-key="value" />
       </UFormField>
 
-      <UFormField label="関数" name="function">
+      <UFormField :label="t('queryBuilder.functionBuilder.function')" name="function">
         <USelectMenu
           v-model="selectedFunctionItem"
           :items="functions"
           searchable
-          placeholder="関数を選択..."
+          :placeholder="t('queryBuilder.functionBuilder.functionPlaceholder')"
           class="w-full"
         />
       </UFormField>
@@ -298,18 +292,18 @@ function buildFunction() {
           {{ functionDef.description }}
         </p>
         <p class="text-xs text-gray-500 mt-1">
-          引数: {{ functionDef.paramCount }} 個
+          {{ t('queryBuilder.functionBuilder.paramCount', { count: functionDef.paramCount }) }}
         </p>
         <p v-if="functionDef.example" class="text-xs text-gray-500 mt-1">
-          例: {{ functionDef.example }}
+          {{ t('queryBuilder.functionBuilder.example', { example: functionDef.example }) }}
         </p>
       </div>
 
       <div v-if="selectedFunction && argumentCount !== 0">
         <div class="flex justify-between items-center mb-2">
-          <label class="text-sm font-medium">引数</label>
+          <label class="text-sm font-medium">{{ t('queryBuilder.functionBuilder.arguments') }}</label>
           <UButton size="xs" :disabled="!canAddArgument" @click="addArgument">
-            引数を追加
+            {{ t('queryBuilder.functionBuilder.addArgument') }}
           </UButton>
         </div>
 
@@ -333,28 +327,28 @@ function buildFunction() {
         </div>
       </div>
 
-      <UFormField v-if="props.showAlias" label="エイリアス" name="alias">
+      <UFormField v-if="props.showAlias" :label="t('queryBuilder.functionBuilder.alias')" name="alias">
         <UInput
           v-model="aliasValue"
-          placeholder="例: upper_name"
+          :placeholder="t('queryBuilder.functionBuilder.aliasPlaceholder')"
           v-bind="sqlIdentifierAttrs"
         />
       </UFormField>
 
       <div v-if="previewSql" class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">プレビュー:</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('queryBuilder.functionBuilder.preview') }}</p>
         <code class="text-sm text-blue-600 dark:text-blue-400">{{ previewSql }}</code>
       </div>
 
       <p v-if="selectedFunction && !argumentCountValid" class="text-xs text-red-500">
-        引数の数が正しくありません
+        {{ t('queryBuilder.functionBuilder.invalidArgs') }}
       </p>
     </div>
 
     <template v-if="props.showFooter" #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="ghost" @click="emit('cancel')">キャンセル</UButton>
-        <UButton :disabled="!canSubmit" @click="buildFunction">追加</UButton>
+        <UButton variant="ghost" @click="emit('cancel')">{{ t('common.actions.cancel') }}</UButton>
+        <UButton :disabled="!canSubmit" @click="buildFunction">{{ t('common.actions.add') }}</UButton>
       </div>
     </template>
   </UCard>

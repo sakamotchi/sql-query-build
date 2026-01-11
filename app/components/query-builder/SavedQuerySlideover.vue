@@ -18,11 +18,13 @@ const emit = defineEmits<{
   (e: 'load', id: string): void
 }>()
 
+
 const router = useRouter()
 const store = useSavedQueryStore()
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const isOpen = computed({
   get: () => props.open,
@@ -62,8 +64,8 @@ const handleLoad = async (query: SavedQueryMetadata) => {
 
     if (!currentConnectionId) {
       toast.add({
-        title: '接続が選択されていません',
-        description: '接続を選択してからクエリを開いてください',
+        title: t('queryBuilder.savedQueries.toasts.noConnection'),
+        description: t('queryBuilder.savedQueries.toasts.noConnectionDesc'),
         color: 'error',
         icon: 'i-heroicons-exclamation-circle'
       })
@@ -84,7 +86,7 @@ const handleLoad = async (query: SavedQueryMetadata) => {
     // 接続が異なるが全テーブル存在する場合はToast通知
     if (!validation.connectionMatches && validation.message) {
       toast.add({
-        title: '接続が異なります',
+        title: t('queryBuilder.savedQueries.toasts.connMismatch'),
         description: validation.message,
         color: 'info',
         icon: 'i-heroicons-information-circle'
@@ -95,8 +97,8 @@ const handleLoad = async (query: SavedQueryMetadata) => {
     await executeLoad(query)
   } catch (error) {
     toast.add({
-      title: '読み込み失敗',
-      description: 'クエリの読み込みに失敗しました',
+      title: t('queryBuilder.savedQueries.toasts.loadFailed'),
+      description: t('queryBuilder.savedQueries.toasts.loadFailedDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
@@ -120,8 +122,8 @@ const executeLoad = async (query: SavedQueryMetadata) => {
   }
 
   toast.add({
-    title: '読み込み成功',
-    description: `クエリ「${fullQuery.name}」を読み込みました`,
+    title: t('queryBuilder.savedQueries.toasts.loadSuccess'),
+    description: t('queryBuilder.savedQueries.toasts.loadSuccessDesc', { name: fullQuery.name }),
     color: 'success',
     icon: 'i-heroicons-check-circle'
   })
@@ -133,8 +135,8 @@ const executeLoad = async (query: SavedQueryMetadata) => {
   if (currentPath !== targetPath) {
     const typeLabel = getQueryTypeLabel(queryType)
     toast.add({
-      title: '画面を切り替えました',
-      description: `${typeLabel}画面に移動しました`,
+      title: t('queryBuilder.savedQueries.toasts.screenSwitch'),
+      description: t('queryBuilder.savedQueries.toasts.screenSwitchDesc', { label: typeLabel }),
       color: 'info',
       icon: 'i-heroicons-arrow-right-circle'
     })
@@ -167,8 +169,8 @@ const executeDelete = async () => {
 
   await store.deleteQuery(queryToDelete.value.id)
   toast.add({
-    title: '削除成功',
-    description: 'クエリを削除しました',
+    title: t('queryBuilder.savedQueries.toasts.deleteSuccess'),
+    description: t('queryBuilder.savedQueries.toasts.deleteSuccessDesc'),
     color: 'success',
     icon: 'i-heroicons-trash'
   })
@@ -184,7 +186,7 @@ const formatDate = (dateStr: string) => {
 </script>
 
 <template>
-  <USlideover v-model:open="isOpen" title="保存済みクエリ" description="保存されたクエリの一覧です。">
+  <USlideover v-model:open="isOpen" :title="t('queryBuilder.savedQueries.title')" :description="t('queryBuilder.savedQueries.description')">
     <template #body>
       <div class="flex flex-col h-full">
         <!-- 検索・フィルタ -->
@@ -192,7 +194,7 @@ const formatDate = (dateStr: string) => {
           <UInput
             v-model="searchQuery"
             icon="i-heroicons-magnifying-glass"
-            placeholder="クエリを検索..."
+            :placeholder="t('queryBuilder.savedQueries.searchPlaceholder')"
             clearable
           />
         </div>
@@ -204,7 +206,7 @@ const formatDate = (dateStr: string) => {
           </div>
           
           <div v-else-if="store.filteredQueries.length === 0" class="text-center py-8 text-gray-500">
-            保存されたクエリはありません
+            {{ t('queryBuilder.savedQueries.empty') }}
           </div>
 
           <UCard
@@ -228,7 +230,7 @@ const formatDate = (dateStr: string) => {
                 </div>
                 
                 <div class="mt-2 text-xs text-gray-400">
-                  更新: {{ formatDate(query.updatedAt) }}
+                  {{ t('queryBuilder.savedQueries.updated', { date: formatDate(query.updatedAt) }) }}
                 </div>
               </div>
               
@@ -247,13 +249,13 @@ const formatDate = (dateStr: string) => {
       </div>
     </template>
   </USlideover>
-
+  
   <Teleport to="body">
     <ConfirmDialog
       v-model:open="confirmDialogOpen"
-      title="クエリの削除"
-      :description="`クエリ「${queryToDelete?.name}」を本当に削除してもよろしいですか？`"
-      confirm-label="削除"
+      :title="t('queryBuilder.savedQueries.deleteConfirm.title')"
+      :description="t('queryBuilder.savedQueries.deleteConfirm.desc', { name: queryToDelete?.name })"
+      :confirm-label="t('common.actions.delete')"
       @confirm="executeDelete"
     />
 

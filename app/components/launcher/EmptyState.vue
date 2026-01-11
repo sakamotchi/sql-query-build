@@ -11,6 +11,8 @@ const emit = defineEmits<{
   action: []
 }>()
 
+const { t } = useI18n()
+
 const handleAction = () => emit('action')
 </script>
 
@@ -22,11 +24,11 @@ const handleAction = () => emit('action')
     />
 
     <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-      {{ title || '接続が見つかりませんでした' }}
+      {{ title || t('launcher.noConnections') }}
     </h3>
 
     <p class="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
-      {{ description || '新しい接続を追加するか、検索条件を変更してください。' }}
+      {{ description || t('launcher.noConnectionsDesc') }}
     </p>
 
     <UButton

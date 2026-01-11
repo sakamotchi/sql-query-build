@@ -3,6 +3,8 @@ import type { QueryExecuteError } from '@/types/query-result'
 import { getErrorMessage, getErrorHint, getErrorIcon } from '@/utils/error-messages'
 import ErrorHint from './ErrorHint.vue'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   error: QueryExecuteError
 }>()
@@ -43,7 +45,7 @@ const showDetails = ref(false)
           v-if="error.details?.objectName"
           class="mt-1 text-sm text-red-600 dark:text-red-400"
         >
-          対象: <code class="px-1 py-0.5 bg-red-100 dark:bg-red-900/50 rounded">{{ error.details.objectName }}</code>
+          {{ t('queryBuilder.queryErrorDisplay.target') }} <code class="px-1 py-0.5 bg-red-100 dark:bg-red-900/50 rounded">{{ error.details.objectName }}</code>
         </p>
 
         <!-- エラー位置表示 -->
@@ -52,11 +54,11 @@ const showDetails = ref(false)
           class="mt-1 text-xs text-red-500 dark:text-red-500"
         >
           <template v-if="error.details?.line">
-            行: {{ error.details.line }}
-            <template v-if="error.details?.column">, 列: {{ error.details.column }}</template>
+            {{ t('queryBuilder.queryErrorDisplay.line', { line: error.details.line }) }}
+            <template v-if="error.details?.column">{{ t('queryBuilder.queryErrorDisplay.column', { column: error.details.column }) }}</template>
           </template>
           <template v-else-if="error.details?.position">
-            文字位置: {{ error.details.position }}
+            {{ t('queryBuilder.queryErrorDisplay.position', { position: error.details.position }) }}
           </template>
         </p>
       </div>
@@ -73,13 +75,13 @@ const showDetails = ref(false)
         @click="showDetails = !showDetails"
       >
         <UIcon :name="showDetails ? 'i-heroicons-chevron-up' : 'i-heroicons-chevron-down'" />
-        技術的な詳細
+        {{ t('queryBuilder.queryErrorDisplay.technicalDetails') }}
       </button>
 
       <div v-if="showDetails" class="mt-2">
         <pre class="text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-2 rounded overflow-x-auto whitespace-pre-wrap">{{ error.message }}</pre>
         <p v-if="error.nativeCode" class="mt-1 text-xs text-red-500">
-          エラーコード: {{ error.nativeCode }}
+          {{ t('queryBuilder.queryErrorDisplay.errorCode', { code: error.nativeCode }) }}
         </p>
       </div>
     </div>
@@ -93,7 +95,7 @@ const showDetails = ref(false)
         icon="i-heroicons-arrow-path"
         @click="emit('retry')"
       >
-        再実行
+        {{ t('queryBuilder.queryErrorDisplay.retry') }}
       </UButton>
     </div>
   </div>
