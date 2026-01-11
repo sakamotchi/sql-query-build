@@ -1,6 +1,5 @@
 import { useTauri } from '~/composables/useTauri'
 import { useSecurityStore } from '~/stores/security'
-import type { SecurityProvider } from '~/types'
 
 interface SwitchFromSimpleParams {
   targetProvider: 'master-password'
@@ -18,14 +17,6 @@ interface SwitchFromMasterPasswordParams {
 export function useProviderSwitch() {
   const { invokeCommand, isAvailable } = useTauri()
   const securityStore = useSecurityStore()
-
-  /**
-   * バックエンドプロバイダー名に変換
-   * 'master-password' → 'master_password'
-   */
-  function toBackendProvider(provider: SecurityProvider): string {
-    return provider === 'master-password' ? 'master_password' : provider
-  }
 
   /**
    * SimpleからMaster Passwordへの切り替え (初期実装)

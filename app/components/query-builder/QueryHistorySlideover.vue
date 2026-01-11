@@ -53,7 +53,7 @@ const handleLoad = async (history: QueryHistoryMetadata) => {
         toast.add({
         title: '復元成功',
         description: `履歴（${formatDate(history.executedAt)}）を復元しました`,
-        color: 'green',
+        color: 'success',
         icon: 'i-heroicons-check-circle'
         })
         emit('loaded', history.id)
@@ -63,7 +63,7 @@ const handleLoad = async (history: QueryHistoryMetadata) => {
     toast.add({
       title: '復元失敗',
       description: '履歴の復元に失敗しました',
-      color: 'red',
+      color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
   }
@@ -80,7 +80,7 @@ const handleSave = async (historyMeta: QueryHistoryMetadata) => {
         toast.add({
             title: 'エラー',
             description: '履歴の読み込みに失敗しました',
-            color: 'red',
+            color: 'error',
             icon: 'i-heroicons-exclamation-circle'
         })
     }
@@ -98,7 +98,7 @@ const executeDelete = async () => {
   toast.add({
     title: '削除成功',
     description: '履歴を削除しました',
-    color: 'green',
+    color: 'success',
     icon: 'i-heroicons-trash'
   })
   confirmDialogOpen.value = false
@@ -154,7 +154,7 @@ const formatExecutionTime = (ms?: number) => {
             <div class="flex justify-between items-start">
               <div @click="handleLoad(history)" class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
-                    <UBadge :color="history.success ? 'green' : 'red'" variant="subtle" size="xs">
+                    <UBadge :color="history.success ? 'success' : 'error'" variant="subtle" size="xs">
                         {{ history.success ? '成功' : '失敗' }}
                     </UBadge>
                     <span class="text-xs text-gray-500">
@@ -179,7 +179,7 @@ const formatExecutionTime = (ms?: number) => {
               <div class="flex flex-col gap-1 ml-2">
                 <UButton
                   icon="i-heroicons-document-arrow-down"
-                  color="gray"
+                  color="neutral"
                   variant="ghost"
                   size="xs"
                   title="保存済みクエリとして保存"
@@ -187,7 +187,7 @@ const formatExecutionTime = (ms?: number) => {
                 />
                 <UButton
                   icon="i-heroicons-trash"
-                  color="red"
+                  color="error"
                   variant="ghost"
                   size="xs"
                   title="履歴から削除"

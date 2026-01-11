@@ -67,7 +67,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
     <UButton
       size="xs"
       variant="ghost"
-      color="gray"
+      color="neutral"
       class="no-drag"
       :icon="isExpanded ? 'i-heroicons-chevron-down' : 'i-heroicons-chevron-right'"
       @click="emit('toggle-expand')"
@@ -107,7 +107,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
     <UButton
       size="xs"
       variant="ghost"
-      color="red"
+      color="error"
       icon="i-heroicons-x-mark"
       class="no-drag"
       @click="emit('remove')"

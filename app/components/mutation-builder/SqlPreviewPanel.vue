@@ -54,7 +54,7 @@ const showWarning = computed(() => {
         <UButton
           icon="i-heroicons-clipboard-document"
           size="xs"
-          color="gray"
+          color="neutral"
           variant="ghost"
           title="コピー"
           :disabled="!generatedSql"

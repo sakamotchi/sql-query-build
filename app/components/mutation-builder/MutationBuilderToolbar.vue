@@ -28,9 +28,16 @@ const activeEnvironment = computed<Environment>(() => {
   return fetchedEnvironment.value || windowStore.currentEnvironment || 'development'
 })
 
+// 現在のアクティブな接続
+const activeConnection = computed(() => {
+  const connectionId = windowStore.currentConnectionId
+  if (!connectionId) return null
+  return connectionStore.getConnectionById(connectionId) || null
+})
+
 // 環境に応じたツールバーのスタイル
 const toolbarStyle = computed(() => {
-  const colors = getEnvironmentColors(activeEnvironment.value)
+  const colors = getEnvironmentColors(activeEnvironment.value, activeConnection.value?.customColor)
   return {
     backgroundColor: colors.bg,
     borderColor: colors.border,
@@ -58,6 +65,8 @@ const queryState = computed(() => store.getSerializableState())
 
 onMounted(async () => {
   safetyStore.loadSettings()
+  // 接続情報を読み込む
+  await connectionStore.loadConnections()
 
   try {
     const env = await windowApi.getWindowEnvironment()
@@ -81,7 +90,7 @@ const executeMutation = () => {
     toast.add({
       title: '実行エラー',
       description: '現在の環境ではDROPクエリの実行は禁止されています',
-      color: 'red',
+      color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -91,7 +100,7 @@ const executeMutation = () => {
     toast.add({
       title: '実行エラー',
       description: '現在の環境ではTRUNCATEクエリの実行は禁止されています',
-      color: 'red',
+      color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -148,21 +157,21 @@ const handleOpenSaved = () => {
       <div class="flex items-center gap-3">
         <UFieldGroup>
           <UButton
-            :color="mutationType === 'INSERT' ? 'primary' : 'gray'"
+            :color="mutationType === 'INSERT' ? 'primary' : 'neutral'"
             :variant="mutationType === 'INSERT' ? 'solid' : 'ghost'"
             @click="handleMutationTypeChange('INSERT')"
           >
             INSERT
           </UButton>
           <UButton
-            :color="mutationType === 'UPDATE' ? 'primary' : 'gray'"
+            :color="mutationType === 'UPDATE' ? 'primary' : 'neutral'"
             :variant="mutationType === 'UPDATE' ? 'solid' : 'ghost'"
             @click="handleMutationTypeChange('UPDATE')"
           >
             UPDATE
           </UButton>
           <UButton
-            :color="mutationType === 'DELETE' ? 'primary' : 'gray'"
+            :color="mutationType === 'DELETE' ? 'primary' : 'neutral'"
             :variant="mutationType === 'DELETE' ? 'solid' : 'ghost'"
             @click="handleMutationTypeChange('DELETE')"
           >
@@ -183,7 +192,7 @@ const handleOpenSaved = () => {
         </UButton>
         <UButton
           icon="i-heroicons-bookmark"
-          color="gray"
+          color="neutral"
           variant="ghost"
           @click="handleSave"
         >
@@ -191,7 +200,7 @@ const handleOpenSaved = () => {
         </UButton>
         <UButton
           icon="i-heroicons-folder-open"
-          color="gray"
+          color="neutral"
           variant="ghost"
           @click="handleOpenSaved"
         >
@@ -199,7 +208,7 @@ const handleOpenSaved = () => {
         </UButton>
         <UButton
           icon="i-heroicons-clock"
-          color="gray"
+          color="neutral"
           variant="ghost"
           @click="handleHistory"
         >
@@ -208,7 +217,7 @@ const handleOpenSaved = () => {
         <USeparator orientation="vertical" class="h-6" />
         <UButton
           icon="i-heroicons-arrow-left"
-          color="gray"
+          color="neutral"
           variant="ghost"
           to="/query-builder"
         >

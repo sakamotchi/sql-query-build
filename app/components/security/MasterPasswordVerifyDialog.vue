@@ -105,7 +105,7 @@ watch(isOpen, (open) => {
 
         <UAlert
           v-if="errorMessage"
-          :color="canRetry ? 'red' : 'amber'"
+          :color="canRetry ? 'error' : 'warning'"
           variant="soft"
           :icon="canRetry ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-x-circle'"
         >
@@ -123,7 +123,7 @@ watch(isOpen, (open) => {
 
           <UAlert
             v-if="showForgotPasswordHelp"
-            color="amber"
+            color="warning"
             variant="soft"
             icon="i-heroicons-information-circle"
             class="mt-3"

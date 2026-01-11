@@ -21,7 +21,7 @@ const providers: Record<Exclude<SecurityProvider, 'keychain'>, ProviderDetail> =
   simple: {
     name: 'Simple',
     icon: 'i-heroicons-key',
-    color: 'emerald',
+    color: 'success',
     securityLevel: 1,
     features: {
       encryption: 'AES-256-GCM',
@@ -36,7 +36,7 @@ const providers: Record<Exclude<SecurityProvider, 'keychain'>, ProviderDetail> =
   'master-password': {
     name: 'マスターパスワード',
     icon: 'i-heroicons-lock-closed',
-    color: 'amber',
+    color: 'warning',
     securityLevel: 2,
     features: {
       encryption: 'AES-256-GCM + PBKDF2',
@@ -123,7 +123,7 @@ const providers: Record<Exclude<SecurityProvider, 'keychain'>, ProviderDetail> =
               class="py-3 px-4"
             >
               <UBadge
-                :color="provider.features.unlockRequired ? 'amber' : 'emerald'"
+                :color="provider.features.unlockRequired ? 'warning' : 'success'"
                 variant="soft"
                 size="xs"
               >

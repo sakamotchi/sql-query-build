@@ -283,6 +283,9 @@ pub struct EnvironmentConfig {
     /// カスタムテーマカラー（Vuetifyカラー名またはHEXコード）
     pub theme_color: Option<String>,
 
+    /// カスタム背景色（HEXコード）
+    pub theme_background_color: Option<String>,
+
     /// テーマの明るさ
     pub theme_variant: ThemeVariant,
 }
@@ -292,6 +295,7 @@ impl Default for EnvironmentConfig {
         Self {
             environment_type: EnvironmentType::Development,
             theme_color: None,
+            theme_background_color: None,
             theme_variant: ThemeVariant::Light,
         }
     }
@@ -303,11 +307,23 @@ impl EnvironmentConfig {
         self.environment_type.default_color()
     }
 
+    /// 環境に応じたデフォルト背景色を取得
+    pub fn default_background_color(&self) -> &'static str {
+        self.environment_type.default_background_color()
+    }
+
     /// 実際に使用する色を取得（カスタム色 or デフォルト）
     pub fn effective_color(&self) -> String {
         self.theme_color
             .clone()
             .unwrap_or_else(|| self.default_color().to_string())
+    }
+
+    /// 実際に使用する背景色を取得（カスタム色 or デフォルト）
+    pub fn effective_background_color(&self) -> String {
+        self.theme_background_color
+            .clone()
+            .unwrap_or_else(|| self.default_background_color().to_string())
     }
 }
 
@@ -329,6 +345,16 @@ impl EnvironmentType {
             Self::Staging => "orange",
             Self::Testing => "purple",
             Self::Production => "red",
+        }
+    }
+
+    /// 環境のデフォルト背景色を取得
+    pub fn default_background_color(&self) -> &'static str {
+        match self {
+            Self::Development => "#F1F8E9",
+            Self::Staging => "#FFF3E0",
+            Self::Testing => "#E3F2FD",
+            Self::Production => "#FFEBEE",
         }
     }
 

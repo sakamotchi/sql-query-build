@@ -156,7 +156,7 @@ watch(isOpen, (open) => {
 
         <UAlert
           v-if="message"
-          color="red"
+          color="error"
           variant="soft"
           icon="i-heroicons-exclamation-triangle"
         >
@@ -167,7 +167,7 @@ watch(isOpen, (open) => {
 
     <template #footer>
       <div class="flex gap-2 justify-end">
-        <UButton variant="outline" color="gray" @click="isOpen = false">
+        <UButton variant="outline" color="neutral" @click="isOpen = false">
           キャンセル
         </UButton>
         <UButton color="primary" :loading="loading" :disabled="!canSubmit" @click="setupPassword">

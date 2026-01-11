@@ -87,7 +87,7 @@ watch(() => props.join, (join) => {
 
 // テーブル選択やJOIN種別変更時に提案を取得
 watch(
-  () => [isOpen.value, state.value.selectedTable, state.value.type],
+  () => [isOpen.value, state.value.selectedTable, state.value.type] as const,
   async ([open, selectedTable, joinType]) => {
     if (suppressSuggestionFetch.value) {
       return
@@ -293,7 +293,7 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
               <UButton
                 icon="i-heroicons-plus"
                 size="xs"
-                color="gray"
+                color="neutral"
                 variant="soft"
                 label="条件を追加"
                 @click="addCondition"
@@ -331,7 +331,7 @@ const applySuggestion = (suggestion: JoinSuggestion) => {
       <div class="flex justify-end gap-2">
         <UButton
           label="キャンセル"
-          color="gray"
+          color="neutral"
           variant="soft"
           @click="close"
         />

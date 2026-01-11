@@ -139,8 +139,8 @@ const handleDragEnd = () => {
     <!-- 削除ボタン -->
     <UButton
       icon="i-heroicons-x-mark"
-      size="2xs"
-      color="gray"
+      size="xs"
+      color="neutral"
       variant="ghost"
       @click.stop="handleRemove"
     />

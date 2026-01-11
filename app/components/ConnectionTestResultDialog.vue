@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ConnectionTestResult } from '~/types'
 
-const props = defineProps<{
+defineProps<{
   result: ConnectionTestResult | null
 }>()
 

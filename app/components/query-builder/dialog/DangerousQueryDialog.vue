@@ -89,7 +89,7 @@ const handleCancel = () => {
 
 // 危険度に応じた色
 const riskColor = computed(() => {
-  return props.analysisResult.riskLevel === 'danger' ? 'red' : 'amber'
+  return props.analysisResult.riskLevel === 'danger' ? 'error' : 'warning'
 })
 
 // 危険度に応じたアイコン
@@ -117,7 +117,7 @@ const executeButtonLabel = computed(() => {
   <UModal
     v-model:open="isOpen"
     title="危険なクエリの実行確認"
-    :ui="{ width: 'max-w-lg' }"
+    class="max-w-lg"
   >
     <template #body>
       <div class="space-y-4">

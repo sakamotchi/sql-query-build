@@ -16,7 +16,7 @@ interface LevelDetail {
 const levels: Record<SecurityLevel, LevelDetail> = {
   low: {
     name: '低',
-    color: 'emerald',
+    color: 'success',
     encryption: {
       algorithm: 'AES-256-GCM',
       keySize: 256,
@@ -27,7 +27,7 @@ const levels: Record<SecurityLevel, LevelDetail> = {
   },
   medium: {
     name: '中',
-    color: 'amber',
+    color: 'warning',
     encryption: {
       algorithm: 'AES-256-GCM',
       keySize: 256,
@@ -127,7 +127,7 @@ const levels: Record<SecurityLevel, LevelDetail> = {
         </div>
       </div>
 
-      <UAlert color="blue" variant="soft" icon="i-heroicons-information-circle">
+      <UAlert color="info" variant="soft" icon="i-heroicons-information-circle">
         <template #title>パフォーマンスへの影響</template>
         <p class="text-sm mt-1">
           セキュリティレベルが高いほど、暗号化・復号化に時間がかかります。

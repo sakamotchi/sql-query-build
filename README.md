@@ -94,7 +94,7 @@
 
 ## インストール
 
-> **Coming Soon**: ビルド済みインストーラーは[Releases](https://github.com/sakamotochi/sql-query-build/releases)ページで公開予定です。
+> **Coming Soon**: ビルド済みインストーラーは[Releases](https://github.com/sakamotchi/sql-query-build/releases)ページで公開予定です。
 
 ### ソースからビルド
 
@@ -108,7 +108,7 @@
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/sakamotochi/sql-query-build.git
+git clone https://github.com/sakamotchi/sql-query-build.git
 cd sql-query-build
 
 # 依存関係をインストール
@@ -158,4 +158,4 @@ npm run typecheck
 
 ## 作者
 
-**Yoshitaka Sakamoto** - [@sakamotochi](https://github.com/sakamotochi)
+**Yoshitaka Sakamoto** - [@sakamotchi](https://github.com/sakamotchi)

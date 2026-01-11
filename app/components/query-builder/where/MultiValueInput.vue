@@ -77,7 +77,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
       <template #trailing>
         <UButton
           v-if="inputValue.trim()"
-          color="gray"
+          color="neutral"
           variant="link"
           icon="i-heroicons-plus"
           :padded="false"

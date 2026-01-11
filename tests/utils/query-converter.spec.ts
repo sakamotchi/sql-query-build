@@ -214,7 +214,7 @@ describe('query-converter', () => {
 
         const result = convertToQueryModel(state, 'conn-123')
 
-        expect(result.whereClause).toBeNull()
+        expect(result.whereClause).toBeUndefined()
       })
 
       it('IS NULL演算子を変換できる', () => {

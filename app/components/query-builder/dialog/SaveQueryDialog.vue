@@ -92,7 +92,7 @@ const handleSave = async () => {
     toast.add({
       title: '保存成功',
       description: 'クエリを保存しました',
-      color: 'green',
+      color: 'success',
       icon: 'i-heroicons-check-circle'
     })
     emit('saved')
@@ -101,7 +101,7 @@ const handleSave = async () => {
     toast.add({
       title: '保存失敗',
       description: savedQueryStore.error || 'クエリの保存に失敗しました',
-      color: 'red',
+      color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
   }
@@ -128,7 +128,7 @@ const handleSave = async () => {
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="gray" variant="ghost" @click="isOpen = false">
+        <UButton color="neutral" variant="ghost" @click="isOpen = false">
           キャンセル
         </UButton>
         <UButton color="primary" @click="handleSave">

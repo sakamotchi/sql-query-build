@@ -4,6 +4,10 @@ import type { Environment } from '~/types'
 const props = withDefaults(defineProps<{
   environment: Environment
   position?: 'top' | 'left' | 'bottom' | 'right'
+  customColor?: {
+    primary: string
+    background: string
+  }
 }>(), {
   position: 'top'
 })
@@ -20,7 +24,7 @@ const positionClasses = computed(() => {
   return positions[props.position]
 })
 
-const barColor = computed(() => getEnvironmentColors(props.environment).primary)
+const barColor = computed(() => getEnvironmentColors(props.environment, props.customColor).primary)
 </script>
 
 <template>

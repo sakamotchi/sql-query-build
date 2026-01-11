@@ -1,9 +1,6 @@
 {
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "paths": {
-      "@/*": ["./app/*"]
-    },
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

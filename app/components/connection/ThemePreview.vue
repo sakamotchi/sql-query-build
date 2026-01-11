@@ -9,10 +9,19 @@ const props = defineProps<{
   }
 }>()
 
-const { getEnvironmentColors } = useEnvironment()
+const { getEnvironmentColors, adjustColorBrightness } = useEnvironment()
+const { isDark } = useTheme()
 
 const previewColors = computed(() => {
   if (props.customColor) {
+    if (isDark.value) {
+      // ダークモード時はカスタムカラーのプライマリをベースに暗い背景を生成
+      return {
+        primary: props.customColor.primary,
+        bg: adjustColorBrightness(props.customColor.primary, -0.6),
+        border: props.customColor.primary
+      }
+    }
     return {
       primary: props.customColor.primary,
       bg: props.customColor.background,

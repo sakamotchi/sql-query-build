@@ -240,22 +240,24 @@ const relationLines = computed(() => {
       const targetTable = selectedTables.value.find((t) => t.alias === join.table.alias)
       if (!baseTable || !targetTable) return null
 
+      const basePos = positions[baseTable.id]
       const fromRect =
         getCardRect(baseTable.id) ||
-        (positions[baseTable.id]
+        (basePos
           ? {
-              x: positions[baseTable.id].x,
-              y: positions[baseTable.id].y,
+              x: basePos.x,
+              y: basePos.y,
               width: CARD_WIDTH,
               height: CARD_HEIGHT,
             }
           : null)
+      const targetPos = positions[targetTable.id]
       const toRect =
         getCardRect(targetTable.id) ||
-        (positions[targetTable.id]
+        (targetPos
           ? {
-              x: positions[targetTable.id].x,
-              y: positions[targetTable.id].y,
+              x: targetPos.x,
+              y: targetPos.y,
               width: CARD_WIDTH,
               height: CARD_HEIGHT,
             }
@@ -320,21 +322,21 @@ const handleCardFocus = (payload: { id: string; alias: string }) => {
       <UButton
         icon="i-heroicons-magnifying-glass-plus"
         size="sm"
-        color="gray"
+        color="neutral"
         variant="ghost"
         @click="handleZoomIn"
       />
       <UButton
         icon="i-heroicons-magnifying-glass-minus"
         size="sm"
-        color="gray"
+        color="neutral"
         variant="ghost"
         @click="handleZoomOut"
       />
       <UButton
         :label="`${zoom}%`"
         size="sm"
-        color="gray"
+        color="neutral"
         variant="ghost"
         @click="handleZoomReset"
       />

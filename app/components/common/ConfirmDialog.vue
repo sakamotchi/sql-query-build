@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+type ButtonColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+
 const props = defineProps<{
   open: boolean
   title?: string
   description?: string
   confirmLabel?: string
-  confirmColor?: string
+  confirmColor?: ButtonColor
   cancelLabel?: string
 }>()
 
@@ -36,10 +38,10 @@ const handleCancel = () => {
   <UModal v-model:open="isOpen" :title="title" :description="description">
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="gray" variant="ghost" @click="handleCancel">
+        <UButton color="neutral" variant="ghost" @click="handleCancel">
           {{ cancelLabel || 'キャンセル' }}
         </UButton>
-        <UButton :color="confirmColor || 'red'" @click="handleConfirm">
+        <UButton :color="confirmColor || 'error'" @click="handleConfirm">
           {{ confirmLabel || '削除' }}
         </UButton>
       </div>

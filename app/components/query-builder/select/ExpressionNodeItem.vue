@@ -32,8 +32,8 @@ const handleRemove = () => {
       <UInput v-model="aliasValue" placeholder="エイリアス（任意）" size="xs" v-bind="sqlIdentifierAttrs" />
       <UButton
         icon="i-heroicons-x-mark"
-        size="2xs"
-        color="gray"
+        size="xs"
+        color="neutral"
         variant="ghost"
         @click.stop="handleRemove"
       />

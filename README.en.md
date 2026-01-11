@@ -94,7 +94,7 @@ A visual SQL query builder desktop application that lets you construct queries t
 
 ## Installation
 
-> **Coming Soon**: Pre-built installers will be available on the [Releases](https://github.com/sakamotochi/sql-query-build/releases) page.
+> **Coming Soon**: Pre-built installers will be available on the [Releases](https://github.com/sakamotchi/sql-query-build/releases) page.
 
 ### Build from Source
 
@@ -108,7 +108,7 @@ A visual SQL query builder desktop application that lets you construct queries t
 
 ```bash
 # Clone the repository
-git clone https://github.com/sakamotochi/sql-query-build.git
+git clone https://github.com/sakamotchi/sql-query-build.git
 cd sql-query-build
 
 # Install dependencies
@@ -158,4 +158,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Author
 
-**Yoshitaka Sakamoto** - [@sakamotochi](https://github.com/sakamotochi)
+**Yoshitaka Sakamoto** - [@sakamotchi](https://github.com/sakamotchi)

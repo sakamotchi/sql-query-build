@@ -152,7 +152,7 @@ const textValue = computed({
         <UPopover :popper="{ placement: 'bottom-start' }">
           <UButton
             icon="i-heroicons-calendar-days-20-solid"
-            color="white"
+            color="neutral"
             variant="outline"
             :label="dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : '日付を選択'"
             class="w-full justify-start font-normal text-left"
@@ -174,7 +174,7 @@ const textValue = computed({
         <UPopover :popper="{ placement: 'bottom-start' }">
           <UButton
             icon="i-heroicons-calendar-days-20-solid"
-            color="white"
+            color="neutral"
             variant="outline"
             :label="timestampDate ? `${df.format(timestampDate.toDate(getLocalTimeZone()))} ${timestampTime?.toString() || ''}` : '日時を選択'"
             class="w-full justify-start font-normal text-left"

@@ -36,7 +36,7 @@ const hasActiveFilters = computed(() => searchQuery.value !== '' || environmentF
             <UButton
               icon="i-heroicons-x-mark"
               variant="ghost"
-              color="gray"
+              color="neutral"
               size="xs"
               @click="clearSearch"
             />
@@ -57,7 +57,7 @@ const hasActiveFilters = computed(() => searchQuery.value !== '' || environmentF
         <UIcon name="i-heroicons-funnel" />
         <span>フィルター適用中</span>
       </div>
-      <UButton variant="ghost" color="gray" size="sm" @click="resetFilters">
+      <UButton variant="ghost" color="neutral" size="sm" @click="resetFilters">
         リセット
       </UButton>
     </div>

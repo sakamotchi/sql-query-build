@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import { useWindowStore } from '@/stores/window'
+import { useConnectionStore } from '@/stores/connection'
 import DangerousQueryDialog from './dialog/DangerousQueryDialog.vue'
 import { useSafetyStore } from '@/stores/safety'
 import { useEnvironment } from '@/composables/useEnvironment'
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 
 const queryBuilderStore = useQueryBuilderStore()
 const windowStore = useWindowStore()
+const connectionStore = useConnectionStore()
 const { toggleColorMode, isDark } = useTheme()
 const safetyStore = useSafetyStore()
 const { getEnvironmentColors } = useEnvironment()
@@ -34,8 +36,14 @@ const activeEnvironment = computed<Environment>(() => {
 })
 
 // 環境に応じたツールバーのスタイル
+const activeConnection = computed(() => {
+  const connectionId = windowStore.currentConnectionId
+  if (!connectionId) return null
+  return connectionStore.getConnectionById(connectionId) || null
+})
+
 const toolbarStyle = computed(() => {
-  const colors = getEnvironmentColors(activeEnvironment.value)
+  const colors = getEnvironmentColors(activeEnvironment.value, activeConnection.value?.customColor)
   return {
     backgroundColor: colors.bg,
     borderColor: colors.border,
@@ -61,6 +69,8 @@ const safetyConfig = computed(() => {
 
 onMounted(async () => {
   safetyStore.loadSettings()
+  // 接続情報を読み込む（カスタムカラーなどのため）
+  await connectionStore.loadConnections()
 
   // Tauriから現在のウィンドウの環境を取得
   try {
@@ -86,7 +96,7 @@ const executeQuery = () => {
         toast.add({
             title: '実行エラー',
             description: '現在の環境ではDROPクエリの実行は禁止されています',
-            color: 'red',
+            color: 'error',
             icon: 'i-heroicons-exclamation-circle'
         })
         return
@@ -95,7 +105,7 @@ const executeQuery = () => {
         toast.add({
             title: '実行エラー',
             description: '現在の環境ではTRUNCATEクエリの実行は禁止されています',
-            color: 'red',
+            color: 'error',
             icon: 'i-heroicons-exclamation-circle'
         })
         return
@@ -174,7 +184,7 @@ const openHistory = () => {
     <UButton
       icon="i-heroicons-circle-stack"
       size="sm"
-      color="gray"
+      color="neutral"
       variant="ghost"
       title="DB構造パネル"
       @click="emit('toggle-left-panel')"
@@ -198,7 +208,7 @@ const openHistory = () => {
 
     <UButton
       variant="ghost"
-      color="gray"
+      color="neutral"
       size="sm"
       @click="saveQuery"
     >
@@ -210,7 +220,7 @@ const openHistory = () => {
 
     <UButton
       variant="ghost"
-      color="gray"
+      color="neutral"
       size="sm"
       @click="openSavedQueries"
     >
@@ -222,7 +232,7 @@ const openHistory = () => {
 
     <UButton
       variant="ghost"
-      color="gray"
+      color="neutral"
       size="sm"
       @click="createNewQuery"
     >
@@ -238,7 +248,7 @@ const openHistory = () => {
     <UButton
       icon="i-heroicons-clock"
       size="sm"
-      color="gray"
+      color="neutral"
       variant="ghost"
       title="クエリ履歴"
       @click="openHistory"
@@ -250,7 +260,7 @@ const openHistory = () => {
     <UButton
       icon="i-heroicons-table-cells"
       size="sm"
-      color="gray"
+      color="neutral"
       variant="ghost"
       title="結果パネル"
       @click="emit('toggle-result-panel')"
@@ -259,7 +269,7 @@ const openHistory = () => {
     <UButton
       icon="i-heroicons-code-bracket"
       size="sm"
-      color="gray"
+      color="neutral"
       variant="ghost"
       title="SQLプレビューパネル"
       @click="emit('toggle-right-panel')"
@@ -271,7 +281,7 @@ const openHistory = () => {
     <UButton
       icon="i-heroicons-arrow-right"
       size="sm"
-      color="gray"
+      color="neutral"
       variant="ghost"
       title="データ変更へ"
       to="/mutation-builder"
@@ -285,7 +295,7 @@ const openHistory = () => {
     <UButton
       :icon="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
       size="sm"
-      color="gray"
+      color="neutral"
       variant="ghost"
       :title="isDark ? 'ライトモードに切り替え' : 'ダークモードに切り替え'"
       @click="toggleColorMode"

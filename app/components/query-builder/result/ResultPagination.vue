@@ -56,7 +56,7 @@ function onPageSizeChange(size: number) {
       <UButton
         icon="i-heroicons-chevron-double-left"
         size="xs"
-        color="gray"
+        color="neutral"
         variant="ghost"
         :disabled="currentPage === 1"
         @click="goToPage(1)"
@@ -64,7 +64,7 @@ function onPageSizeChange(size: number) {
       <UButton
         icon="i-heroicons-chevron-left"
         size="xs"
-        color="gray"
+        color="neutral"
         variant="ghost"
         :disabled="currentPage === 1"
         @click="goToPage(currentPage - 1)"
@@ -75,7 +75,7 @@ function onPageSizeChange(size: number) {
       <UButton
         icon="i-heroicons-chevron-right"
         size="xs"
-        color="gray"
+        color="neutral"
         variant="ghost"
         :disabled="currentPage === totalPages"
         @click="goToPage(currentPage + 1)"
@@ -83,7 +83,7 @@ function onPageSizeChange(size: number) {
       <UButton
         icon="i-heroicons-chevron-double-right"
         size="xs"
-        color="gray"
+        color="neutral"
         variant="ghost"
         :disabled="currentPage === totalPages"
         @click="goToPage(totalPages)"

@@ -4,7 +4,7 @@ import ResultColumnHeader from './ResultColumnHeader.vue'
 import ResultRow from './ResultRow.vue'
 import { useColumnResize } from '@/composables/useColumnResize'
 
-const props = defineProps<{
+defineProps<{
   columns: QueryResultColumn[]
   rows: QueryResultRow[]
 }>()

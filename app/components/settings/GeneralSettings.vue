@@ -100,7 +100,7 @@ const saveSettings = async () => {
 
       <UAlert
         v-if="error || message"
-        :color="error ? 'red' : 'green'"
+        :color="error ? 'error' : 'success'"
         variant="soft"
         :title="error ? '設定の読み込み/保存でエラーが発生しました' : '完了'"
       >

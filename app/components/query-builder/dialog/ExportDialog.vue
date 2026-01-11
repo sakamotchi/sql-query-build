@@ -61,7 +61,7 @@ const handleExport = async () => {
       toast.add({
         title: 'エクスポート成功',
         description: `${result.rowsAffected}件のデータをエクスポートしました`,
-        color: 'green',
+        color: 'success',
         icon: 'i-heroicons-check-circle'
       })
       isOpen.value = false
@@ -72,7 +72,7 @@ const handleExport = async () => {
     toast.add({
       title: 'エクスポート失敗',
       description: e.message,
-      color: 'red',
+      color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
   } finally {
@@ -97,7 +97,7 @@ const handleExport = async () => {
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton color="gray" variant="ghost" @click="isOpen = false" :disabled="isExporting">
+        <UButton color="neutral" variant="ghost" @click="isOpen = false" :disabled="isExporting">
           キャンセル
         </UButton>
         <UButton color="primary" @click="handleExport" :loading="isExporting">

@@ -191,11 +191,13 @@ watch(
               isCorrelated: true,
             }
           }
+          // literal型の場合のみvalueプロパティを参照
+          const literalValue = condition.value.type === 'literal' ? condition.value.value : ''
           return {
             id: condition.id,
             column: condition.column.columnName,
             operator: condition.operator as WhereOperator,
-            value: String(condition.value.value ?? ''),
+            value: String(literalValue ?? ''),
             isCorrelated: false,
           }
         })
@@ -523,13 +525,14 @@ const previewSql = computed(() => {
             class="flex gap-2 items-start"
           >
             <CorrelatedConditionEditor
-              v-model="whereConditions[index]"
+              :model-value="condition"
               :table-columns="tableColumns"
               :parent-columns="parentColumns"
+              @update:model-value="(val) => whereConditions[index] = { ...val, id: condition.id, operator: val.operator as WhereOperator }"
             />
             <UButton
               size="xs"
-              color="red"
+              color="error"
               variant="ghost"
               icon="i-heroicons-trash"
               @click="removeWhereCondition(index)"
@@ -547,7 +550,7 @@ const previewSql = computed(() => {
 
       <UAlert
         v-if="selectType === 'column'"
-        color="yellow"
+        color="warning"
         variant="soft"
         title="注意"
         description="サブクエリは必ずスカラー値（単一の値）を返す必要があります。複数行が返される場合はエラーになります。"

@@ -69,7 +69,7 @@
     <div class="flex-shrink-0">
       <UButton
         icon="i-heroicons-x-mark"
-        color="red"
+        color="error"
         variant="ghost"
         size="xs"
         @click="$emit('remove')"

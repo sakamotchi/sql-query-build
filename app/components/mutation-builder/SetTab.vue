@@ -106,14 +106,14 @@ const buildColumnsFromModel = (setClause: Record<string, { value: any; isNull: b
       return {
         id: column.name,
         column,
-        value: config.isNull ? getDefaultValue(column) : (config.value ?? getDefaultValue(column)),
-        isNull: config.isNull,
+        value: config?.isNull ? getDefaultValue(column) : (config?.value ?? getDefaultValue(column)),
+        isNull: config?.isNull ?? false,
       }
     })
 }
 
 const setColumns = ref<SetColumnEntry[]>([])
-const columnToAdd = ref<Column | null>(null)
+const columnToAdd = ref<Column | undefined>(undefined)
 const internalUpdate = ref(false)
 
 const columnsForAdd = computed(() => {
@@ -132,7 +132,7 @@ const syncStore = () => {
   mutationStore.updateSetClause(setClause)
 }
 
-const addColumn = (column?: Column | null) => {
+const addColumn = (column?: Column) => {
   if (!column) return
   setColumns.value.push({
     id: column.name,
@@ -140,7 +140,7 @@ const addColumn = (column?: Column | null) => {
     value: getDefaultValue(column),
     isNull: false,
   })
-  columnToAdd.value = null
+  columnToAdd.value = undefined
   syncStore()
 }
 
@@ -247,7 +247,7 @@ watch(externalSetClauseSignature, () => {
 
       <UAlert
         v-if="setColumns.length === 0"
-        color="amber"
+        color="warning"
         icon="i-heroicons-exclamation-triangle"
         title="カラムが選択されていません"
         description="少なくとも1つのカラムを選択してください"

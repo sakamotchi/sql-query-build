@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import ConditionGroup from './ConditionGroup.vue'
-import type { WhereCondition, ConditionGroup as ConditionGroupType } from '@/types/query'
 
 const queryBuilderStore = useQueryBuilderStore()
 
@@ -129,7 +127,7 @@ const addGroup = () => {
               icon="i-heroicons-folder-plus"
               size="sm"
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="addGroup"
             />
           </div>

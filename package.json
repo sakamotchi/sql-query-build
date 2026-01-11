@@ -6,7 +6,7 @@
   "author": "Yoshitaka Sakamoto",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sakamotochi/sql-query-build.git"
+    "url": "https://github.com/sakamotchi/sql-query-build.git"
   },
   "type": "module",
   "overrides": {

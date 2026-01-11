@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { invoke } from '@tauri-apps/api/core'
-import type { Connection } from '~/types'
+import type { Connection, ConnectionTestResult } from '~/types'
 
 // Tauriコマンドのヘルパー関数
 async function invokeTauri<T>(command: string, args?: Record<string, unknown>): Promise<T> {
@@ -34,6 +34,7 @@ function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'crea
     name: baseConnection.name,
     environment: baseConnection.environment,
     themeColor: baseConnection.customColor?.primary || '#4CAF50',
+    themeBackgroundColor: baseConnection.customColor?.background || '#F1F8E9',
     host: baseConnection.host,
     port: baseConnection.port,
     database: baseConnection.database,
@@ -46,6 +47,26 @@ function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'crea
     timeout: 30,
     createdAt: baseConnection.createdAt,
     updatedAt: baseConnection.updatedAt
+  }
+}
+
+// RustのFrontendConnection型からフロントエンド型に変換
+function fromRustConnection(rustConnection: any): Connection {
+  const { themeColor, themeBackgroundColor, ...rest } = rustConnection
+  
+  // customColorの再構築
+  // themeColorが存在すればカスタムカラーとして扱う
+  let customColor = undefined
+  if (themeColor) {
+    customColor = {
+      primary: themeColor,
+      background: themeBackgroundColor || '#F1F8E9' // フォールバック（通常は両方設定される）
+    }
+  }
+
+  return {
+    ...rest,
+    customColor
   }
 }
 
@@ -70,7 +91,8 @@ export const useConnectionStore = defineStore('connection', {
       this.error = null
 
       try {
-        this.connections = await invokeTauri<Connection[]>('get_connections')
+        const rustConnections = await invokeTauri<any[]>('get_connections')
+        this.connections = rustConnections.map(fromRustConnection)
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Unknown error'
         console.error('Failed to load connections:', error)
@@ -89,9 +111,9 @@ export const useConnectionStore = defineStore('connection', {
           includePasswordDecrypted: true
         }
         console.log('[getConnectionWithPassword] Calling with params:', params)
-        const result = await invokeTauri<Connection | null>('get_connection', params)
+        const result = await invokeTauri<any | null>('get_connection', params)
         console.log('[getConnectionWithPassword] Result:', result)
-        return result
+        return result ? fromRustConnection(result) : null
       } catch (error) {
         console.error('Failed to get connection with password:', error)
 
@@ -110,7 +132,8 @@ export const useConnectionStore = defineStore('connection', {
 
       try {
         const rustConnection = toRustConnection(connection)
-        const newConnection = await invokeTauri<Connection>('create_connection', { connection: rustConnection })
+        const newRustConnection = await invokeTauri<any>('create_connection', { connection: rustConnection })
+        const newConnection = fromRustConnection(newRustConnection)
         this.connections.push(newConnection)
         return newConnection
       } catch (error) {
@@ -149,7 +172,8 @@ export const useConnectionStore = defineStore('connection', {
 
         const merged = { ...existing, ...updates }
         const rustConnection = toRustConnection(merged)
-        const updated = await invokeTauri<Connection>('update_connection', { connection: rustConnection })
+        const updatedRustConnection = await invokeTauri<any>('update_connection', { connection: rustConnection })
+        const updated = fromRustConnection(updatedRustConnection)
 
         const index = this.connections.findIndex((connection) => connection.id === id)
         if (index !== -1) {
@@ -163,14 +187,27 @@ export const useConnectionStore = defineStore('connection', {
 
         // ブラウザモード用のフォールバック
         if (error instanceof Error && error.message.includes('Tauri is not available')) {
-          const index = this.connections.findIndex((connection) => connection.id === id)
-          if (index !== -1) {
-            const updated = {
-              ...this.connections[index],
+          const existing = this.connections.find((connection) => connection.id === id)
+          if (existing) {
+            const updated: Connection = {
+              ...existing,
               ...updates,
+              // 必須フィールドを既存の値で確定
+              id: existing.id,
+              name: updates.name ?? existing.name,
+              type: updates.type ?? existing.type,
+              environment: updates.environment ?? existing.environment,
+              host: updates.host ?? existing.host,
+              port: updates.port ?? existing.port,
+              username: updates.username ?? existing.username,
+              database: updates.database ?? existing.database,
+              createdAt: existing.createdAt,
               updatedAt: new Date().toISOString()
             }
-            this.connections[index] = updated
+            const index = this.connections.findIndex((connection) => connection.id === id)
+            if (index !== -1) {
+              this.connections[index] = updated
+            }
             console.warn('Updated mock connection in browser mode:', updated)
             return updated
           }
@@ -213,10 +250,10 @@ export const useConnectionStore = defineStore('connection', {
       }
     },
 
-    async testConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>) {
+    async testConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>): Promise<ConnectionTestResult> {
       try {
         const rustConnection = toRustConnection(connection)
-        return await invokeTauri('test_connection', { connection: rustConnection })
+        return await invokeTauri('test_connection', { connection: rustConnection }) as ConnectionTestResult
       } catch (error) {
         console.error('Connection test failed:', error)
 
