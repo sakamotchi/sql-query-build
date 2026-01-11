@@ -11,11 +11,9 @@ const toast = useToast()
 
 const { settings, loading, error } = storeToRefs(settingsStore)
 
-const form = reactive<AppSettings>({
+const form = reactive<Pick<AppSettings, 'theme' | 'language'>>({
   theme: settings.value.theme,
-  language: settings.value.language,
-  autoSave: settings.value.autoSave,
-  windowRestore: settings.value.windowRestore
+  language: settings.value.language
 })
 
 const saving = ref(false)
@@ -104,24 +102,6 @@ const saveSettings = async () => {
             { label: t('settings.general.language.options.en'), value: 'en' }
           ]"
         />
-      </UFormField>
-
-      <UFormField :label="t('settings.general.autoSave.label')">
-        <div class="space-y-1">
-          <USwitch v-model="form.autoSave" />
-          <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ t('settings.general.autoSave.hint') }}
-          </p>
-        </div>
-      </UFormField>
-
-      <UFormField :label="t('settings.general.windowRestore.label')">
-        <div class="space-y-1">
-          <USwitch v-model="form.windowRestore" />
-          <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ t('settings.general.windowRestore.hint') }}
-          </p>
-        </div>
       </UFormField>
 
       <UAlert
