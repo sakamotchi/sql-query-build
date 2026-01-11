@@ -30,6 +30,7 @@ const showTestResultDialog = ref(false)
 const useCustomColor = ref(false)
 const showPassword = ref(false)
 const loadingConnection = ref(false)
+const isInitializing = ref(false)
 
 const connectionId = computed(() => (route.query.id as string | undefined) ?? '')
 const isEditMode = computed(() => Boolean(connectionId.value))
@@ -74,18 +75,30 @@ const loadConnectionForEdit = async () => {
     // パスワード復号化付きで接続情報を取得
     const existing = await connectionStore.getConnectionWithPassword(connectionId.value)
     if (existing) {
-      const { id, createdAt, updatedAt, ...payload } = existing
-      Object.assign(form, payload)
-      useCustomColor.value = Boolean(existing.customColor)
+      isInitializing.value = true
+      try {
+        const { id, createdAt, updatedAt, ...payload } = existing
+        Object.assign(form, payload)
+        useCustomColor.value = Boolean(existing.customColor)
+        await nextTick()
+      } finally {
+        isInitializing.value = false
+      }
     }
   } catch (error) {
     console.error('Failed to load connection for edit:', error)
     // フォールバック: ストアから取得（パスワードなし）
     const existing = connectionStore.getConnectionById(connectionId.value)
     if (existing) {
-      const { id, createdAt, updatedAt, ...payload } = existing
-      Object.assign(form, payload)
-      useCustomColor.value = Boolean(existing.customColor)
+      isInitializing.value = true
+      try {
+        const { id, createdAt, updatedAt, ...payload } = existing
+        Object.assign(form, payload)
+        useCustomColor.value = Boolean(existing.customColor)
+        await nextTick()
+      } finally {
+        isInitializing.value = false
+      }
     }
   } finally {
     loadingConnection.value = false
@@ -158,6 +171,8 @@ watch(useCustomColor, (enabled) => {
 })
 
 watch(() => form.type, (newType) => {
+  if (loadingConnection.value || isInitializing.value) return
+
   if (newType === 'mysql') {
     form.port = 3306
   } else if (newType === 'postgresql') {
