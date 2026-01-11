@@ -5,6 +5,10 @@ const props = withDefaults(defineProps<{
   environment: Environment
   size?: 'sm' | 'md' | 'lg'
   showIcon?: boolean
+  customColor?: {
+    primary: string
+    background: string
+  }
 }>(), {
   size: 'md',
   showIcon: false
@@ -28,9 +32,18 @@ const environmentIcons: Record<Environment, string> = {
   production: 'i-heroicons-server'
 }
 
-const badgeColor = computed(() => environmentColors[props.environment])
+const badgeColor = computed(() => props.customColor ? 'neutral' : environmentColors[props.environment]) // カスタムの時はベースをneutralにする（styleで上書き）
 const badgeIcon = computed(() => environmentIcons[props.environment])
 const label = computed(() => getEnvironmentLabel(props.environment))
+
+const customStyle = computed(() => {
+  if (!props.customColor) return {}
+  return {
+    backgroundColor: props.customColor.primary,
+    color: '#ffffff', // テキストは白固定（プライマリが濃い色想定）
+    borderColor: props.customColor.primary
+  }
+})
 </script>
 
 <template>
@@ -38,6 +51,7 @@ const label = computed(() => getEnvironmentLabel(props.environment))
     :color="badgeColor"
     :size="size"
     variant="solid"
+    :style="customStyle"
   >
     <div class="flex items-center gap-1">
       <UIcon

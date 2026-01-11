@@ -28,9 +28,16 @@ const activeEnvironment = computed<Environment>(() => {
   return fetchedEnvironment.value || windowStore.currentEnvironment || 'development'
 })
 
+// 現在のアクティブな接続
+const activeConnection = computed(() => {
+  const connectionId = windowStore.currentConnectionId
+  if (!connectionId) return null
+  return connectionStore.getConnectionById(connectionId) || null
+})
+
 // 環境に応じたツールバーのスタイル
 const toolbarStyle = computed(() => {
-  const colors = getEnvironmentColors(activeEnvironment.value)
+  const colors = getEnvironmentColors(activeEnvironment.value, activeConnection.value?.customColor)
   return {
     backgroundColor: colors.bg,
     borderColor: colors.border,
@@ -58,6 +65,8 @@ const queryState = computed(() => store.getSerializableState())
 
 onMounted(async () => {
   safetyStore.loadSettings()
+  // 接続情報を読み込む
+  await connectionStore.loadConnections()
 
   try {
     const env = await windowApi.getWindowEnvironment()

@@ -31,7 +31,11 @@ const handleDelete = () => emit('delete', props.connection)
 
 <template>
   <UCard class="relative hover:shadow-lg transition-shadow">
-    <EnvironmentIndicator :environment="connection.environment" position="top" />
+    <EnvironmentIndicator 
+      :environment="connection.environment" 
+      :custom-color="connection.customColor"
+      position="top" 
+    />
 
     <div class="space-y-4">
       <div class="flex items-start justify-between">
@@ -44,7 +48,11 @@ const handleDelete = () => emit('delete', props.connection)
             </p>
           </div>
         </div>
-        <EnvironmentBadge :environment="connection.environment" size="sm" />
+        <EnvironmentBadge 
+          :environment="connection.environment" 
+          :custom-color="connection.customColor"
+          size="sm" 
+        />
       </div>
 
       <div class="space-y-2 text-sm">

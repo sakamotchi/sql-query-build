@@ -34,6 +34,7 @@ function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'crea
     name: baseConnection.name,
     environment: baseConnection.environment,
     themeColor: baseConnection.customColor?.primary || '#4CAF50',
+    themeBackgroundColor: baseConnection.customColor?.background || '#F1F8E9',
     host: baseConnection.host,
     port: baseConnection.port,
     database: baseConnection.database,
@@ -46,6 +47,26 @@ function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'crea
     timeout: 30,
     createdAt: baseConnection.createdAt,
     updatedAt: baseConnection.updatedAt
+  }
+}
+
+// RustのFrontendConnection型からフロントエンド型に変換
+function fromRustConnection(rustConnection: any): Connection {
+  const { themeColor, themeBackgroundColor, ...rest } = rustConnection
+  
+  // customColorの再構築
+  // themeColorが存在すればカスタムカラーとして扱う
+  let customColor = undefined
+  if (themeColor) {
+    customColor = {
+      primary: themeColor,
+      background: themeBackgroundColor || '#F1F8E9' // フォールバック（通常は両方設定される）
+    }
+  }
+
+  return {
+    ...rest,
+    customColor
   }
 }
 
@@ -70,7 +91,8 @@ export const useConnectionStore = defineStore('connection', {
       this.error = null
 
       try {
-        this.connections = await invokeTauri<Connection[]>('get_connections')
+        const rustConnections = await invokeTauri<any[]>('get_connections')
+        this.connections = rustConnections.map(fromRustConnection)
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Unknown error'
         console.error('Failed to load connections:', error)
@@ -89,9 +111,9 @@ export const useConnectionStore = defineStore('connection', {
           includePasswordDecrypted: true
         }
         console.log('[getConnectionWithPassword] Calling with params:', params)
-        const result = await invokeTauri<Connection | null>('get_connection', params)
+        const result = await invokeTauri<any | null>('get_connection', params)
         console.log('[getConnectionWithPassword] Result:', result)
-        return result
+        return result ? fromRustConnection(result) : null
       } catch (error) {
         console.error('Failed to get connection with password:', error)
 
@@ -110,7 +132,8 @@ export const useConnectionStore = defineStore('connection', {
 
       try {
         const rustConnection = toRustConnection(connection)
-        const newConnection = await invokeTauri<Connection>('create_connection', { connection: rustConnection })
+        const newRustConnection = await invokeTauri<any>('create_connection', { connection: rustConnection })
+        const newConnection = fromRustConnection(newRustConnection)
         this.connections.push(newConnection)
         return newConnection
       } catch (error) {
@@ -149,7 +172,8 @@ export const useConnectionStore = defineStore('connection', {
 
         const merged = { ...existing, ...updates }
         const rustConnection = toRustConnection(merged)
-        const updated = await invokeTauri<Connection>('update_connection', { connection: rustConnection })
+        const updatedRustConnection = await invokeTauri<any>('update_connection', { connection: rustConnection })
+        const updated = fromRustConnection(updatedRustConnection)
 
         const index = this.connections.findIndex((connection) => connection.id === id)
         if (index !== -1) {
