@@ -36,15 +36,6 @@ watch(
   }
 )
 
-watch(
-  () => form.language,
-  (newLang) => {
-    if (locale.value !== newLang) {
-      void setLocale(newLang)
-    }
-  }
-)
-
 const saveSettings = async () => {
   saving.value = true
   message.value = null

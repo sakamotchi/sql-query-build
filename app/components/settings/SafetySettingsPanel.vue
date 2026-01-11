@@ -5,13 +5,14 @@ import type { Environment } from '@/types'
 
 const safetyStore = useSafetyStore()
 const { settings, loading, error } = storeToRefs(safetyStore)
+const { t } = useI18n()
 
-const environments: { key: Environment; label: string; description: string }[] = [
-  { key: 'development', label: '開発環境', description: 'ローカル開発用' },
-  { key: 'test', label: 'テスト環境', description: '自動テスト・検証用' },
-  { key: 'staging', label: 'ステージング環境', description: '本番前の最終確認用' },
-  { key: 'production', label: '本番環境', description: '実運用環境' },
-]
+const environments = computed<{ key: Environment; label: string; description: string }[]>(() => [
+  { key: 'development', label: t('settings.safety.env.development.label'), description: t('settings.safety.env.development.description') },
+  { key: 'test', label: t('settings.safety.env.test.label'), description: t('settings.safety.env.test.description') },
+  { key: 'staging', label: t('settings.safety.env.staging.label'), description: t('settings.safety.env.staging.description') },
+  { key: 'production', label: t('settings.safety.env.production.label'), description: t('settings.safety.env.production.description') },
+])
 
 const resetConfirmOpen = ref(false)
 
@@ -30,9 +31,9 @@ const handleReset = async () => {
     <template #header>
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h3 class="text-xl font-semibold">環境別安全設定</h3>
+          <h3 class="text-xl font-semibold">{{ t('settings.safety.title') }}</h3>
           <p class="text-sm text-neutral-500 mt-1">
-            接続先の環境ごとに、クエリ実行時の安全確認を設定します
+            {{ t('settings.safety.description') }}
           </p>
         </div>
         <UButton
@@ -41,7 +42,7 @@ const handleReset = async () => {
           size="sm"
           @click="resetConfirmOpen = true"
         >
-          デフォルトに戻す
+          {{ t('settings.safety.resetButton') }}
         </UButton>
       </div>
     </template>
@@ -68,19 +69,19 @@ const handleReset = async () => {
     </div>
 
     <!-- リセット確認モーダル -->
-    <UModal v-model:open="resetConfirmOpen" title="設定をリセット">
+    <UModal v-model:open="resetConfirmOpen" :title="t('settings.safety.modal.title')">
       <template #body>
         <div class="p-4">
-            <p>すべての環境の安全設定をデフォルトに戻しますか？</p>
+            <p>{{ t('settings.safety.modal.body') }}</p>
         </div>
       </template>
       <template #footer>
         <div class="flex gap-2 justify-end p-4">
           <UButton color="neutral" variant="outline" @click="resetConfirmOpen = false">
-            キャンセル
+            {{ t('settings.safety.modal.cancel') }}
           </UButton>
           <UButton color="error" @click="handleReset">
-            リセット
+            {{ t('settings.safety.modal.confirm') }}
           </UButton>
         </div>
       </template>

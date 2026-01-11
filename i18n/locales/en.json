@@ -604,6 +604,111 @@
                 "successTitle": "Success"
             },
             "saveButton": "Save Settings"
+        },
+        "about": {
+            "appInfo": {
+                "label": "App Information",
+                "description": "Desktop app for database connection and SQL query building"
+            },
+            "stack": {
+                "frontend": "Frontend",
+                "ui": "UI",
+                "desktop": "Desktop",
+                "state": "State Management"
+            },
+            "documentation": "Please refer to documents under `docs/` for latest changes and detailed design."
+        },
+        "security": {
+            "title": "Security",
+            "provider": {
+                "title": "Security Provider",
+                "label": "Provider",
+                "hint": "Select storage backend and encryption method",
+                "current": "Current Provider: {provider}",
+                "reset": "Reset",
+                "processing": "Processing",
+                "options": {
+                    "simple": {
+                        "label": "Simple (Recommended)",
+                        "description": "Fixed key encryption. No password required."
+                    },
+                    "masterPassword": {
+                        "label": "Master Password",
+                        "description": "Encrypted with user-defined password"
+                    }
+                },
+                "recommended": "Recommended"
+            },
+            "level": {
+                "title": "Security Level Details",
+                "label": "Security Level",
+                "hint": "Select encryption strength",
+                "options": {
+                    "low": {
+                        "label": "Low",
+                        "hint": "Basic encryption"
+                    },
+                    "medium": {
+                        "label": "Medium",
+                        "hint": "Recommended"
+                    },
+                    "high": {
+                        "label": "High",
+                        "hint": "Strictest setting"
+                    }
+                }
+            },
+            "masterPassword": {
+                "title": "Master Password",
+                "description": "Manage password for encrypting connections",
+                "status": "Status: {status}",
+                "statusSet": "Set",
+                "statusUnset": "Not Set",
+                "change": "Change Password",
+                "setup": "Setup",
+                "warning": "Master password is not set. It will be set when switching providers."
+            },
+            "comparison": {
+                "title": "Provider Comparison"
+            },
+            "messages": {
+                "updated": "Security level updated",
+                "updateFailed": "Failed to update security level",
+                "resetConfirm": "Are you sure you want to reset security settings?\n\nWARNING: All connection data will be lost.",
+                "resetSuccess": "Security settings reset",
+                "resetFailed": "Reset failed",
+                "errorTitle": "Error loading/saving settings",
+                "successTitle": "Success"
+            }
+        },
+        "safety": {
+            "title": "Environment Safety Settings",
+            "description": "Configure safety checks for query execution per environment",
+            "resetButton": "Reset to Default",
+            "env": {
+                "development": {
+                    "label": "Development",
+                    "description": "Local development"
+                },
+                "test": {
+                    "label": "Test",
+                    "description": "Automated testing/QA"
+                },
+                "staging": {
+                    "label": "Staging",
+                    "description": "Pre-production verification"
+                },
+                "production": {
+                    "label": "Production",
+                    "description": "Live environment"
+                }
+            },
+            "modal": {
+                "title": "Reset Settings",
+                "body": "Reset all environment safety settings to default?",
+                "cancel": "Cancel",
+                "confirm": "Reset"
+            }
         }
     },
     "mutationBuilder": {

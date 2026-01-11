@@ -603,6 +603,111 @@
                 "successTitle": "完了"
             },
             "saveButton": "設定を保存"
+        },
+        "about": {
+            "appInfo": {
+                "label": "アプリ情報",
+                "description": "データベース接続とSQLクエリ編集を支援するデスクトップアプリ"
+            },
+            "stack": {
+                "frontend": "フロント",
+                "ui": "UI",
+                "desktop": "デスクトップ",
+                "state": "状態管理"
+            },
+            "documentation": "最新の変更点や詳細設計は `docs/` 配下のドキュメントを参照してください。"
+        },
+        "security": {
+            "title": "セキュリティ",
+            "provider": {
+                "title": "セキュリティプロバイダー",
+                "label": "プロバイダー",
+                "hint": "保存先と復号方式を選択します",
+                "current": "現在のプロバイダー: {provider}",
+                "reset": "リセット",
+                "processing": "処理中",
+                "options": {
+                    "simple": {
+                        "label": "Simple (推奨)",
+                        "description": "固定キーで暗号化。パスワード入力不要。"
+                    },
+                    "masterPassword": {
+                        "label": "マスターパスワード",
+                        "description": "ユーザー設定のパスワードで暗号化"
+                    }
+                },
+                "recommended": "推奨"
+            },
+            "level": {
+                "title": "セキュリティレベル詳細",
+                "label": "セキュリティレベル",
+                "hint": "暗号化強度を選択します",
+                "options": {
+                    "low": {
+                        "label": "低",
+                        "hint": "基本的な暗号化"
+                    },
+                    "medium": {
+                        "label": "中",
+                        "hint": "推奨設定"
+                    },
+                    "high": {
+                        "label": "高",
+                        "hint": "最も厳格な設定"
+                    }
+                }
+            },
+            "masterPassword": {
+                "title": "マスターパスワード",
+                "description": "接続情報を暗号化するパスワードを管理します",
+                "status": "状態: {status}",
+                "statusSet": "設定済み",
+                "statusUnset": "未設定",
+                "change": "パスワード変更",
+                "setup": "初期設定",
+                "warning": "マスターパスワードが未設定です。プロバイダー切り替え時に設定されます。"
+            },
+            "comparison": {
+                "title": "プロバイダー比較"
+            },
+            "messages": {
+                "updated": "セキュリティレベルを更新しました",
+                "updateFailed": "セキュリティレベルの更新に失敗しました",
+                "resetConfirm": "セキュリティ設定をリセットしますか？\n\n警告: この操作により、すべての接続情報が失われます。",
+                "resetSuccess": "セキュリティ設定をリセットしました",
+                "resetFailed": "リセットに失敗しました",
+                "errorTitle": "設定の読み込み/保存でエラーが発生しました",
+                "successTitle": "完了"
+            }
+        },
+        "safety": {
+            "title": "環境別安全設定",
+            "description": "接続先の環境ごとに、クエリ実行時の安全確認を設定します",
+            "resetButton": "デフォルトに戻す",
+            "env": {
+                "development": {
+                    "label": "開発環境",
+                    "description": "ローカル開発用"
+                },
+                "test": {
+                    "label": "テスト環境",
+                    "description": "自動テスト・検証用"
+                },
+                "staging": {
+                    "label": "ステージング環境",
+                    "description": "本番前の最終確認用"
+                },
+                "production": {
+                    "label": "本番環境",
+                    "description": "実運用環境"
+                }
+            },
+            "modal": {
+                "title": "設定をリセット",
+                "body": "すべての環境の安全設定をデフォルトに戻しますか？",
+                "cancel": "キャンセル",
+                "confirm": "リセット"
+            }
         }
     },
     "mutationBuilder": {
