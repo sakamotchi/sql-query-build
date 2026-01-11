@@ -250,7 +250,7 @@ mod tests {
         assert!(
             suggestions
                 .iter()
-                .any(|s| s.reason.contains("カラム名パターン")),
+                .any(|s| s.reason.starts_with("COLUMN_PATTERN_")),
             "expected pattern based suggestion"
         );
         assert!(
