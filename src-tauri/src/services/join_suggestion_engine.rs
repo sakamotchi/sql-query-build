@@ -62,7 +62,7 @@ impl JoinSuggestionEngine {
                     join_type: "LEFT JOIN".to_string(),
                     conditions,
                     confidence: 1.0,
-                    reason: format!("外部キー制約 '{}' に基づく", fk.name),
+                    reason: format!("FK_CONSTRAINT:{}", fk.name),
                 });
             }
 
@@ -84,7 +84,7 @@ impl JoinSuggestionEngine {
                     join_type: "INNER JOIN".to_string(),
                     conditions,
                     confidence: 1.0,
-                    reason: format!("外部キー制約 '{}' に基づく（逆方向）", fk.name),
+                    reason: format!("FK_CONSTRAINT_REVERSE:{}", fk.name),
                 });
             }
         }
@@ -114,7 +114,7 @@ impl JoinSuggestionEngine {
                             right_column: format!("{}.{}", to_table, to_col.name),
                         }],
                         confidence: 0.7,
-                        reason: format!("カラム名の一致: '{}'", from_col.name),
+                        reason: format!("COLUMN_MATCH:{}", from_col.name),
                     });
                 }
 
@@ -135,7 +135,7 @@ impl JoinSuggestionEngine {
                         }],
                         confidence: 0.8,
                         reason: format!(
-                            "カラム名パターン: '{}.{}' → '{}.{}'",
+                            "COLUMN_PATTERN_FORWARD:{}:{}:{}:{}",
                             from_table, from_col.name, to_table, to_col.name
                         ),
                     });
@@ -158,7 +158,7 @@ impl JoinSuggestionEngine {
                         }],
                         confidence: 0.8,
                         reason: format!(
-                            "カラム名パターン: '{}.{}' ← '{}.{}'",
+                            "COLUMN_PATTERN_REVERSE:{}:{}:{}:{}",
                             from_table, from_col.name, to_table, to_col.name
                         ),
                     });

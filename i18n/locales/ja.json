@@ -491,6 +491,11 @@
             },
             "addCondition": "条件を追加"
         },
+        "joinSuggestion": {
+            "title": "おすすめのJOIN条件",
+            "loading": "提案を生成中...",
+            "noSuggestions": "JOIN条件の提案が見つかりませんでした。手動で条件を設定してください。"
+        },
         "resultPagination": {
             "show": "表示:",
             "count": "{count}件",

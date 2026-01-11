@@ -491,6 +491,11 @@
             },
             "addCondition": "Add Condition"
         },
+        "joinSuggestion": {
+            "title": "Suggested JOIN Conditions",
+            "loading": "Generating suggestions...",
+            "noSuggestions": "No JOIN suggestions found. Please set conditions manually."
+        },
         "resultPagination": {
             "show": "Show:",
             "count": "{count}",
