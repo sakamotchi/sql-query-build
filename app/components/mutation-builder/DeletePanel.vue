@@ -14,7 +14,7 @@ const showWarning = computed(() => {
   <div class="flex flex-col h-full bg-white dark:bg-gray-900">
     <div v-if="showWarning" class="p-4 border-b border-gray-200 dark:border-gray-800">
       <UAlert
-        color="red"
+        color="error"
         variant="soft"
         icon="i-heroicons-exclamation-triangle"
         title="警告: WHERE句がありません"

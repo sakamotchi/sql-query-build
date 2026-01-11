@@ -49,7 +49,7 @@ onMounted(async () => {
 
       <UAlert
         v-if="errorMessage"
-        color="red"
+        color="error"
         variant="soft"
         icon="i-heroicons-exclamation-triangle"
         title="設定の読み込みに失敗しました"

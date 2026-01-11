@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref } from 'vue'
 
 /**
  * カラムリサイズ機能を提供するComposable

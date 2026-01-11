@@ -178,7 +178,7 @@ const handleDialogCancel = () => {
                   <UButton
                     icon="i-heroicons-trash"
                     variant="ghost"
-                    color="red"
+                    color="error"
                     size="xs"
                     @click="item.remove"
                   />

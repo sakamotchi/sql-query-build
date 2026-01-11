@@ -72,6 +72,6 @@ const selectedColumnModel = computed({
      </div>
 
      <!-- Remove Button -->
-     <UButton icon="i-heroicons-x-mark" color="red" variant="ghost" size="sm" @click="$emit('remove')" />
+     <UButton icon="i-heroicons-x-mark" color="error" variant="ghost" size="sm" @click="$emit('remove')" />
   </div>
 </template>

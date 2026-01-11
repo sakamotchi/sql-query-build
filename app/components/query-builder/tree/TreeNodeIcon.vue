@@ -6,8 +6,10 @@ const props = defineProps<{
   isSystem?: boolean
 }>()
 
+type IconType = 'schema' | 'table' | 'view' | 'column' | 'primary-key' | 'foreign-key' | 'unique'
+
 const iconConfig = computed((): { icon: string; class: string } => {
-  const configs: Record<string, { icon: string; class: string }> = {
+  const configs: Record<IconType, { icon: string; class: string }> = {
     schema: {
       icon: 'i-heroicons-folder',
       class: props.isSystem ? 'text-gray-400' : 'text-primary-500',
@@ -38,7 +40,7 @@ const iconConfig = computed((): { icon: string; class: string } => {
     },
   }
 
-  return configs[props.type] || configs.column
+  return configs[props.type]
 })
 </script>
 

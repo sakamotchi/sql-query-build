@@ -75,10 +75,10 @@ const handleDelete = () => emit('delete', props.connection)
         <UButton color="primary" variant="outline" size="sm" @click="handleMutation">
           データ変更
         </UButton>
-        <UButton color="gray" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit">
+        <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit">
           編集
         </UButton>
-        <UButton color="red" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete">
+        <UButton color="error" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete">
           削除
         </UButton>
       </div>

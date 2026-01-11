@@ -14,7 +14,7 @@
             <ProviderCard :provider="targetProvider" variant="target" />
           </div>
 
-          <UAlert color="amber" variant="soft" icon="i-heroicons-exclamation-triangle">
+          <UAlert color="warning" variant="soft" icon="i-heroicons-exclamation-triangle">
             <template #title>重要な注意事項</template>
             <ul class="text-sm space-y-1 mt-2 list-disc list-inside">
               <li>変更中は接続情報にアクセスできません</li>
@@ -84,7 +84,7 @@
 
         <!-- エラーフェーズ -->
         <div v-if="currentPhase === 'error'" class="space-y-4">
-          <UAlert color="red" variant="soft" icon="i-heroicons-x-circle">
+          <UAlert color="error" variant="soft" icon="i-heroicons-x-circle">
             <template #title>エラーが発生しました</template>
             <p class="text-sm mt-2">{{ errorMessage }}</p>
           </UAlert>
@@ -93,7 +93,7 @@
         <!-- インラインエラー表示 -->
         <UAlert
           v-if="errorMessage && currentPhase !== 'error'"
-          color="red"
+          color="error"
           variant="soft"
           icon="i-heroicons-exclamation-triangle"
         >
@@ -107,8 +107,7 @@
         <UButton
           v-if="currentPhase !== 'switching' && currentPhase !== 'complete'"
           variant="outline"
-          color="gray"
-          :disabled="currentPhase === 'switching'"
+          color="neutral"
           @click="cancel"
         >
           キャンセル
@@ -145,7 +144,7 @@ interface Props {
   targetProvider: 'master-password'
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // ダイアログの開閉状態
 const isOpen = defineModel<boolean>('open')

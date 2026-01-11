@@ -197,7 +197,7 @@ const isValidUuid = computed(() => {
         <UPopover :popper="{ placement: 'bottom-start' }">
           <UButton
             icon="i-heroicons-calendar-days-20-solid"
-            color="white"
+            color="neutral"
             variant="outline"
             :label="dateValue ? df.format(dateValue.toDate(getLocalTimeZone())) : '日付を選択'"
             class="w-full justify-start font-normal text-left"
@@ -220,7 +220,7 @@ const isValidUuid = computed(() => {
         <UPopover :popper="{ placement: 'bottom-start' }">
           <UButton
             icon="i-heroicons-calendar-days-20-solid"
-            color="white"
+            color="neutral"
             variant="outline"
             :label="timestampDate ? `${df.format(timestampDate.toDate(getLocalTimeZone()))} ${timestampTime?.toString() || ''}` : '日時を選択'"
             class="w-full justify-start font-normal text-left"
@@ -253,7 +253,7 @@ const isValidUuid = computed(() => {
           v-model="modelValue"
           :disabled="isDisabled"
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-          :color="!isValidUuid ? 'red' : undefined"
+          :color="!isValidUuid ? 'error' : undefined"
           class="flex-1"
         />
         <UButton
@@ -309,7 +309,7 @@ const isValidUuid = computed(() => {
       :model-value="isNullValue"
       label="NULL"
       class="mt-2"
-      @update:model-value="(val) => emit('update:isNull', val)"
+      @update:model-value="(val: boolean | 'indeterminate') => emit('update:isNull', val === true)"
     />
   </UFormField>
 </template>

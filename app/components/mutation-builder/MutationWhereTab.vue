@@ -67,10 +67,11 @@ const hasColumns = computed(() => tableColumns.value.length > 0)
 const availableColumns = computed(() => {
   if (!selectedTable.value) return []
 
+  const tableId = selectedTable.value // non-null assertion after the check
   return tableColumns.value.map((column) => ({
     id: `${tableAlias.value}.${column.name}`,
     label: `${tableAlias.value}.${column.name}`,
-    tableId: selectedTable.value,
+    tableId,
     tableAlias: tableAlias.value,
     tableName: tableAlias.value,
     columnName: column.name,
@@ -157,7 +158,7 @@ const addGroup = () => {
               icon="i-heroicons-folder-plus"
               size="sm"
               variant="ghost"
-              color="gray"
+              color="neutral"
               @click="addGroup"
             />
           </div>

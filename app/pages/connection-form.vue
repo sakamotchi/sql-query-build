@@ -257,7 +257,7 @@ watch(() => form.type, (newType) => {
                 <template #trailing>
                   <UButton
                     variant="ghost"
-                    color="gray"
+                    color="neutral"
                     size="xs"
                     :icon="showPassword ? 'i-heroicons-eye-slash' : 'i-heroicons-eye'"
                     @click="showPassword = !showPassword"

@@ -40,7 +40,7 @@ const copyToClipboard = async () => {
           <UButton
             icon="i-heroicons-clipboard-document"
             size="xs"
-            color="gray"
+            color="neutral"
             variant="ghost"
             title="コピー"
             @click="copyToClipboard"

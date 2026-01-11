@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Connection } from '~/types'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   connections: Connection[]
   loading?: boolean
 }>(), {
@@ -58,10 +58,10 @@ const handleMutation = (connection: Connection) => emit('mutation', connection)
             <UButton color="primary" variant="outline" size="sm" @click="handleMutation(connection)">
               データ変更
             </UButton>
-            <UButton color="gray" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit(connection)">
+            <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit(connection)">
               編集
             </UButton>
-            <UButton color="red" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete(connection)">
+            <UButton color="error" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete(connection)">
               削除
             </UButton>
           </div>

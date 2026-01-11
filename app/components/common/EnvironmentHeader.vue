@@ -11,11 +11,13 @@ const props = withDefaults(defineProps<{
 const { getEnvironmentLabel, getEnvironmentColors } = useEnvironment()
 const { toggleColorMode, isDark } = useTheme()
 
-const badgeColors: Record<Environment, string> = {
-  development: 'green',
-  test: 'blue',
-  staging: 'amber',
-  production: 'red'
+type BadgeColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+
+const badgeColors: Record<Environment, BadgeColor> = {
+  development: 'success',
+  test: 'info',
+  staging: 'warning',
+  production: 'error'
 }
 
 const borderColor = computed(() => getEnvironmentColors(props.environment).border)

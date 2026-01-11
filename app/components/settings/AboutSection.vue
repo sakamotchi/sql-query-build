@@ -21,7 +21,7 @@ const stack = [
           <p class="text-sm text-gray-500 dark:text-gray-400">アプリ情報</p>
           <h3 class="text-xl font-semibold">{{ appInfo.name }}</h3>
         </div>
-        <UBadge color="gray" variant="solid">v{{ appInfo.version }}</UBadge>
+        <UBadge color="neutral" variant="solid">v{{ appInfo.version }}</UBadge>
       </div>
     </template>
 
@@ -48,7 +48,7 @@ const stack = [
         </div>
       </div>
 
-      <UAlert color="gray" variant="soft" icon="i-heroicons-light-bulb">
+      <UAlert color="neutral" variant="soft" icon="i-heroicons-light-bulb">
         最新の変更点や詳細設計は `docs/` 配下のドキュメントを参照してください。
       </UAlert>
     </div>

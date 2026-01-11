@@ -22,12 +22,14 @@ const warningMessage = computed(() => {
   return messages[props.environment]
 })
 
+type AlertColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+
 const alertColor = computed(() => {
-  const colors: Record<Environment, string> = {
-    development: 'green',
-    test: 'blue',
-    staging: 'amber',
-    production: 'red'
+  const colors: Record<Environment, AlertColor> = {
+    development: 'success',
+    test: 'info',
+    staging: 'warning',
+    production: 'error'
   }
   return colors[props.environment]
 })

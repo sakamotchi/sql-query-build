@@ -64,7 +64,7 @@ const handleLoad = async (query: SavedQueryMetadata) => {
       toast.add({
         title: '接続が選択されていません',
         description: '接続を選択してからクエリを開いてください',
-        color: 'red',
+        color: 'error',
         icon: 'i-heroicons-exclamation-circle'
       })
       return
@@ -86,7 +86,7 @@ const handleLoad = async (query: SavedQueryMetadata) => {
       toast.add({
         title: '接続が異なります',
         description: validation.message,
-        color: 'blue',
+        color: 'info',
         icon: 'i-heroicons-information-circle'
       })
     }
@@ -97,7 +97,7 @@ const handleLoad = async (query: SavedQueryMetadata) => {
     toast.add({
       title: '読み込み失敗',
       description: 'クエリの読み込みに失敗しました',
-      color: 'red',
+      color: 'error',
       icon: 'i-heroicons-exclamation-circle'
     })
   }
@@ -122,7 +122,7 @@ const executeLoad = async (query: SavedQueryMetadata) => {
   toast.add({
     title: '読み込み成功',
     description: `クエリ「${fullQuery.name}」を読み込みました`,
-    color: 'green',
+    color: 'success',
     icon: 'i-heroicons-check-circle'
   })
 
@@ -135,7 +135,7 @@ const executeLoad = async (query: SavedQueryMetadata) => {
     toast.add({
       title: '画面を切り替えました',
       description: `${typeLabel}画面に移動しました`,
-      color: 'blue',
+      color: 'info',
       icon: 'i-heroicons-arrow-right-circle'
     })
     await router.push(targetPath)
@@ -169,7 +169,7 @@ const executeDelete = async () => {
   toast.add({
     title: '削除成功',
     description: 'クエリを削除しました',
-    color: 'green',
+    color: 'success',
     icon: 'i-heroicons-trash'
   })
 }
@@ -222,7 +222,7 @@ const formatDate = (dateStr: string) => {
                 </p>
                 
                 <div class="flex flex-wrap gap-1 mt-2">
-                  <UBadge v-for="tag in query.tags" :key="tag" color="gray" variant="soft" size="xs">
+                  <UBadge v-for="tag in query.tags" :key="tag" color="neutral" variant="soft" size="xs">
                     {{ tag }}
                   </UBadge>
                 </div>
@@ -235,7 +235,7 @@ const formatDate = (dateStr: string) => {
               <div class="flex flex-col gap-1 ml-2">
                 <UButton
                   icon="i-heroicons-trash"
-                  color="red"
+                  color="error"
                   variant="ghost"
                   size="xs"
                   @click.stop="handleDelete(query)"

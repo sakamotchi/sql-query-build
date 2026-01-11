@@ -43,7 +43,7 @@ const updateIsNull = (columnName: string, value: boolean) => {
       <UButton
         v-if="canRemove"
         icon="i-heroicons-trash"
-        color="red"
+        color="error"
         variant="ghost"
         size="xs"
         @click="emit('remove')"

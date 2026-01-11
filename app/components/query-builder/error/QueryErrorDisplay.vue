@@ -88,7 +88,7 @@ const showDetails = ref(false)
     <div class="mt-4 flex gap-2">
       <UButton
         size="sm"
-        color="red"
+        color="error"
         variant="soft"
         icon="i-heroicons-arrow-path"
         @click="emit('retry')"

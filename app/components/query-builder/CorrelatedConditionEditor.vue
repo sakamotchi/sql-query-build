@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 
 type CorrelatedCondition = {
+  id?: string
   column: string
   operator: string
   value: string

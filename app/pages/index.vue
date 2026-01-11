@@ -81,7 +81,7 @@ const handleConnect = async (connection: Connection) => {
     toast.add({
       title: 'ウィンドウの起動に失敗しました',
       description: error instanceof Error ? error.message : '不明なエラーが発生しました',
-      color: 'red',
+      color: 'error',
     })
   }
 }
@@ -110,7 +110,7 @@ const handleMutation = async (connection: Connection) => {
     toast.add({
       title: 'ウィンドウの起動に失敗しました',
       description: error instanceof Error ? error.message : '不明なエラーが発生しました',
-      color: 'red',
+      color: 'error',
     })
   }
 }

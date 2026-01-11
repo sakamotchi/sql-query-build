@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import ConditionRow from './ConditionRow.vue'
 import type { WhereCondition, ConditionGroup as ConditionGroupType } from '@/types/query'
@@ -24,20 +23,6 @@ const props = defineProps<{
 }>()
 
 const queryBuilderStore = useQueryBuilderStore()
-
-/**
- * ロジック変更
- */
-const handleLogicChange = (index: number, newLogic: 'AND' | 'OR') => {
-  // グループ内のロジック変更は親に委譲（この実装では配列内の要素間のロジックではなくグループ全体のロジックを変更する形で実装されているケースが多いが、
-  // 設計書では各行の間にAND/ORがあるような見た目。
-  // しかし、ストアの実装 `updateGroupLogic` はグループ全体のロジックを変更する。
-  // 簡易化のため、グループ内の全要素は同じロジック（ANDまたはOR）で結合されるとするのが一般的。
-  // 設計書のUIでは `[AND ▼]` とあるが、これを切り替えるとグループ全体のロジックが変わる実装にする。
-  if (props.groupId) {
-    queryBuilderStore.updateGroupLogic(props.groupId, newLogic)
-  }
-}
 
 /**
  * 条件を削除
@@ -103,7 +88,7 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
       <span class="text-xs font-bold text-gray-500 uppercase">{{ logic }} グループ</span>
       <UButton
         icon="i-heroicons-x-mark"
-        color="red"
+        color="error"
         variant="ghost"
         size="xs"
         @click="removeGroup"
@@ -126,9 +111,9 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
              <template v-else>
                <UButton
                  :label="logic"
-                 :color="logic === 'AND' ? 'primary' : 'orange'"
+                 :color="logic === 'AND' ? 'primary' : 'warning'"
                  variant="soft"
-                 size="2xs"
+                 size="xs"
                  @click="groupId ? queryBuilderStore.updateGroupLogic(groupId, logic === 'AND' ? 'OR' : 'AND') : null"
                />
              </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { QueryResultColumn, QueryResultRow, QueryValue } from '@/types/query-result'
 
-const props = defineProps<{
+defineProps<{
   row: QueryResultRow
   columns: QueryResultColumn[]
   getColumnWidth: (columnName: string) => number
@@ -52,9 +52,9 @@ function isNull(value: QueryValue): boolean {
         'text-gray-900 dark:text-gray-100': !isNull(value),
       }"
       :style="{
-        width: `${getColumnWidth(columns[index].name)}px`,
-        minWidth: `${getColumnWidth(columns[index].name)}px`,
-        maxWidth: `${getColumnWidth(columns[index].name)}px`
+        width: `${getColumnWidth(columns[index]?.name ?? '')}px`,
+        minWidth: `${getColumnWidth(columns[index]?.name ?? '')}px`,
+        maxWidth: `${getColumnWidth(columns[index]?.name ?? '')}px`
       }"
       :title="!isNull(value) ? String(value) : ''"
     >

@@ -72,7 +72,7 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
       <span class="text-xs font-bold text-gray-500 uppercase">{{ logic }} グループ</span>
       <UButton
         icon="i-heroicons-x-mark"
-        color="red"
+        color="error"
         variant="ghost"
         size="xs"
         @click="removeGroup"
@@ -89,9 +89,9 @@ const isCondition = (item: WhereCondition | ConditionGroupType): item is WhereCo
             <template v-else>
               <UButton
                 :label="logic"
-                :color="logic === 'AND' ? 'primary' : 'orange'"
+                :color="logic === 'AND' ? 'primary' : 'warning'"
                 variant="soft"
-                size="2xs"
+                size="xs"
                 @click="groupId ? mutationStore.updateGroupLogic(groupId, logic === 'AND' ? 'OR' : 'AND') : null"
               />
             </template>

@@ -68,7 +68,7 @@ const showExportDialog = ref(false)
         <UButton
           icon="i-heroicons-arrow-down-tray"
           size="xs"
-          color="gray"
+          color="neutral"
           variant="ghost"
           title="エクスポート"
           :disabled="!hasResult"
@@ -77,7 +77,7 @@ const showExportDialog = ref(false)
         <UButton
           icon="i-heroicons-x-mark"
           size="xs"
-          color="gray"
+          color="neutral"
           variant="ghost"
           title="閉じる"
           @click="emit('close')"

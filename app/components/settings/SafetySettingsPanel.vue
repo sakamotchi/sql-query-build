@@ -47,7 +47,7 @@ const handleReset = async () => {
     </template>
 
     <div class="space-y-4">
-      <UAlert v-if="error" color="red" variant="soft" icon="i-heroicons-exclamation-circle">
+      <UAlert v-if="error" color="error" variant="soft" icon="i-heroicons-exclamation-circle">
         {{ error }}
       </UAlert>
 
@@ -79,7 +79,7 @@ const handleReset = async () => {
           <UButton color="neutral" variant="outline" @click="resetConfirmOpen = false">
             キャンセル
           </UButton>
-          <UButton color="red" @click="handleReset">
+          <UButton color="error" @click="handleReset">
             リセット
           </UButton>
         </div>

@@ -98,7 +98,7 @@ const resetToDefault = () => {
     </div>
 
     <div class="flex justify-end">
-      <UButton variant="outline" color="gray" @click="resetToDefault">
+      <UButton variant="outline" color="neutral" @click="resetToDefault">
         デフォルトに戻す
       </UButton>
     </div>

@@ -116,7 +116,7 @@ onMounted(() => {
       <UButton
         icon="i-heroicons-arrow-path"
         size="xs"
-        color="gray"
+        color="neutral"
         variant="ghost"
         title="更新"
         :disabled="!connectionId"

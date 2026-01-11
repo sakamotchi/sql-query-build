@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { invoke } from '@tauri-apps/api/core'
-import type { Connection } from '~/types'
+import type { Connection, ConnectionTestResult } from '~/types'
 
 // Tauriコマンドのヘルパー関数
 async function invokeTauri<T>(command: string, args?: Record<string, unknown>): Promise<T> {
@@ -163,14 +163,27 @@ export const useConnectionStore = defineStore('connection', {
 
         // ブラウザモード用のフォールバック
         if (error instanceof Error && error.message.includes('Tauri is not available')) {
-          const index = this.connections.findIndex((connection) => connection.id === id)
-          if (index !== -1) {
-            const updated = {
-              ...this.connections[index],
+          const existing = this.connections.find((connection) => connection.id === id)
+          if (existing) {
+            const updated: Connection = {
+              ...existing,
               ...updates,
+              // 必須フィールドを既存の値で確定
+              id: existing.id,
+              name: updates.name ?? existing.name,
+              type: updates.type ?? existing.type,
+              environment: updates.environment ?? existing.environment,
+              host: updates.host ?? existing.host,
+              port: updates.port ?? existing.port,
+              username: updates.username ?? existing.username,
+              database: updates.database ?? existing.database,
+              createdAt: existing.createdAt,
               updatedAt: new Date().toISOString()
             }
-            this.connections[index] = updated
+            const index = this.connections.findIndex((connection) => connection.id === id)
+            if (index !== -1) {
+              this.connections[index] = updated
+            }
             console.warn('Updated mock connection in browser mode:', updated)
             return updated
           }
@@ -213,10 +226,10 @@ export const useConnectionStore = defineStore('connection', {
       }
     },
 
-    async testConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>) {
+    async testConnection(connection: Connection | Omit<Connection, 'id' | 'createdAt' | 'updatedAt'>): Promise<ConnectionTestResult> {
       try {
         const rustConnection = toRustConnection(connection)
-        return await invokeTauri('test_connection', { connection: rustConnection })
+        return await invokeTauri('test_connection', { connection: rustConnection }) as ConnectionTestResult
       } catch (error) {
         console.error('Connection test failed:', error)
 

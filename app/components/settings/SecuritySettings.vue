@@ -108,7 +108,7 @@ const resetSecurity = async () => {
             <UBadge v-if="saving || loading" color="primary" variant="soft">処理中</UBadge>
             <UButton
               variant="ghost"
-              color="red"
+              color="error"
               size="sm"
               @click="resetSecurity"
               :disabled="saving || loading"
@@ -147,10 +147,10 @@ const resetSecurity = async () => {
             :disabled="saving || loading"
             @update:model-value="updateLevel"
           >
-            <template #label="{ option }">
+            <template #label="{ item }">
               <div class="flex items-center justify-between w-full">
-                <span>{{ option.label }}</span>
-                <span class="text-xs text-gray-500">{{ option.hint }}</span>
+                <span>{{ item.label }}</span>
+                <span class="text-xs text-gray-500">{{ item.hint }}</span>
               </div>
             </template>
           </URadioGroup>
@@ -158,7 +158,7 @@ const resetSecurity = async () => {
 
         <UAlert
           v-if="error || message"
-          :color="error ? 'red' : 'green'"
+          :color="error ? 'error' : 'success'"
           variant="soft"
           :title="error ? '設定の読み込み/保存でエラーが発生しました' : '完了'"
         >
@@ -184,7 +184,7 @@ const resetSecurity = async () => {
           </div>
           <UButton
             :variant="settings.masterPasswordSet ? 'outline' : 'solid'"
-            :color="settings.masterPasswordSet ? 'gray' : 'primary'"
+            :color="settings.masterPasswordSet ? 'neutral' : 'primary'"
             :disabled="loading"
             @click="openMasterPasswordDialog"
           >
@@ -194,7 +194,7 @@ const resetSecurity = async () => {
 
         <UAlert
           v-if="!settings.masterPasswordSet"
-          color="amber"
+          color="warning"
           variant="soft"
           icon="i-heroicons-exclamation-triangle"
         >

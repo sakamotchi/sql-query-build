@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { ExpressionNode, FunctionCall } from '~/types/expression-node'
-import { getFunctionCatalog } from '~/data/function-catalog'
+import { getFunctionCatalog, type FunctionCatalogDbType } from '~/data/function-catalog'
+
+type FunctionCategory = 'string' | 'date' | 'numeric' | 'conditional' | 'aggregate'
 import { generatePreviewSql } from '~/utils/expression-preview'
 import { useConnectionStore } from '~/stores/connection'
 import { useWindowStore } from '~/stores/window'
 import { sqlIdentifierAttrs } from '@/composables/useSqlIdentifierInput'
 import ArgumentEditor from './ArgumentEditor.vue'
+import type { DatabaseType } from '~/types'
 
 const props = withDefaults(
   defineProps<{
@@ -32,13 +35,25 @@ const emit = defineEmits<{
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 
-const selectedCategory = ref<string>('string')
-const selectedFunctionItem = ref<{ value: string; label: string } | null>(null)
+const selectedCategory = ref<FunctionCategory | undefined>('string')
+const selectedFunctionItem = ref<{ value: string; label: string } | undefined>(undefined)
 const functionArgs = ref<ExpressionNode[]>([])
 const aliasValue = ref<string>('')
 const isInternalUpdate = ref(false) // 内部更新フラグ
 
 const selectedFunction = computed(() => selectedFunctionItem.value?.value || '')
+
+/**
+ * DatabaseTypeをFunctionCatalogDbTypeにマッピング
+ * sqlserverやoracleは関数カタログ未対応のためpostgresqlにフォールバック
+ */
+function toFunctionCatalogDbType(dbType: DatabaseType): FunctionCatalogDbType {
+  if (dbType === 'postgresql' || dbType === 'mysql' || dbType === 'sqlite') {
+    return dbType
+  }
+  // sqlserver, oracleは未対応のためpostgresqlにフォールバック
+  return 'postgresql'
+}
 
 const currentDbType = computed(() => {
   const active = connectionStore.activeConnection
@@ -49,7 +64,7 @@ const currentDbType = computed(() => {
   return fallback?.type || 'postgresql'
 })
 
-const availableFunctions = computed(() => getFunctionCatalog(currentDbType.value))
+const availableFunctions = computed(() => getFunctionCatalog(toFunctionCatalogDbType(currentDbType.value)))
 
 const categories = computed(() => {
   const uniqueCategories = [...new Set(availableFunctions.value.map((f) => f.category))]
@@ -87,7 +102,7 @@ const canAddArgument = computed(() => {
   return false
 })
 
-const canRemoveArgument = computed(() => (index: number) => {
+const canRemoveArgument = computed(() => (_index: number) => {
   if (argumentCount.value === 'variable') return functionArgs.value.length > 1
   if (typeof argumentCount.value === 'number') {
     return functionArgs.value.length > argumentCount.value
@@ -138,7 +153,7 @@ watch(
     if (!selectedFunction.value) return
     const exists = functions.value.some((item) => item.value === selectedFunction.value)
     if (!exists) {
-      selectedFunctionItem.value = null
+      selectedFunctionItem.value = undefined
       functionArgs.value = []
     }
   }
@@ -301,14 +316,15 @@ function buildFunction() {
         <div class="space-y-2">
           <div v-for="(arg, index) in functionArgs" :key="index" class="flex gap-2 items-center">
             <ArgumentEditor
-              v-model="functionArgs[index]"
+              :model-value="arg"
               :index="index"
               :allow-function="props.allowNested"
+              @update:model-value="(val) => functionArgs[index] = val"
             />
             <UButton
               v-if="canRemoveArgument(index)"
               size="xs"
-              color="red"
+              color="error"
               variant="ghost"
               icon="i-heroicons-trash"
               @click="removeArgument(index)"

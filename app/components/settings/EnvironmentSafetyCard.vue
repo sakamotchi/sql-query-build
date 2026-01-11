@@ -91,7 +91,7 @@ const countdownOptions = Array.from({ length: 11 }, (_, i) => ({
       <!-- 本番環境の警告 -->
       <UAlert
         v-if="isProduction"
-        color="amber"
+        color="warning"
         variant="soft"
         icon="i-heroicons-exclamation-triangle"
       >

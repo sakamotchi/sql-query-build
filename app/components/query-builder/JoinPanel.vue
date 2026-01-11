@@ -157,14 +157,14 @@ const formatConditions = (conditions: JoinCondition[], logic: 'AND' | 'OR') => {
               <UButton
                 icon="i-heroicons-pencil"
                 size="xs"
-                color="gray"
+                color="neutral"
                 variant="ghost"
                 @click="handleEditJoin(join)"
               />
               <UButton
                 icon="i-heroicons-x-mark"
                 size="xs"
-                color="red"
+                color="error"
                 variant="ghost"
                 @click="handleRemoveJoin(join.id)"
               />

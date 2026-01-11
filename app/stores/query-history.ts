@@ -4,9 +4,7 @@ import { ref, computed } from 'vue'
 import type {
   QueryHistory,
   QueryHistoryMetadata,
-  AddHistoryRequest,
-  SearchHistoryRequest,
-  SerializableBuilderState
+  AddHistoryRequest
 } from '@/types/query-history'
 import type { SerializableMutationState } from '@/stores/mutation-builder'
 

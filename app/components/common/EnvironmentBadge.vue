@@ -12,11 +12,13 @@ const props = withDefaults(defineProps<{
 
 const { getEnvironmentLabel } = useEnvironment()
 
-const environmentColors: Record<Environment, string> = {
-  development: 'green',
-  test: 'blue',
-  staging: 'amber',
-  production: 'red'
+type BadgeColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
+
+const environmentColors: Record<Environment, BadgeColor> = {
+  development: 'success',
+  test: 'info',
+  staging: 'warning',
+  production: 'error'
 }
 
 const environmentIcons: Record<Environment, string> = {

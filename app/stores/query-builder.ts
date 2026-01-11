@@ -659,8 +659,13 @@ export const useQueryBuilderStore = defineStore('query-builder', {
       }
 
       const conditions: JoinConditionModel[] = suggestion.conditions.map((cond) => {
-        const [leftTableRaw, ...leftRest] = cond.leftColumn.split('.')
-        const [rightTableRaw, ...rightRest] = cond.rightColumn.split('.')
+        const leftParts = cond.leftColumn.split('.')
+        const rightParts = cond.rightColumn.split('.')
+
+        const leftTableRaw = leftParts[0] ?? ''
+        const leftColumnName = leftParts.slice(1).join('.') || leftTableRaw
+        const rightTableRaw = rightParts[0] ?? ''
+        const rightColumnName = rightParts.slice(1).join('.') || rightTableRaw
 
         const leftAlias = resolveAlias(leftTableRaw)
         const rightAlias = resolveAlias(rightTableRaw)
@@ -668,12 +673,12 @@ export const useQueryBuilderStore = defineStore('query-builder', {
         return {
           left: {
             tableAlias: leftAlias,
-            columnName: leftRest.join('.') || leftTableRaw,
+            columnName: leftColumnName,
           },
           operator: (cond.operator as JoinConditionModel['operator']) || '=',
           right: {
             tableAlias: rightAlias,
-            columnName: rightRest.join('.') || rightTableRaw,
+            columnName: rightColumnName,
           },
         }
       })

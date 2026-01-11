@@ -226,7 +226,7 @@ const checkValidity = (value: any): boolean => {
     <!-- 削除ボタン -->
     <UButton
       icon="i-heroicons-x-mark"
-      color="red"
+      color="error"
       variant="ghost"
       size="sm"
       @click="emit('remove')"
