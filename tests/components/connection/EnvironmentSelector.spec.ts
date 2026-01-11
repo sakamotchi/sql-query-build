@@ -42,10 +42,14 @@ describe('EnvironmentSelector', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('開発環境')
-    expect(wrapper.text()).toContain('テスト環境')
-    expect(wrapper.text()).toContain('ステージング環境')
-    expect(wrapper.text()).toContain('本番環境')
+    expect(wrapper.text()).toContain('開発')
+    expect(wrapper.text()).toContain('開発・テスト用の環境')
+    expect(wrapper.text()).toContain('テスト')
+    expect(wrapper.text()).toContain('品質保証・テスト用の環境')
+    expect(wrapper.text()).toContain('ステージング')
+    expect(wrapper.text()).toContain('本番前の検証用環境')
+    expect(wrapper.text()).toContain('本番')
+    expect(wrapper.text()).toContain('実運用環境（要注意）')
   })
 
   it('クリックで環境を変更できる', async () => {
@@ -60,7 +64,7 @@ describe('EnvironmentSelector', () => {
 
     const productionButton = wrapper
       .findAll('button')
-      .find((btn) => btn.text().includes('本番環境'))
+      .find((btn) => btn.text().includes('本番') && btn.text().includes('実運用環境'))
 
     await productionButton?.trigger('click')
 

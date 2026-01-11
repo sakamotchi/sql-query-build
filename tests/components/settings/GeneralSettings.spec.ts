@@ -105,8 +105,6 @@ describe('GeneralSettings', () => {
     expect(updateSettings).toHaveBeenCalledWith({
       theme: 'auto',
       language: 'ja',
-      autoSave: true,
-      windowRestore: true,
     })
   })
 })
