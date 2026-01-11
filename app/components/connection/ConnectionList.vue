@@ -55,7 +55,7 @@ const handleMutation = (connection: Connection) => emit('mutation', connection)
           </div>
           <div class="grid grid-cols-2 gap-2">
             <UButton color="primary" size="sm" @click="handleConnect(connection)">
-              {{ t('connection.actions.queryBuilder') }}
+              {{ t('connection.actions.browseData') }}
             </UButton>
             <UButton color="primary" variant="outline" size="sm" @click="handleMutation(connection)">
               {{ t('connection.actions.mutation') }}

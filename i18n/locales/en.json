@@ -105,7 +105,7 @@
     },
     "connection": {
         "actions": {
-            "browseData": "Browse Data",
+            "browseData": "Data Reference",
             "mutation": "Data Mutation",
             "queryBuilder": "Query Builder",
             "connect": "Connect"

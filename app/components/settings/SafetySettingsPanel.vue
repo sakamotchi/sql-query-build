@@ -6,6 +6,7 @@ import type { Environment } from '@/types'
 const safetyStore = useSafetyStore()
 const { settings, loading, error } = storeToRefs(safetyStore)
 const { t } = useI18n()
+const toast = useToast()
 
 const environments = computed<{ key: Environment; label: string; description: string }[]>(() => [
   { key: 'development', label: t('settings.safety.env.development.label'), description: t('settings.safety.env.development.description') },
@@ -21,7 +22,20 @@ onMounted(() => {
 })
 
 const handleReset = async () => {
-  await safetyStore.resetToDefault()
+  try {
+    await safetyStore.resetToDefault()
+    toast.add({
+      title: t('settings.safety.messages.resetSuccess') || 'Reset successful', // fallback if key missing
+      icon: 'i-heroicons-check-circle',
+      color: 'primary'
+    })
+  } catch (e) {
+     toast.add({
+      title: 'Failed to reset',
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'error'
+    })
+  }
   resetConfirmOpen.value = false
 }
 </script>

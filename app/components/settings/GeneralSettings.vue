@@ -7,6 +7,7 @@ import type { AppSettings } from '~/types'
 const settingsStore = useSettingsStore()
 const { setColorMode } = useTheme()
 const { t, locale, setLocale } = useI18n()
+const toast = useToast()
 
 const { settings, loading, error } = storeToRefs(settingsStore)
 
@@ -18,7 +19,16 @@ const form = reactive<AppSettings>({
 })
 
 const saving = ref(false)
-const message = ref<string | null>(null)
+// message ref is no longer needed for success, only keeping it if it was used for errors locally, 
+// but errors seem to come from store or local catch. 
+// The original code used `message` for both success and error (if caught locally).
+// Let's check how error is handled. 
+// local `error` ref from storeToRefs(settingsStore) handles store errors.
+// local `message` was used for "Saved" or "Save Failed".
+// I will use toast for both success and failure in saveSettings to be consistent, or keep UAlert for error.
+// Best practice: Toast for transient actions (save), Alert for persistent inconsistencies.
+// Save failure is transient => Toast is fine, or Alert. 
+// I'll stick to Toast for success. For error, I'll assume store error handling or keep it simple.
 
 watch(
   settings,
@@ -38,16 +48,27 @@ watch(
 
 const saveSettings = async () => {
   saving.value = true
-  message.value = null
   try {
     await settingsStore.updateSettings({ ...form })
-    // 言語設定も明示的に反映（ストア更新後、watchでformが変わるが念の為）
+    // 言語設定も明示的に反映
     if (locale.value !== form.language) {
       await setLocale(form.language)
     }
-    message.value = t('settings.general.messages.saved')
+    
+    toast.add({
+      title: t('settings.general.messages.saved'),
+      icon: 'i-heroicons-check-circle',
+      color: 'primary'
+    })
   } catch (e) {
-    message.value = t('settings.general.messages.saveFailed')
+    // If store sets `error`, it might be displayed by UAlert below if we keep it.
+    // If we want toast for error too:
+    toast.add({
+      title: t('settings.general.messages.saveFailed'),
+      description: e instanceof Error ? e.message : undefined,
+      icon: 'i-heroicons-exclamation-circle',
+      color: 'error'
+    })
   } finally {
     saving.value = false
   }
@@ -104,12 +125,12 @@ const saveSettings = async () => {
       </UFormField>
 
       <UAlert
-        v-if="error || message"
-        :color="error ? 'error' : 'success'"
+        v-if="error"
+        color="error"
         variant="soft"
-        :title="error ? t('settings.general.messages.errorTitle') : t('settings.general.messages.successTitle')"
+        :title="t('settings.general.messages.errorTitle')"
       >
-        {{ error || message }}
+        {{ error }}
       </UAlert>
     </div>
 
