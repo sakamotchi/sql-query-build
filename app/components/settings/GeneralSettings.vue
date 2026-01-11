@@ -6,6 +6,7 @@ import type { AppSettings } from '~/types'
 
 const settingsStore = useSettingsStore()
 const { setColorMode } = useTheme()
+const { t, locale, setLocale } = useI18n()
 
 const { settings, loading, error } = storeToRefs(settingsStore)
 
@@ -35,14 +36,27 @@ watch(
   }
 )
 
+watch(
+  () => form.language,
+  (newLang) => {
+    if (locale.value !== newLang) {
+      void setLocale(newLang)
+    }
+  }
+)
+
 const saveSettings = async () => {
   saving.value = true
   message.value = null
   try {
     await settingsStore.updateSettings({ ...form })
-    message.value = '設定を保存しました'
+    // 言語設定も明示的に反映（ストア更新後、watchでformが変わるが念の為）
+    if (locale.value !== form.language) {
+      await setLocale(form.language)
+    }
+    message.value = t('settings.general.messages.saved')
   } catch (e) {
-    message.value = '設定の保存に失敗しました'
+    message.value = t('settings.general.messages.saveFailed')
   } finally {
     saving.value = false
   }
@@ -53,47 +67,47 @@ const saveSettings = async () => {
   <UCard>
     <template #header>
       <div class="flex items-center justify-between gap-3">
-        <h3 class="text-xl font-semibold">一般設定</h3>
-        <UBadge v-if="saving" color="primary" variant="soft">保存中</UBadge>
+        <h3 class="text-xl font-semibold">{{ t('settings.general.title') }}</h3>
+        <UBadge v-if="saving" color="primary" variant="soft">{{ t('settings.general.saving') }}</UBadge>
       </div>
     </template>
 
     <div class="space-y-6">
-      <UFormField label="テーマ" hint="アプリ全体のカラーモード">
+      <UFormField :label="t('settings.general.theme.label')" :hint="t('settings.general.theme.hint')">
         <USelect
           v-model="form.theme"
           :items="[
-            { label: 'ライト', value: 'light' },
-            { label: 'ダーク', value: 'dark' },
-            { label: '自動', value: 'auto' }
+            { label: t('settings.general.theme.options.light'), value: 'light' },
+            { label: t('settings.general.theme.options.dark'), value: 'dark' },
+            { label: t('settings.general.theme.options.auto'), value: 'auto' }
           ]"
         />
       </UFormField>
 
-      <UFormField label="言語" hint="将来的にi18nで切り替え予定">
+      <UFormField :label="t('settings.general.language.label')" :hint="t('settings.general.language.hint')">
         <USelect
           v-model="form.language"
           :items="[
-            { label: '日本語', value: 'ja' },
-            { label: 'English', value: 'en' }
+            { label: t('settings.general.language.options.ja'), value: 'ja' },
+            { label: t('settings.general.language.options.en'), value: 'en' }
           ]"
         />
       </UFormField>
 
-      <UFormField label="自動保存">
+      <UFormField :label="t('settings.general.autoSave.label')">
         <div class="space-y-1">
           <USwitch v-model="form.autoSave" />
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            クエリを一定間隔で自動保存します
+            {{ t('settings.general.autoSave.hint') }}
           </p>
         </div>
       </UFormField>
 
-      <UFormField label="ウィンドウ復元">
+      <UFormField :label="t('settings.general.windowRestore.label')">
         <div class="space-y-1">
           <USwitch v-model="form.windowRestore" />
           <p class="text-sm text-gray-600 dark:text-gray-400">
-            再起動時に前回のウィンドウ位置とサイズを復元します
+            {{ t('settings.general.windowRestore.hint') }}
           </p>
         </div>
       </UFormField>
@@ -102,7 +116,7 @@ const saveSettings = async () => {
         v-if="error || message"
         :color="error ? 'error' : 'success'"
         variant="soft"
-        :title="error ? '設定の読み込み/保存でエラーが発生しました' : '完了'"
+        :title="error ? t('settings.general.messages.errorTitle') : t('settings.general.messages.successTitle')"
       >
         {{ error || message }}
       </UAlert>
@@ -116,7 +130,7 @@ const saveSettings = async () => {
           :disabled="loading"
           @click="saveSettings"
         >
-          設定を保存
+          {{ t('settings.general.saveButton') }}
         </UButton>
       </div>
     </template>

@@ -1,0 +1,40 @@
+{
+    "settings": {
+        "general": {
+            "title": "一般設定",
+            "saving": "保存中",
+            "theme": {
+                "label": "テーマ",
+                "hint": "アプリ全体のカラーモード",
+                "options": {
+                    "light": "ライト",
+                    "dark": "ダーク",
+                    "auto": "自動"
+                }
+            },
+            "language": {
+                "label": "言語",
+                "hint": "表示言語を切り替えます",
+                "options": {
+                    "ja": "日本語",
+                    "en": "English"
+                }
+            },
+            "autoSave": {
+                "label": "自動保存",
+                "hint": "クエリを一定間隔で自動保存します"
+            },
+            "windowRestore": {
+                "label": "ウィンドウ復元",
+                "hint": "再起動時に前回のウィンドウ位置とサイズを復元します"
+            },
+            "messages": {
+                "saved": "設定を保存しました",
+                "saveFailed": "設定の保存に失敗しました",
+                "errorTitle": "設定の読み込み/保存でエラーが発生しました",
+                "successTitle": "完了"
+            },
+            "saveButton": "設定を保存"
+        }
+    }
+}

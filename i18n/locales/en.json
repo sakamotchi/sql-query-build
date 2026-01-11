@@ -1,0 +1,40 @@
+{
+    "settings": {
+        "general": {
+            "title": "General Settings",
+            "saving": "Saving...",
+            "theme": {
+                "label": "Theme",
+                "hint": "Color mode for the entire application",
+                "options": {
+                    "light": "Light",
+                    "dark": "Dark",
+                    "auto": "Auto"
+                }
+            },
+            "language": {
+                "label": "Language",
+                "hint": "Change display language",
+                "options": {
+                    "ja": "日本語",
+                    "en": "English"
+                }
+            },
+            "autoSave": {
+                "label": "Auto Save",
+                "hint": "Automatically save queries at regular intervals"
+            },
+            "windowRestore": {
+                "label": "Window Restore",
+                "hint": "Restore previous window position and size on restart"
+            },
+            "messages": {
+                "saved": "Settings saved",
+                "saveFailed": "Failed to save settings",
+                "errorTitle": "Error loading/saving settings",
+                "successTitle": "Success"
+            },
+            "saveButton": "Save Settings"
+        }
+    }
+}
