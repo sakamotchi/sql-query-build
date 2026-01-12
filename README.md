@@ -96,7 +96,29 @@
 
 ## インストール
 
-> **Coming Soon**: ビルド済みインストーラーは[Releases](https://github.com/sakamotchi/sql-query-build/releases)ページで公開予定です。
+[Releases](https://github.com/sakamotchi/sql-query-build/releases)ページから、お使いのOSに合ったファイルをダウンロードしてください。
+
+### ダウンロードガイド
+
+| OS | ファイル | 説明 |
+|----|---------|------|
+| **Windows** | `sql-query-build_x.x.x_x64-setup.exe` | Windowsインストーラー（推奨） |
+| **Windows** | `sql-query-build_x.x.x_x64_en-US.msi` | Windows MSIインストーラー |
+| **macOS (Apple Silicon)** | `sql-query-build_x.x.x_aarch64.dmg` | M1/M2/M3/M4 Mac用 |
+| **macOS (Intel)** | `sql-query-build_x.x.x_x64.dmg` | Intel Mac用 |
+| **Linux (Ubuntu/Debian)** | `sql-query-build_x.x.x_amd64.deb` | .debパッケージ |
+| **Linux (Fedora/RHEL)** | `sql-query-build-x.x.x-1.x86_64.rpm` | .rpmパッケージ |
+| **Linux (その他)** | `sql-query-build_x.x.x_amd64.AppImage` | AppImage（インストール不要） |
+
+※ `x.x.x` はバージョン番号です。最新版をダウンロードしてください。
+
+> **注意**: 現在、macOS以外のプラットフォーム（Windows、Linux）では動作確認を行っていません。問題が発生した場合は[Issues](https://github.com/sakamotchi/sql-query-build/issues)でご報告ください。
+
+#### どのmacOS版をダウンロードすべき？
+
+- **2020年以降のMac**（M1/M2/M3/M4チップ搭載）→ `aarch64.dmg`
+- **2020年以前のMac**（Intelチップ搭載）→ `x64.dmg`
+- 不明な場合：Appleメニュー →「このMacについて」→ チップの項目を確認
 
 ### ソースからビルド
 

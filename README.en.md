@@ -96,7 +96,29 @@ A visual SQL query builder desktop application that lets you construct queries t
 
 ## Installation
 
-> **Coming Soon**: Pre-built installers will be available on the [Releases](https://github.com/sakamotchi/sql-query-build/releases) page.
+Download the appropriate file for your operating system from the [Releases](https://github.com/sakamotchi/sql-query-build/releases) page.
+
+### Download Guide
+
+| OS | File | Description |
+|----|------|-------------|
+| **Windows** | `sql-query-build_x.x.x_x64-setup.exe` | Windows installer (recommended) |
+| **Windows** | `sql-query-build_x.x.x_x64_en-US.msi` | Windows MSI installer |
+| **macOS (Apple Silicon)** | `sql-query-build_x.x.x_aarch64.dmg` | For M1/M2/M3/M4 Macs |
+| **macOS (Intel)** | `sql-query-build_x.x.x_x64.dmg` | For Intel Macs |
+| **Linux (Ubuntu/Debian)** | `sql-query-build_x.x.x_amd64.deb` | .deb package |
+| **Linux (Fedora/RHEL)** | `sql-query-build-x.x.x-1.x86_64.rpm` | .rpm package |
+| **Linux (Other)** | `sql-query-build_x.x.x_amd64.AppImage` | AppImage (no installation required) |
+
+*`x.x.x` represents the version number. Download the latest version.*
+
+> **Note**: Currently, platforms other than macOS (Windows, Linux) have not been tested. If you encounter any issues, please report them on [Issues](https://github.com/sakamotchi/sql-query-build/issues).
+
+#### Which macOS version should I download?
+
+- **Macs from 2020 or later** (with M1/M2/M3/M4 chip) → `aarch64.dmg`
+- **Macs before 2020** (with Intel chip) → `x64.dmg`
+- If unsure: Apple menu → "About This Mac" → Check the Chip field
 
 ### Build from Source
 
