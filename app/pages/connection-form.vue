@@ -256,10 +256,10 @@ watch(() => form.type, (newType) => {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UFormField :label="t('connection.fields.database')" required :error="errors.database">
+              <UFormField :label="t('connection.form.fields.database')" required :error="errors.database">
                 <UInput v-model="form.database" :placeholder="t('connection.form.fields.dbPlaceholder')" v-bind="sqlIdentifierAttrs" />
               </UFormField>
-              <UFormField :label="t('connection.fields.username')" required :error="errors.username">
+              <UFormField :label="t('connection.form.fields.username')" required :error="errors.username">
                 <UInput v-model="form.username" :placeholder="t('connection.form.fields.userPlaceholder')" v-bind="sqlIdentifierAttrs" />
               </UFormField>
             </div>

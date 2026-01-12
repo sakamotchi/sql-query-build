@@ -1,6 +1,6 @@
-# Docker Benchmark Environment
+# Docker Database Environment
 
-ベンチマーク用のPostgreSQL・MySQLデータベース環境です。
+ベンチマーク用およびデモ用のPostgreSQL・MySQLデータベース環境です。
 
 ## クイックスタート
 
@@ -60,6 +60,7 @@ postgresql://benchmark:benchmark@localhost:5433/postgres
 ```
 
 #### データベース一覧
+- `demo_ecommerce` - **ECサイトスキーマ（デモ・スクリーンショット用）** - 14テーブル、外部キーリレーションあり
 - `benchmark_small` - 10テーブル（小規模）
 - `benchmark_medium` - 100テーブル（中規模）
 - `benchmark_large` - 500テーブル（大規模）
@@ -80,9 +81,44 @@ mysql://benchmark:benchmark@localhost:3307/benchmark_small
 ```
 
 #### データベース一覧
+- `demo_ecommerce` - **ECサイトスキーマ（デモ・スクリーンショット用）** - 14テーブル、外部キーリレーションあり
 - `benchmark_small` - 10テーブル（小規模）
 - `benchmark_medium` - 100テーブル（中規模）
 - `benchmark_large` - 500テーブル（大規模）
+
+## デモ用データベース（スクリーンショット撮影用）
+
+`demo_ecommerce` データベースはECサイトをモデルにしたスキーマで、外部キーによるリレーションが豊富に設定されています。クエリビルダー画面でテーブル間のリレーションを視覚的に確認できます。
+
+### テーブル構成
+
+| テーブル名 | 説明 | リレーション |
+|-----------|------|-------------|
+| `categories` | 商品カテゴリ | 自己参照（親子関係） |
+| `brands` | ブランド | - |
+| `products` | 商品 | → categories, brands |
+| `product_images` | 商品画像 | → products |
+| `users` | ユーザー | - |
+| `addresses` | 配送先住所 | → users |
+| `order_statuses` | 注文ステータス | - |
+| `orders` | 注文 | → users, order_statuses, addresses |
+| `order_items` | 注文明細 | → orders, products |
+| `reviews` | 商品レビュー | → products, users |
+| `carts` | ショッピングカート | → users |
+| `cart_items` | カートアイテム | → carts, products |
+| `favorites` | お気に入り商品 | → users, products |
+
+### 接続方法
+
+**PostgreSQL**:
+```
+postgresql://benchmark:benchmark@localhost:5433/demo_ecommerce
+```
+
+**MySQL**:
+```
+mysql://benchmark:benchmark@localhost:3307/demo_ecommerce
+```
 
 ## SQLスクリプトの配置
 

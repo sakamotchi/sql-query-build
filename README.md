@@ -12,6 +12,8 @@
 - **マルチデータベース対応**: PostgreSQL、MySQL、SQLiteをサポート
 - **安全な認証情報管理**: データベースパスワードはローカルで暗号化保存
 
+![SQL Query Builder - クエリビルダー画面](docs/images/query_builder.ja.png)
+
 ## 機能
 
 ### 接続管理
