@@ -87,8 +87,9 @@ export default defineNuxtConfig({
   // 開発ツール
   devtools: { enabled: true },
 
-  // Nitro設定（開発モード向け）
+  // Nitro設定
   nitro: {
+    preset: 'static',
     experimental: {
       tasks: false
     }

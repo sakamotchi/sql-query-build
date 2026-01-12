@@ -1,7 +1,7 @@
 {
   "name": "sql-query-build",
   "private": false,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "license": "MIT",
   "author": "Yoshitaka Sakamoto",
   "repository": {
@@ -27,6 +27,7 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "nuxt typecheck",
     "version:sync": "node scripts/sync-version.js",
+    "release": "node scripts/release.js",
     "preversion": "npm run test:run",
     "version": "npm run version:sync && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
     "postversion": "git push && git push --tags"
