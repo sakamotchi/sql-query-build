@@ -198,7 +198,12 @@ watch(isOpen, (newValue) => {
               name="expression"
               :description="t('queryBuilder.selectColumnDialog.expressionExample')"
             >
-              <UTextarea v-model="expressionText" placeholder="price * quantity" :rows="4" />
+              <UTextarea
+                v-model="expressionText"
+                placeholder="price * quantity"
+                :rows="4"
+                class="w-full"
+              />
             </UFormField>
             <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
               <p class="text-xs text-gray-600 dark:text-gray-400">
