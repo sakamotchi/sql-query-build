@@ -158,11 +158,14 @@ describe('useSavedQueryStore', () => {
   it('fetchQueries はエラー時に error を設定する', async () => {
     const store = useSavedQueryStore()
     vi.mocked(queryStorageApi.searchSavedQueries).mockRejectedValue(new Error('API Error'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await store.fetchQueries()
 
     expect(store.error).toBe('API Error')
     expect(store.isLoading).toBe(false)
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch queries:', expect.any(Error))
+    consoleSpy.mockRestore()
   })
 
   it('fetchQueries はローディング状態を正しく管理する', async () => {
@@ -307,11 +310,14 @@ describe('useSavedQueryStore', () => {
     queryBuilderStoreMock.getSerializableState.mockReturnValue(mockState)
     connectionStoreMock.activeConnection = { id: 'conn-1' }
     vi.mocked(queryStorageApi.saveQuery).mockRejectedValue(new Error('Save failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const result = await store.saveCurrentQuery('Query Name', 'Desc', [])
 
     expect(result).toBe(false)
     expect(store.error).toBe('Save failed')
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to save query:', expect.any(Error))
+    consoleSpy.mockRestore()
   })
 
   it('loadQuery はクエリ詳細を取得できる', async () => {
@@ -347,9 +353,12 @@ describe('useSavedQueryStore', () => {
   it('loadQuery はエラー時に error を設定して再スローする', async () => {
     const store = useSavedQueryStore()
     vi.mocked(queryStorageApi.loadQuery).mockRejectedValue(new Error('Load failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await expect(store.loadQuery('1')).rejects.toThrow('Load failed')
     expect(store.error).toBe('Load failed')
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to load query:', expect.any(Error))
+    consoleSpy.mockRestore()
   })
 
   it('loadQueryToBuilder は SELECT クエリをロードできる', async () => {
@@ -403,11 +412,14 @@ describe('useSavedQueryStore', () => {
       updatedAt: '2025-01-01T00:00:00Z',
     }
     vi.mocked(queryStorageApi.loadQuery).mockResolvedValue(savedQuery as any)
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await expect(store.loadQueryToBuilder('1')).rejects.toThrow('This query is not a SELECT query')
     expect(queryBuilderStoreMock.loadState).not.toHaveBeenCalled()
     expect(store.error).toBe('This query is not a SELECT query')
     expect(store.isLoading).toBe(false)
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to load query:', expect.any(Error))
+    consoleSpy.mockRestore()
   })
 
   it('loadQueryToMutationBuilder はクエリをロードできる', async () => {
@@ -442,11 +454,14 @@ describe('useSavedQueryStore', () => {
   it('loadQueryToMutationBuilder はエラー時に error を設定して再スローする', async () => {
     const store = useSavedQueryStore()
     vi.mocked(queryStorageApi.loadQuery).mockRejectedValue(new Error('Mutation load failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await expect(store.loadQueryToMutationBuilder('1')).rejects.toThrow('Mutation load failed')
     expect(store.error).toBe('Mutation load failed')
     expect(mutationBuilderStoreMock.loadState).not.toHaveBeenCalled()
     expect(store.isLoading).toBe(false)
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to load query:', expect.any(Error))
+    consoleSpy.mockRestore()
   })
 
   it('deleteQuery はクエリを削除できる', async () => {
@@ -464,11 +479,14 @@ describe('useSavedQueryStore', () => {
   it('deleteQuery はエラー時に error を設定する', async () => {
     const store = useSavedQueryStore()
     vi.mocked(queryStorageApi.deleteQuery).mockRejectedValue(new Error('Delete failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await store.deleteQuery('1')
 
     expect(store.error).toBe('Delete failed')
     expect(store.isLoading).toBe(false)
+    expect(consoleSpy).toHaveBeenCalledWith('Failed to delete query:', expect.any(Error))
+    consoleSpy.mockRestore()
   })
 
   it('setSearchKeyword は検索キーワードを更新して検索する', async () => {

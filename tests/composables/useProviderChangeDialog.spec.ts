@@ -29,7 +29,7 @@ describe('useProviderChangeDialog', () => {
   describe('openChangeDialog', () => {
     it('Simple → Master Password でSimpleダイアログが開く', () => {
       const securityStore = useSecurityStore()
-      securityStore.currentProvider = 'simple'
+      securityStore.settings.provider = 'simple'
 
       const { openChangeDialog, isFromSimpleDialogOpen, isFromMasterPasswordDialogOpen } = useProviderChangeDialog()
 
@@ -45,7 +45,7 @@ describe('useProviderChangeDialog', () => {
       const { openChangeDialog, isFromSimpleDialogOpen, isFromMasterPasswordDialogOpen } = useProviderChangeDialog()
 
       const securityStore = useSecurityStore()
-      securityStore.currentProvider = 'master-password'
+      securityStore.settings.provider = 'master-password'
 
       openChangeDialog('simple')
 
@@ -55,7 +55,7 @@ describe('useProviderChangeDialog', () => {
 
     it('同じプロバイダーへの変更は何もしない', () => {
       const securityStore = useSecurityStore()
-      securityStore.currentProvider = 'simple'
+      securityStore.settings.provider = 'simple'
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       const { openChangeDialog, isFromSimpleDialogOpen, isFromMasterPasswordDialogOpen } = useProviderChangeDialog()
@@ -76,7 +76,8 @@ describe('useProviderChangeDialog', () => {
       const { openChangeDialog } = useProviderChangeDialog()
 
       const securityStore = useSecurityStore()
-      securityStore.currentProvider = null
+      // @ts-ignore test invalid state
+      securityStore.settings.provider = null
 
       openChangeDialog('master-password')
 
@@ -89,7 +90,7 @@ describe('useProviderChangeDialog', () => {
   describe('closeAllDialogs', () => {
     it('全てのダイアログを閉じる', () => {
       const securityStore = useSecurityStore()
-      securityStore.currentProvider = 'simple'
+      securityStore.settings.provider = 'simple'
 
       const { openChangeDialog, closeAllDialogs, isFromSimpleDialogOpen, isFromMasterPasswordDialogOpen } = useProviderChangeDialog()
 
