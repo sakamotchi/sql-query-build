@@ -12,6 +12,8 @@ A visual SQL query builder desktop application that lets you construct queries t
 - **Multi-Database Support**: Works with PostgreSQL, MySQL, and SQLite
 - **Secure Credential Storage**: Your database passwords are encrypted locally
 
+![SQL Query Builder - Query Builder Screen](docs/images/querybuilder_en.png)
+
 ## Features
 
 ### Connection Management
