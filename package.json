@@ -29,7 +29,7 @@
     "version:sync": "node scripts/sync-version.js",
     "release": "node scripts/release.js",
     "preversion": "npm run test:run",
-    "version": "npm run version:sync && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
+    "version": "npm run version:sync && cargo check --manifest-path src-tauri/Cargo.toml && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock",
     "postversion": "git push && git push --tags"
   },
   "dependencies": {
