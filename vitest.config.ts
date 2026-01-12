@@ -6,11 +6,18 @@ export default defineVitestConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['nuxt', '@nuxt/ui'],
+      },
+    },
   },
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './app'),
       '@': path.resolve(__dirname, './app'),
+      'nuxt/app': path.resolve(__dirname, './tests/mocks/nuxt-app.ts'),
+      '#imports': path.resolve(__dirname, './tests/mocks/nuxt-app.ts'),
     },
   },
 })

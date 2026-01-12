@@ -1,9 +1,11 @@
 <script setup lang="ts">
 const { t } = useI18n()
 
+const config = useRuntimeConfig()
+
 const appInfo = computed(() => ({
   name: 'SQL Query Build',
-  version: '0.1.0',
+  version: config.public.appVersion,
   description: t('settings.about.appInfo.description')
 }))
 

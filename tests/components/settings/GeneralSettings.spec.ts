@@ -53,35 +53,7 @@ vi.mock('~/composables/useTheme', () => ({
   }),
 }))
 
-const toastAdd = vi.fn()
-vi.mock('~/composables/useToast', () => ({
-  useToast: () => ({
-    add: toastAdd
-  })
-}))
 
-// Mock common Nuxt composables just in case
-vi.mock('#imports', () => ({
-  useToast: () => ({
-    add: toastAdd
-  }),
-  useNuxtApp: () => ({
-    $toast: { add: toastAdd }
-  }),
-  useState: (key: string, init?: () => any) => ref(init ? init() : undefined)
-}))
-
-// IMPORTANT: Mocking the actual module calls seen in stack trace (if implied via auto-import resolution)
-// Since explicit path mocking is hard, we rely on #imports or global stub working if environment is set up right
-// But here we see it resolves to node_modules.
-// Let's try mocking `nuxt/app` to silence `useNuxtApp` error if that's what's called.
-vi.mock('nuxt/app', () => ({
-  useNuxtApp: () => ({ 
-    payload: {}, 
-    // minimal mock
-  }),
-  useState: (key: string, init: () => any) => ref(init ? init() : undefined)
-}))
 
 const stubs = {
   ...nuxtUiStubs,
