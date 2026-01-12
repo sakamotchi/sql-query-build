@@ -18,7 +18,6 @@ export default defineVitestConfig({
       '@': path.resolve(__dirname, './app'),
       'nuxt/app': path.resolve(__dirname, './tests/mocks/nuxt-app.ts'),
       '#imports': path.resolve(__dirname, './tests/mocks/nuxt-app.ts'),
-      '@nuxt/ui/runtime/composables/useToast': path.resolve(__dirname, './tests/mocks/nuxt-ui-toast.ts'),
     },
   },
 })
