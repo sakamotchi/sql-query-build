@@ -1,9 +1,17 @@
 import { defineNuxtConfig } from 'nuxt/config'
+import pkg from './package.json'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   // Tauri向けにSSRを無効化
   ssr: false,
+
+  // アプリケーション設定
+  runtimeConfig: {
+    public: {
+      appVersion: pkg.version
+    }
+  },
 
   // Nuxt 4標準ディレクトリ構成
   srcDir: 'app/',

@@ -68,25 +68,18 @@ const useI18n = () => ({
   setLocale,
 })
 
+// Imports from aliased mock
+import { useNuxtApp, useState, useToast } from './mocks/nuxt-app'
+
 vi.stubGlobal('useI18n', useI18n)
 
 vi.mock('vue-i18n', () => ({
   useI18n,
 }))
 
-const toast = { add: vi.fn() }
-const useToast = () => toast
-
 vi.stubGlobal('useToast', useToast)
-
-const stateStore = new Map<string, ReturnType<typeof ref>>()
-const useState = <T>(key: string, init?: () => T) => {
-  if (!stateStore.has(key)) {
-    const value = init ? init() : undefined
-    stateStore.set(key, ref(value) as ReturnType<typeof ref>)
-  }
-  return stateStore.get(key) as ReturnType<typeof ref<T>>
-}
+vi.stubGlobal('useNuxtApp', useNuxtApp)
+vi.stubGlobal('useState', useState)
 
 vi.mock('#imports', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('#imports')
@@ -95,5 +88,13 @@ vi.mock('#imports', async () => {
     useI18n,
     useToast,
     useState,
+    useNuxtApp,
   }
 })
+
+vi.mock('nuxt/app', async () => {
+  return await vi.importActual('./mocks/nuxt-app')
+})
+
+
+

@@ -36,29 +36,7 @@ vi.mock('~/composables/useProviderChangeDialog', () => ({
   }),
 }))
 
-const toastAdd = vi.fn()
-vi.mock('~/composables/useToast', () => ({
-  useToast: () => ({
-    add: toastAdd
-  })
-}))
 
-vi.mock('#imports', () => ({
-  useToast: () => ({
-    add: toastAdd
-  }),
-  useNuxtApp: () => ({
-    $toast: { add: toastAdd }
-  }),
-  useState: (key: string, init?: () => any) => ref(init ? init() : undefined)
-}))
-
-vi.mock('nuxt/app', () => ({
-  useNuxtApp: () => ({ 
-    payload: {}, 
-  }),
-  useState: (key: string, init: () => any) => ref(init ? init() : undefined)
-}))
 
 const stubs = {
   ...nuxtUiStubs,

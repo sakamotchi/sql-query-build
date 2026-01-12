@@ -80,6 +80,11 @@ const toggleResultPanel = () => {
  * クエリ実行後に結果パネルを表示
  */
 const showResultPanel = () => {
+  const halfHeight = window.innerHeight * 0.5
+  resultPanelHeight.value = Math.min(
+    halfHeight,
+    window.innerHeight * panelConstraints.result.maxRatio
+  )
   isResultPanelVisible.value = true
 }
 
