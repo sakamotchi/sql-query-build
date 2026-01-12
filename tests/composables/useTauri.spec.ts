@@ -50,10 +50,12 @@ describe('useTauri', () => {
              vi.stubGlobal('__TAURI_INTERNALS__', {})
              mockInvoke.mockRejectedValue(new Error('fail'))
              
+             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
              const { safeInvokeCommand } = useTauri()
              const result = await safeInvokeCommand('test_cmd', {}, 'fallback')
              
              expect(result).toBe('fallback')
+             consoleSpy.mockRestore()
         })
     })
 })

@@ -120,29 +120,36 @@ describe('DatabaseStructureStore', () => {
     it('エラー時はエラーを保存する', async () => {
       const store = useDatabaseStructureStore()
       mockGetDatabaseStructure.mockRejectedValue(new Error('Connection failed'))
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       await expect(store.fetchDatabaseStructure('conn1')).rejects.toThrow('Connection failed')
 
       expect(store.errors['conn1']).toBe('Connection failed')
       expect(store.loadingIds.has('conn1')).toBe(false)
+      expect(consoleSpy).toHaveBeenCalled()
+      consoleSpy.mockRestore()
     })
 
     it('文字列エラーを正しく処理する', async () => {
       const store = useDatabaseStructureStore()
       mockGetDatabaseStructure.mockRejectedValue('String error')
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       await expect(store.fetchDatabaseStructure('conn1')).rejects.toBe('String error')
 
       expect(store.errors['conn1']).toBe('String error')
+      consoleSpy.mockRestore()
     })
 
     it('不明なエラーをJSON文字列として保存する', async () => {
       const store = useDatabaseStructureStore()
       mockGetDatabaseStructure.mockRejectedValue({ code: 500 })
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       await expect(store.fetchDatabaseStructure('conn1')).rejects.toEqual({ code: 500 })
 
       expect(store.errors['conn1']).toBe('{"code":500}')
+      consoleSpy.mockRestore()
     })
 
     it('読み込み開始時にエラーをクリアする', async () => {

@@ -72,8 +72,13 @@ describe('ConnectionStore', () => {
       })
       
       expect(store.connections).toHaveLength(1)
+
+      // Suppress expected error log for browser mode
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       await store.deleteConnection(newConn.id)
+      
       expect(store.connections).toHaveLength(0)
+      consoleSpy.mockRestore()
     })
   })
 })
