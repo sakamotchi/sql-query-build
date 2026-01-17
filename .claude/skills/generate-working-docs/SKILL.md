@@ -108,6 +108,29 @@ mkdir -p docs/working/{YYYYMMDD}_{要件名}
 
 ## 技術仕様の注意事項
 
+### 永続化ドキュメントの参照
+
+**重要**: ドキュメント生成時は、`docs/steering/` ディレクトリにある永続化ドキュメントを参照してください。
+
+#### 参照すべきドキュメント
+
+| ドキュメント | 参照目的 |
+|------------|---------|
+| `docs/steering/01_product_requirements.md` | プロダクト全体の要件・機能を確認 |
+| `docs/steering/02_functional_design.md` | 既存の画面・機能設計を参照 |
+| `docs/steering/03_architecture_specifications.md` | 技術スタック・アーキテクチャを確認 |
+| `docs/steering/04_repository_structure.md` | ディレクトリ構造・命名規則を確認 |
+| `docs/steering/05_development_guidelines.md` | コーディング規約を確認 |
+| `docs/steering/06_ubiquitous_language.md` | プロジェクト用語の正しい使用 |
+| `docs/steering/features/*.md` | 関連機能の詳細仕様を確認 |
+
+#### 参照ルール
+
+1. **要件定義書生成時**: プロダクト要求定義書と関連する機能詳細仕様を参照
+2. **設計書生成時**: 技術仕様書、リポジトリ構造定義書、開発ガイドラインを参照
+3. **コード例記載時**: ユビキタス言語定義書で用語を確認
+4. **全ドキュメント生成時**: 既存の永続化ドキュメントとの整合性を保つ
+
 ### Nuxt UI v4 コンポーネント記法
 
 **重要**: このプロジェクトは Nuxt UI v4 を使用しています。ドキュメント内のコード例では必ず以下の記法を使用してください。
