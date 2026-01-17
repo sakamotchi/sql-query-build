@@ -1,4 +1,5 @@
 import { defineNuxtConfig } from 'nuxt/config'
+import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import pkg from './package.json'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -64,8 +65,16 @@ export default defineNuxtConfig({
 
   // Vite設定（Tauri統合）
   vite: {
+    plugins: [
+      monacoEditorPlugin({
+        languageWorkers: ['editorWorkerService'],
+      }),
+    ],
     clearScreen: false,
     envPrefix: ['VITE_', 'TAURI_'],
+    optimizeDeps: {
+      include: ['monaco-editor'],
+    },
     server: {
       strictPort: true,
       hmr: {

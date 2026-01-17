@@ -18,6 +18,7 @@ export default defineVitestConfig({
       '@': path.resolve(__dirname, './app'),
       'nuxt/app': path.resolve(__dirname, './tests/mocks/nuxt-app.ts'),
       '#imports': path.resolve(__dirname, './tests/mocks/nuxt-app.ts'),
+      'monaco-editor': path.resolve(__dirname, './tests/mocks/monaco-editor.ts'),
     },
   },
 })
