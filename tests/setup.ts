@@ -29,6 +29,7 @@ const messages: Record<LocaleCode, LocaleMessages> = {
 }
 
 const locale = ref<LocaleCode>('ja')
+const colorMode = ref('light')
 
 const resolveMessage = (key: string, target: LocaleMessages): string | undefined => {
   return key.split('.').reduce<unknown>((current, part) => {
@@ -68,10 +69,13 @@ const useI18n = () => ({
   setLocale,
 })
 
+const useColorMode = () => colorMode
+
 // Imports from aliased mock
 import { useNuxtApp, useState, useToast } from './mocks/nuxt-app'
 
 vi.stubGlobal('useI18n', useI18n)
+vi.stubGlobal('useColorMode', useColorMode)
 
 vi.mock('vue-i18n', () => ({
   useI18n,
@@ -89,12 +93,12 @@ vi.mock('#imports', async () => {
     useToast,
     useState,
     useNuxtApp,
+    useColorMode,
   }
 })
 
 vi.mock('nuxt/app', async () => {
   return await vi.importActual('./mocks/nuxt-app')
 })
-
 
 

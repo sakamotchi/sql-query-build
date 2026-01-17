@@ -510,13 +510,43 @@ export default defineNuxtConfig({
   vite: {
     plugins: [
       monacoEditorPlugin({
-        languageWorkers: ['editorWorkerService', 'sql'],
+        // SQLは専用ワーカーがないため editorWorkerService のみ使用
+        languageWorkers: ['editorWorkerService'],
       }),
     ],
     optimizeDeps: {
       include: ['monaco-editor'],
     },
   },
+})
+```
+
+### Monaco Worker設定（Nuxtプラグイン）
+
+Nuxt環境でMonacoのWeb Workerが取得できない場合があるため、
+`MonacoEnvironment.getWorker` を明示的に定義します。
+SQLは専用ワーカーがないため、デフォルトは editor worker を使用します。
+
+```typescript
+// app/plugins/monaco.client.ts
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker'
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+
+export default defineNuxtPlugin(() => {
+  const monacoEnvironment = {
+    getWorker(_workerId: string, label: string) {
+      if (label === 'json') return new jsonWorker()
+      if (label === 'css' || label === 'scss' || label === 'less') return new cssWorker()
+      if (label === 'html' || label === 'handlebars' || label === 'razor') return new htmlWorker()
+      if (label === 'typescript' || label === 'javascript') return new tsWorker()
+      return new editorWorker()
+    },
+  }
+
+  ;(globalThis as any).MonacoEnvironment = monacoEnvironment
 })
 ```
 
