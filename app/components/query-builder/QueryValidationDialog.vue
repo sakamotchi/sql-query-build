@@ -36,16 +36,29 @@ const dialogTitle = computed(() => {
   }
 })
 
-const iconClass = computed(() => {
+const iconName = computed(() => {
   if (!props.validation) return ''
 
   switch (props.validation.status) {
     case 'error':
-      return 'i-heroicons-x-circle text-red-500'
+      return 'i-heroicons-x-circle'
     case 'warning':
-      return 'i-heroicons-exclamation-triangle text-yellow-500'
+      return 'i-heroicons-exclamation-triangle'
     default:
-      return 'i-heroicons-information-circle text-blue-500'
+      return 'i-heroicons-information-circle'
+  }
+})
+
+const iconColorClass = computed(() => {
+  if (!props.validation) return ''
+
+  switch (props.validation.status) {
+    case 'error':
+      return 'text-red-500'
+    case 'warning':
+      return 'text-yellow-500'
+    default:
+      return 'text-blue-500'
   }
 })
 
@@ -65,17 +78,15 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <UModal v-model:open="isOpen">
-    <UCard>
-      <template v-if="validation" #header>
-        <div class="flex items-center gap-3">
-          <UIcon v-if="iconClass" :name="iconClass" class="w-6 h-6" />
-          <h3 class="text-lg font-semibold">
-            {{ dialogTitle }}
-          </h3>
-        </div>
-      </template>
+  <UModal v-model:open="isOpen" :title="dialogTitle" :description="validation?.message || ''">
+    <template #header>
+      <div class="flex items-center gap-3">
+        <UIcon v-if="iconName" :name="iconName" :class="iconColorClass" class="w-6 h-6" />
+        <span class="text-lg font-semibold">{{ dialogTitle }}</span>
+      </div>
+    </template>
 
+    <template #body>
       <div v-if="validation" class="space-y-4">
         <!-- エラーメッセージ -->
         <div v-if="validation.message" class="text-sm text-gray-700 dark:text-gray-300">
@@ -115,25 +126,25 @@ const handleCancel = () => {
           {{ t('queryBuilder.queryValidationDialog.warningMessage') }}
         </div>
       </div>
+    </template>
 
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            @click="handleCancel"
-          >
-            {{ validation?.status === 'error' ? t('queryBuilder.queryValidationDialog.actions.close') : t('common.actions.cancel') }}
-          </UButton>
-          <UButton
-            v-if="canProceed"
-            color="primary"
-            @click="handleConfirm"
-          >
-            {{ t('queryBuilder.queryValidationDialog.actions.open') }}
-          </UButton>
-        </div>
-      </template>
-    </UCard>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          @click="handleCancel"
+        >
+          {{ validation?.status === 'error' ? t('queryBuilder.queryValidationDialog.actions.close') : t('common.actions.cancel') }}
+        </UButton>
+        <UButton
+          v-if="canProceed"
+          color="primary"
+          @click="handleConfirm"
+        >
+          {{ t('queryBuilder.queryValidationDialog.actions.open') }}
+        </UButton>
+      </div>
+    </template>
   </UModal>
 </template>
