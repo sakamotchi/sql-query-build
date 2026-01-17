@@ -88,22 +88,22 @@
 
 | ドキュメント | 内容 | 更新タイミング |
 |------------|------|--------------|
-| `docs/01_product_requirements.md` | プロダクト要求定義書 | 要件・機能の追加/変更時 |
-| `docs/02_functional_design.md` | 機能設計書 | 画面・機能の追加/変更時 |
-| `docs/03_architecture_specifications.md` | 技術仕様書 | アーキテクチャ・技術スタック変更時 |
-| `docs/04_repository_structure.md` | リポジトリ構造定義書 | ディレクトリ構造・命名規則変更時 |
-| `docs/05_development_guidelines.md` | 開発ガイドライン | コーディング規約・レビュー手順変更時 |
-| `docs/06_ubiquitous_language.md` | ユビキタス言語定義書 | 用語の追加/変更時 |
+| `docs/steering/01_product_requirements.md` | プロダクト要求定義書 | 要件・機能の追加/変更時 |
+| `docs/steering/02_functional_design.md` | 機能設計書 | 画面・機能の追加/変更時 |
+| `docs/steering/03_architecture_specifications.md` | 技術仕様書 | アーキテクチャ・技術スタック変更時 |
+| `docs/steering/04_repository_structure.md` | リポジトリ構造定義書 | ディレクトリ構造・命名規則変更時 |
+| `docs/steering/05_development_guidelines.md` | 開発ガイドライン | コーディング規約・レビュー手順変更時 |
+| `docs/steering/06_ubiquitous_language.md` | ユビキタス言語定義書 | 用語の追加/変更時 |
 
-#### 機能詳細仕様（docs/features/）
+#### 機能詳細仕様（docs/steering/features/）
 
 | ドキュメント | 内容 |
 |------------|------|
-| `docs/features/connection.md` | 接続管理機能の詳細仕様 |
-| `docs/features/query-builder.md` | クエリビルダー機能の詳細仕様 |
-| `docs/features/security.md` | セキュリティ機能の詳細仕様 |
-| `docs/features/settings.md` | 設定機能の詳細仕様 |
-| `docs/features/window.md` | ウィンドウ管理機能の詳細仕様 |
+| `docs/steering/features/connection.md` | 接続管理機能の詳細仕様 |
+| `docs/steering/features/query-builder.md` | クエリビルダー機能の詳細仕様 |
+| `docs/steering/features/security.md` | セキュリティ機能の詳細仕様 |
+| `docs/steering/features/settings.md` | 設定機能の詳細仕様 |
+| `docs/steering/features/window.md` | ウィンドウ管理機能の詳細仕様 |
 
 #### ドキュメント更新のルール
 

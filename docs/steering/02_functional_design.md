@@ -1,8 +1,8 @@
 # 機能設計書
 
-**バージョン**: 1.0
+**バージョン**: 1.1
 **作成日**: 2025年12月29日
-**最終更新**: 2025年12月29日
+**最終更新**: 2026年1月17日
 
 ---
 
@@ -13,9 +13,10 @@
 | カテゴリ | 説明 | 詳細ドキュメント |
 |---------|------|-----------------|
 | 接続管理 | DB接続の登録・編集・削除・起動 | [features/connection.md](features/connection.md) |
-| クエリビルダー | GUIによるSQL構築機能 | [features/query-builder.md](features/query-builder.md) |
+| クエリビルダー | GUIによるSQL構築・実行・結果表示 | [features/query-builder.md](features/query-builder.md) |
+| Mutation Builder | GUIによるINSERT/UPDATE/DELETE構築 | - |
 | セキュリティ | 認証情報の暗号化・プロバイダー管理 | [features/security.md](features/security.md) |
-| 設定 | アプリケーション設定管理 | [features/settings.md](features/settings.md) |
+| 設定 | アプリケーション設定・安全設定管理 | [features/settings.md](features/settings.md) |
 | ウィンドウ管理 | マルチウィンドウ・状態保存 | [features/window.md](features/window.md) |
 
 ---
@@ -28,8 +29,9 @@
 |--------|--------|-----------|------|
 | S001 | ランチャー（ホーム） | `/` | 保存済み接続一覧と新規接続作成 |
 | S002 | 接続設定画面 | `/connection-form` | データベース接続情報の設定 |
-| S003 | クエリビルダー画面 | `/query-builder` | GUIでのクエリ構築（メイン画面） |
-| S004 | 設定画面 | `/settings` | アプリケーション設定 |
+| S003 | クエリビルダー画面 | `/query-builder` | GUIでのSELECTクエリ構築・実行・結果表示 |
+| S004 | 設定画面 | `/settings` | アプリケーション設定・安全設定 |
+| S005 | Mutation Builder画面 | `/mutation-builder` | GUIでのINSERT/UPDATE/DELETE構築・実行 |
 
 ### 2.2 画面遷移図
 
@@ -91,7 +93,7 @@
 
 ### 3.2 クエリビルダー機能
 
-**状態**: ✅ Phase 1.6完了、Phase 2計画中
+**状態**: ✅ 完了（Phase 1〜5）
 
 | 機能 | 説明 | 対応コンポーネント |
 |------|------|------------------|
@@ -103,9 +105,29 @@
 | ORDER BY設定 | ソート順設定（ASC/DESC） | `OrderByTab.vue` |
 | LIMIT設定 | 件数制限とOFFSET | `LimitTab.vue` |
 | SQLプレビュー | リアルタイムSQL生成 | `SqlPreview.vue` |
-| クエリ実行 | 📝 Phase 2で実装予定 | `ResultPanel.vue`（予定） |
+| クエリ実行 | SELECTクエリの実行 | `ResultPanel.vue` |
+| 結果表示 | 実行結果の表形式表示 | `ResultTable.vue` |
+| ページネーション | 結果のページ分割表示 | `ResultPagination.vue` |
+| クエリ保存 | クエリの保存・読み込み | `SaveQueryDialog.vue`, `SavedQuerySlideover.vue` |
+| クエリ履歴 | 実行済みクエリの履歴表示 | `QueryHistorySlideover.vue` |
+| エクスポート | CSV/Excel/JSON形式での出力 | `ExportDialog.vue` |
+| JOIN提案 | 外部キーに基づくJOIN提案 | `JoinSuggestionList.vue` |
+| 危険クエリ確認 | UPDATE/DELETE時の確認ダイアログ | `DangerousQueryDialog.vue` |
 
-### 3.3 セキュリティ機能
+### 3.3 Mutation Builder機能
+
+**状態**: ✅ 完了（Phase 6）
+
+| 機能 | 説明 | 対応コンポーネント |
+|------|------|------------------|
+| テーブル選択 | 対象テーブルの選択 | `TableSelector.vue` |
+| INSERT構築 | フォーム入力によるINSERT文構築 | `InsertInputPanel.vue`, `InsertRowForm.vue` |
+| UPDATE構築 | SET句とWHERE条件の設定 | `UpdatePanel.vue`, `SetTab.vue` |
+| DELETE構築 | WHERE条件の設定 | `DeletePanel.vue`, `MutationWhereTab.vue` |
+| SQLプレビュー | 生成されたSQLのプレビュー | `SqlPreviewPanel.vue` |
+| クエリ実行 | Mutation実行と結果表示 | `MutationBuilderToolbar.vue` |
+
+### 3.4 セキュリティ機能
 
 **状態**: ✅ 完了（Phase 1.5a）
 
@@ -116,7 +138,7 @@
 | Keychainプロバイダー | OSセキュアストレージ使用 | `SecuritySettings.vue` |
 | プロバイダー切替 | プロバイダー間の移行 | `FromSimpleDialog.vue`, `FromMasterPasswordDialog.vue` |
 
-### 3.4 ウィンドウ管理機能
+### 3.5 ウィンドウ管理機能
 
 **状態**: ✅ 完了（Phase 1.5）
 
@@ -271,8 +293,14 @@ Feature: セキュリティプロバイダー
 │           │ │ [➕条件追加]      │   │                       │
 │           │ └───────────────────┘  │                       │
 ├───────────┴─────────────────────────┴───────────────────────┤
-│ 実行結果エリア（Phase 2で実装）                             │
-│ [結果なし - クエリを実行してください]                        │
+│ 実行結果エリア                                               │
+│ ┌───────────────────────────────────────────────────────┐   │
+│ │ id │ name   │ email          │ created_at            │   │
+│ │────┼────────┼────────────────┼───────────────────────│   │
+│ │ 11 │ user11 │ user11@ex.com  │ 2025-01-01 10:00:00   │   │
+│ │ 12 │ user12 │ user12@ex.com  │ 2025-01-02 11:00:00   │   │
+│ └───────────────────────────────────────────────────────┘   │
+│ [< 前へ] ページ 1/10 [次へ >]    [CSV] [Excel] [JSON]       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -329,3 +357,4 @@ Feature: セキュリティプロバイダー
 | 日付 | バージョン | 変更内容 | 作成者 |
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
+| 2026-01-17 | 1.1 | Mutation Builder機能追加、クエリビルダー機能の実装完了を反映、画面一覧更新 | - |

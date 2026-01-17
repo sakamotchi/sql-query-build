@@ -1,8 +1,9 @@
 # クエリビルダー機能 詳細仕様
 
-**バージョン**: 1.0
+**バージョン**: 1.1
 **作成日**: 2025年12月29日
-**状態**: ✅ Phase 1.6完了、📝 Phase 2計画中
+**最終更新**: 2026年1月17日
+**状態**: ✅ 完了（Phase 1〜5）
 
 ---
 
@@ -29,7 +30,7 @@ GUIを通じてSQLクエリを視覚的に構築する機能。ドラッグ&ド�
 │          │  条件設定タブ            │                       │
 │          │  (下部)                  │                       │
 ├───────────┴─────────────────────────┴───────────────────────┤
-│ 結果パネル（Phase 2で実装）                                  │
+│ 結果パネル（実行結果表示、ページネーション、エクスポート）      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,7 +41,7 @@ GUIを通じてSQLクエリを視覚的に構築する機能。ドラッグ&ド�
 | 左パネル | `LeftPanel.vue` | データベース構造ツリー |
 | 中央パネル | `CenterPanel.vue` | テーブル関係図 + 条件設定タブ |
 | 右パネル | `RightPanel.vue` | SQLプレビュー + クエリ情報 |
-| 結果パネル | `ResultPanel.vue` | クエリ実行結果（Phase 2） |
+| 結果パネル | `ResultPanel.vue` | クエリ実行結果・ページネーション・エクスポート |
 
 ---
 
@@ -291,28 +292,194 @@ interface Column {
 | OrderByTab | `components/query-builder/order-by/OrderByTab.vue` | ORDER BYタブ |
 | LimitTab | `components/query-builder/limit/LimitTab.vue` | LIMITタブ |
 
-### 7.5 ストア
+---
+
+## 8. クエリ実行機能
+
+### 8.1 概要
+
+構築したSQLクエリをデータベースに対して実行し、結果を表形式で表示する機能。
+
+### 8.2 実行フロー
+
+```
+SQLクエリ
+    ↓ invoke("execute_query", { connectionId, sql, limit, offset })
+QueryExecutor (Rust)
+    ↓ DB接続・実行
+QueryResult
+    ↓
+ResultTable.vue で表示
+```
+
+### 8.3 関連コンポーネント
+
+| コンポーネント | パス | 説明 |
+|--------------|------|------|
+| ResultPanel | `components/query-builder/ResultPanel.vue` | 結果パネル全体 |
+| ResultTable | `components/query-builder/result/ResultTable.vue` | 結果テーブル |
+| ResultRow | `components/query-builder/result/ResultRow.vue` | 結果行 |
+| ResultColumnHeader | `components/query-builder/result/ResultColumnHeader.vue` | カラムヘッダー |
+| ResultPagination | `components/query-builder/result/ResultPagination.vue` | ページネーション |
+| QueryErrorDisplay | `components/query-builder/error/QueryErrorDisplay.vue` | エラー表示 |
+
+---
+
+## 9. 安全機能
+
+### 9.1 概要
+
+危険なクエリ（UPDATE/DELETE/DROP/TRUNCATE）の実行前に確認ダイアログを表示する機能。
+
+### 9.2 クエリ分析
+
+```rust
+#[tauri::command]
+async fn analyze_query(sql: String) -> Result<QueryAnalysis, Error>
+```
+
+### 9.3 QueryAnalysis構造
+
+```typescript
+interface QueryAnalysis {
+  queryType: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'DROP' | 'TRUNCATE' | 'OTHER'
+  isDangerous: boolean
+  affectedTables: string[]
+  hasWhereClause: boolean
+}
+```
+
+### 9.4 関連コンポーネント
+
+| コンポーネント | パス | 説明 |
+|--------------|------|------|
+| DangerousQueryDialog | `components/query-builder/dialog/DangerousQueryDialog.vue` | 確認ダイアログ |
+
+---
+
+## 10. クエリ保存・履歴機能
+
+### 10.1 クエリ保存
+
+作成したクエリを名前をつけて保存し、後から読み込む機能。
+
+#### API
+
+```rust
+#[tauri::command]
+async fn save_query(query: SavedQuery) -> Result<(), Error>
+
+#[tauri::command]
+async fn get_saved_queries(connection_id: String) -> Result<Vec<SavedQuery>, Error>
+
+#[tauri::command]
+async fn delete_saved_query(query_id: String) -> Result<(), Error>
+```
+
+#### 関連コンポーネント
+
+| コンポーネント | パス | 説明 |
+|--------------|------|------|
+| SaveQueryDialog | `components/query-builder/dialog/SaveQueryDialog.vue` | 保存ダイアログ |
+| SavedQuerySlideover | `components/query-builder/SavedQuerySlideover.vue` | 保存済みクエリ一覧 |
+
+### 10.2 クエリ履歴
+
+実行したクエリの履歴を管理する機能。
+
+#### API
+
+```rust
+#[tauri::command]
+async fn get_query_history(connection_id: String) -> Result<Vec<QueryHistory>, Error>
+
+#[tauri::command]
+async fn add_query_history(history: QueryHistory) -> Result<(), Error>
+
+#[tauri::command]
+async fn clear_query_history(connection_id: String) -> Result<(), Error>
+```
+
+#### 関連コンポーネント
+
+| コンポーネント | パス | 説明 |
+|--------------|------|------|
+| QueryHistorySlideover | `components/query-builder/QueryHistorySlideover.vue` | 履歴一覧 |
+
+---
+
+## 11. エクスポート機能
+
+### 11.1 概要
+
+クエリ実行結果を各種フォーマットでエクスポートする機能。
+
+### 11.2 対応フォーマット
+
+| フォーマット | 拡張子 | 説明 |
+|------------|--------|------|
+| CSV | .csv | カンマ区切りテキスト |
+| Excel | .xlsx | Microsoft Excel形式 |
+| JSON | .json | JSON配列形式 |
+
+### 11.3 API
+
+```rust
+#[tauri::command]
+async fn export_to_csv(data: ExportData, path: String) -> Result<(), Error>
+
+#[tauri::command]
+async fn export_to_excel(data: ExportData, path: String) -> Result<(), Error>
+
+#[tauri::command]
+async fn export_to_json(data: ExportData, path: String) -> Result<(), Error>
+```
+
+### 11.4 関連コンポーネント
+
+| コンポーネント | パス | 説明 |
+|--------------|------|------|
+| ExportDialog | `components/query-builder/dialog/ExportDialog.vue` | エクスポートダイアログ |
+
+---
+
+## 12. JOIN提案機能
+
+### 12.1 概要
+
+外部キー情報に基づいて、関連テーブルとのJOIN条件を提案する機能。
+
+### 12.2 API
+
+```rust
+#[tauri::command]
+async fn get_join_suggestions(
+    connection_id: String,
+    table_alias: String,
+    schema: String,
+    table_name: String
+) -> Result<Vec<JoinSuggestion>, Error>
+```
+
+### 12.3 関連コンポーネント
+
+| コンポーネント | パス | 説明 |
+|--------------|------|------|
+| JoinSuggestionList | `components/query-builder/join/JoinSuggestionList.vue` | JOIN提案一覧 |
+| JoinSuggestionItem | `components/query-builder/join/JoinSuggestionItem.vue` | JOIN提案アイテム |
+| JoinConfigDialog | `components/query-builder/dialog/JoinConfigDialog.vue` | JOIN設定ダイアログ |
+
+---
+
+## 13. ストア
 
 | ストア | パス | 説明 |
 |--------|------|------|
 | queryBuilderStore | `stores/query-builder.ts` | クエリビルダー状態管理 |
 | databaseStructureStore | `stores/database-structure.ts` | DB構造キャッシュ |
-
----
-
-## 8. Phase 2: クエリ実行（計画中）
-
-### 8.1 実装予定機能
-
-- QueryExecutorトレイト（Rust）
-- execute_query Tauriコマンド
-- ResultTable.vue コンポーネント
-- Pagination.vue コンポーネント
-- エラー表示UI
-
-### 8.2 参照ドキュメント
-
-[sql_editor_wbs_v3.md](../sql_editor_wbs_v3.md) - Phase 2セクション参照
+| queryHistoryStore | `stores/query-history.ts` | クエリ履歴管理 |
+| savedQueryStore | `stores/saved-query.ts` | 保存済みクエリ管理 |
+| safetyStore | `stores/safety.ts` | 安全設定管理 |
 
 ---
 
@@ -321,3 +488,4 @@ interface Column {
 | 日付 | バージョン | 変更内容 |
 |------|----------|---------|
 | 2025-12-29 | 1.0 | 初版作成 |
+| 2026-01-17 | 1.1 | Phase 2-5の実装完了を反映（クエリ実行、安全機能、履歴・保存、エクスポート、JOIN提案） |

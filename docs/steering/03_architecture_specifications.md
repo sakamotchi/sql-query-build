@@ -1,8 +1,8 @@
 # 技術仕様書
 
-**バージョン**: 1.0
+**バージョン**: 1.1
 **作成日**: 2025年12月29日
-**最終更新**: 2025年12月29日
+**最終更新**: 2026年1月17日
 
 ---
 
@@ -149,7 +149,14 @@ Result<T, Error>
 app/
 ├── api/                      # Tauri IPC ラッパー
 │   ├── database-structure.ts # DB構造取得API
+│   ├── export.ts             # エクスポートAPI
+│   ├── join-suggestions.ts   # JOIN提案API
+│   ├── mutation.ts           # Mutation API
 │   ├── query.ts              # クエリ関連API
+│   ├── query-history.ts      # クエリ履歴API
+│   ├── query-storage.ts      # クエリ保存API
+│   ├── query-validation.ts   # クエリバリデーションAPI
+│   ├── safetyApi.ts          # 安全設定API
 │   └── window.ts             # ウィンドウ管理API
 │
 ├── assets/css/               # グローバルCSS
@@ -157,29 +164,61 @@ app/
 │
 ├── components/               # Vueコンポーネント
 │   ├── common/               # 共通コンポーネント
+│   │   ├── ConfirmDialog.vue
 │   │   ├── EnvironmentHeader.vue
 │   │   ├── EnvironmentBadge.vue
+│   │   ├── EnvironmentIndicator.vue
+│   │   ├── EnvironmentWarningBanner.vue
 │   │   └── ...
 │   ├── connection/           # 接続管理
 │   │   ├── ConnectionCard.vue
 │   │   ├── ConnectionList.vue
 │   │   └── ...
+│   ├── launcher/             # ランチャー
+│   │   ├── EmptyState.vue
+│   │   ├── LauncherToolbar.vue
+│   │   └── SearchFilter.vue
+│   ├── mutation-builder/     # Mutation Builder
+│   │   ├── MutationBuilderLayout.vue
+│   │   ├── InsertInputPanel.vue
+│   │   ├── UpdatePanel.vue
+│   │   ├── DeletePanel.vue
+│   │   └── ...
 │   ├── query-builder/        # クエリビルダー
 │   │   ├── DatabaseTree.vue
+│   │   ├── ResultPanel.vue
+│   │   ├── QueryHistorySlideover.vue
+│   │   ├── SavedQuerySlideover.vue
+│   │   ├── dialog/
+│   │   │   ├── DangerousQueryDialog.vue
+│   │   │   ├── ExportDialog.vue
+│   │   │   ├── JoinConfigDialog.vue
+│   │   │   └── SaveQueryDialog.vue
+│   │   ├── result/
+│   │   │   ├── ResultTable.vue
+│   │   │   └── ResultPagination.vue
 │   │   ├── select/
 │   │   ├── where/
 │   │   ├── group-by/
 │   │   ├── order-by/
+│   │   ├── join/
 │   │   └── ...
 │   ├── security/             # セキュリティ
 │   │   ├── MasterPasswordSetupDialog.vue
+│   │   ├── MasterPasswordVerifyDialog.vue
 │   │   └── ...
 │   └── settings/             # 設定
 │       ├── GeneralSettings.vue
-│       └── SecuritySettings.vue
+│       ├── SecuritySettings.vue
+│       ├── SafetySettingsPanel.vue
+│       ├── EnvironmentSafetyCard.vue
+│       └── AboutSection.vue
 │
 ├── composables/              # Composition API関数
 │   ├── useEnvironment.ts     # 環境情報
+│   ├── useProviderChangeDialog.ts # プロバイダー変更
+│   ├── useProviderSwitch.ts  # プロバイダー切替
+│   ├── useTableSelection.ts  # テーブル選択
 │   ├── useTauri.ts           # Tauri API ラッパー
 │   ├── useTheme.ts           # テーマ管理
 │   └── useWindow.ts          # ウィンドウ操作
@@ -187,13 +226,18 @@ app/
 ├── pages/                    # ページコンポーネント
 │   ├── index.vue             # ランチャー
 │   ├── connection-form.vue   # 接続設定
+│   ├── mutation-builder.vue  # Mutation Builder
 │   ├── query-builder.vue     # クエリビルダー
 │   └── settings.vue          # 設定
 │
 ├── stores/                   # Pinia ストア
 │   ├── connection.ts         # 接続情報
 │   ├── database-structure.ts # DB構造
+│   ├── mutation-builder.ts   # Mutation状態
 │   ├── query-builder.ts      # クエリ状態
+│   ├── query-history.ts      # クエリ履歴
+│   ├── saved-query.ts        # 保存済みクエリ
+│   ├── safety.ts             # 安全設定
 │   ├── security.ts           # セキュリティ
 │   ├── settings.ts           # 設定
 │   ├── theme.ts              # テーマ
@@ -202,10 +246,16 @@ app/
 ├── types/                    # TypeScript型定義
 │   ├── index.ts              # 共通型
 │   ├── database-structure.ts # DB構造型
+│   ├── export.ts             # エクスポート型
+│   ├── join-suggestion.ts    # JOIN提案型
+│   ├── query-analysis.ts     # クエリ分析型
 │   ├── query-model.ts        # クエリモデル型
-│   └── query.ts              # クエリ関連型
+│   ├── query-result.ts       # クエリ結果型
+│   ├── query.ts              # クエリ関連型
+│   └── safety-settings.ts    # 安全設定型
 │
 ├── utils/                    # ユーティリティ
+│   ├── error-messages.ts     # エラーメッセージ
 │   └── query-converter.ts    # クエリ変換
 │
 ├── app.config.ts             # アプリ設定
@@ -222,7 +272,14 @@ src-tauri/src/
 ├── commands/                 # Tauriコマンド
 │   ├── mod.rs
 │   ├── database_structure.rs # DB構造取得
+│   ├── export_commands.rs    # エクスポートコマンド
+│   ├── join_suggestions.rs   # JOIN提案コマンド
+│   ├── mutation_commands.rs  # Mutationコマンド
 │   ├── query.rs              # クエリ関連
+│   ├── query_analyzer.rs     # クエリ分析
+│   ├── query_history_commands.rs # クエリ履歴コマンド
+│   ├── query_storage_commands.rs # クエリ保存コマンド
+│   ├── safety.rs             # 安全設定コマンド
 │   ├── security.rs           # セキュリティ
 │   ├── settings.rs           # 設定
 │   └── window.rs             # ウィンドウ管理
@@ -232,6 +289,9 @@ src-tauri/src/
 │   ├── builder.rs            # 接続ビルダー
 │   ├── collection.rs         # 接続コレクション
 │   ├── commands.rs           # 接続コマンド
+│   ├── connection_test_service.rs # 接続テストサービス
+│   ├── error.rs              # 接続エラー
+│   ├── frontend_types.rs     # フロントエンド型
 │   ├── service.rs            # 接続サービス
 │   ├── storage.rs            # 接続永続化
 │   └── types.rs              # 接続型定義
@@ -239,43 +299,80 @@ src-tauri/src/
 ├── crypto/                   # 暗号化モジュール
 │   ├── mod.rs
 │   ├── encryption.rs         # 暗号化ユーティリティ
+│   ├── error.rs              # 暗号化エラー
+│   ├── password_cache.rs     # パスワードキャッシュ
+│   ├── types.rs              # 暗号化型
 │   ├── master_key/           # マスターキー管理
+│   │   ├── mod.rs
+│   │   ├── error.rs
+│   │   ├── keychain.rs
 │   │   ├── manager.rs
-│   │   └── keychain.rs
+│   │   └── types.rs
 │   └── security_provider/    # セキュリティプロバイダー
-│       ├── traits.rs
-│       ├── simple.rs
-│       ├── master_password.rs
+│       ├── mod.rs
+│       ├── config.rs
+│       ├── credential_storage.rs
+│       ├── error.rs
 │       ├── keychain.rs
 │       ├── manager.rs
-│       └── config.rs
+│       ├── master_password.rs
+│       ├── password_validator.rs
+│       ├── provider_switcher.rs
+│       ├── simple.rs
+│       ├── simple_key.rs
+│       ├── traits.rs
+│       └── types.rs
 │
 ├── database/                 # データベースモジュール
 │   ├── mod.rs
-│   ├── postgresql_inspector.rs
-│   ├── mysql_inspector.rs
-│   └── sqlite_inspector.rs
+│   ├── mysql_executor.rs     # MySQL実行
+│   ├── mysql_inspector.rs    # MySQL構造取得
+│   ├── postgresql_executor.rs # PostgreSQL実行
+│   ├── postgresql_inspector.rs # PostgreSQL構造取得
+│   ├── sqlite_executor.rs    # SQLite実行
+│   └── sqlite_inspector.rs   # SQLite構造取得
 │
 ├── models/                   # データモデル
 │   ├── mod.rs
 │   ├── database_structure.rs
+│   ├── export.rs             # エクスポートモデル
+│   ├── join_suggestion.rs    # JOIN提案モデル
+│   ├── mutation_result.rs    # Mutation結果モデル
 │   ├── query.rs
+│   ├── query_analysis.rs     # クエリ分析モデル
+│   ├── query_history.rs      # クエリ履歴モデル
+│   ├── query_result.rs       # クエリ結果モデル
+│   ├── safety_settings.rs    # 安全設定モデル
+│   ├── saved_query.rs        # 保存済みクエリモデル
 │   └── window.rs
+│
+├── query/                    # クエリモジュール
+│   ├── mod.rs
+│   └── mutation.rs           # Mutation処理
 │
 ├── services/                 # サービス層
 │   ├── mod.rs
 │   ├── database_inspector.rs
+│   ├── exporter.rs           # エクスポートサービス
+│   ├── query_analyzer.rs     # クエリ分析サービス
+│   ├── query_executor.rs     # クエリ実行サービス
+│   ├── query_history.rs      # クエリ履歴サービス
+│   ├── query_storage.rs      # クエリ保存サービス
+│   ├── safety_config.rs      # 安全設定サービス
 │   └── window_manager.rs
 │
 ├── sql_generator/            # SQL生成エンジン
 │   ├── mod.rs
 │   ├── builder.rs            # SQL構築メイン
 │   ├── dialect.rs            # 方言トレイト
+│   ├── reserved_words.rs     # 予約語定義
 │   ├── dialects/             # DB方言実装
+│   │   ├── mod.rs
 │   │   ├── postgres.rs
 │   │   ├── mysql.rs
 │   │   └── sqlite.rs
 │   └── clause/               # 句生成
+│       ├── mod.rs
 │       ├── select.rs
 │       ├── from.rs
 │       ├── join.rs
@@ -286,6 +383,7 @@ src-tauri/src/
 │
 └── storage/                  # ストレージモジュール
     ├── mod.rs
+    ├── error.rs              # ストレージエラー
     ├── file_storage.rs       # ファイルI/O
     ├── path_manager.rs       # パス管理
     └── window_state.rs       # ウィンドウ状態
@@ -319,13 +417,29 @@ src-tauri/src/
 | 接続 | `test_connection` | 接続テスト |
 | DB構造 | `get_database_structure` | DB構造取得 |
 | クエリ | `generate_sql` | SQL生成 |
-| クエリ | `execute_query` | クエリ実行（Phase 2） |
+| クエリ | `execute_query` | クエリ実行 |
+| クエリ | `analyze_query` | クエリ分析（危険度判定） |
+| クエリ履歴 | `get_query_history` | クエリ履歴取得 |
+| クエリ履歴 | `add_query_history` | クエリ履歴追加 |
+| クエリ履歴 | `clear_query_history` | クエリ履歴クリア |
+| クエリ保存 | `save_query` | クエリ保存 |
+| クエリ保存 | `get_saved_queries` | 保存済みクエリ取得 |
+| クエリ保存 | `delete_saved_query` | 保存済みクエリ削除 |
+| エクスポート | `export_to_csv` | CSV形式でエクスポート |
+| エクスポート | `export_to_excel` | Excel形式でエクスポート |
+| エクスポート | `export_to_json` | JSON形式でエクスポート |
+| JOIN提案 | `get_join_suggestions` | JOIN提案取得 |
+| Mutation | `execute_mutation` | INSERT/UPDATE/DELETE実行 |
+| Mutation | `generate_mutation_sql` | Mutation SQL生成 |
+| 安全設定 | `get_safety_settings` | 安全設定取得 |
+| 安全設定 | `save_safety_settings` | 安全設定保存 |
 | セキュリティ | `get_security_settings` | セキュリティ設定取得 |
 | セキュリティ | `switch_security_provider` | プロバイダー切替 |
 | セキュリティ | `verify_master_password` | パスワード検証 |
 | 設定 | `get_settings` | 設定取得 |
 | 設定 | `save_settings` | 設定保存 |
 | ウィンドウ | `open_query_builder_window` | ウィンドウ起動 |
+| ウィンドウ | `open_mutation_builder_window` | Mutation Builderウィンドウ起動 |
 | ウィンドウ | `get_window_context` | コンテキスト取得 |
 
 ### 4.3 エラーハンドリング
@@ -359,8 +473,10 @@ pub enum AppError {
 ├── credentials.json          # 認証情報（暗号化）
 ├── security-config.json      # セキュリティ設定
 ├── settings.json             # アプリ設定
+├── safety-settings.json      # 安全設定
 ├── window-states.json        # ウィンドウ状態
-└── saved-queries/            # 保存済みクエリ（Phase 4）
+├── query-history.json        # クエリ履歴
+└── saved-queries/            # 保存済みクエリ
     └── {query_id}.json
 ```
 
@@ -514,3 +630,4 @@ npm run tauri:build
 | 日付 | バージョン | 変更内容 | 作成者 |
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
+| 2026-01-17 | 1.1 | モジュール構成を最新化、Tauriコマンド一覧を拡充、Mutation Builder・エクスポート・履歴機能を反映 | - |

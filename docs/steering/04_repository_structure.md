@@ -1,8 +1,8 @@
 # リポジトリ構造定義書
 
-**バージョン**: 1.0
+**バージョン**: 1.1
 **作成日**: 2025年12月29日
-**最終更新**: 2025年12月29日
+**最終更新**: 2026年1月17日
 
 ---
 
@@ -44,7 +44,14 @@ sql-query-build/
 app/
 ├── api/                      # Tauri IPCラッパー
 │   ├── database-structure.ts
+│   ├── export.ts
+│   ├── join-suggestions.ts
+│   ├── mutation.ts
 │   ├── query.ts
+│   ├── query-history.ts
+│   ├── query-storage.ts
+│   ├── query-validation.ts
+│   ├── safetyApi.ts
 │   └── window.ts
 │
 ├── assets/                   # 静的アセット
@@ -53,52 +60,185 @@ app/
 │
 ├── components/               # Vueコンポーネント
 │   ├── common/               # 共通コンポーネント
+│   │   ├── ConfirmDialog.vue
+│   │   ├── EnvironmentBadge.vue
+│   │   ├── EnvironmentHeader.vue
+│   │   ├── EnvironmentIndicator.vue
+│   │   └── EnvironmentWarningBanner.vue
 │   ├── connection/           # 接続管理関連
+│   │   ├── ConnectionCard.vue
+│   │   ├── ConnectionList.vue
+│   │   ├── EnvironmentColorPicker.vue
+│   │   ├── EnvironmentSelector.vue
+│   │   └── ThemePreview.vue
 │   ├── launcher/             # ランチャー関連
+│   │   ├── EmptyState.vue
+│   │   ├── LauncherToolbar.vue
+│   │   └── SearchFilter.vue
+│   ├── mutation-builder/     # ミューテーションビルダー関連
+│   │   ├── ColumnInputField.vue
+│   │   ├── DeletePanel.vue
+│   │   ├── FormInputTab.vue
+│   │   ├── InsertInputPanel.vue
+│   │   ├── InsertRowForm.vue
+│   │   ├── MutationBuilderCenterPanel.vue
+│   │   ├── MutationBuilderLayout.vue
+│   │   ├── MutationBuilderLeftPanel.vue
+│   │   ├── MutationBuilderRightPanel.vue
+│   │   ├── MutationBuilderToolbar.vue
+│   │   ├── MutationConditionGroup.vue
+│   │   ├── MutationWhereTab.vue
+│   │   ├── SetColumnField.vue
+│   │   ├── SetTab.vue
+│   │   ├── SqlPreviewPanel.vue
+│   │   ├── TableSelector.vue
+│   │   └── UpdatePanel.vue
 │   ├── query-builder/        # クエリビルダー関連
-│   │   ├── group-by/
-│   │   ├── limit/
-│   │   ├── order-by/
-│   │   ├── select/
-│   │   ├── table/
-│   │   ├── tree/
-│   │   └── where/
+│   │   ├── dialog/           # ダイアログ
+│   │   │   ├── DangerousQueryDialog.vue
+│   │   │   ├── ExportDialog.vue
+│   │   │   ├── JoinConditionRow.vue
+│   │   │   ├── JoinConfigDialog.vue
+│   │   │   └── SaveQueryDialog.vue
+│   │   ├── error/            # エラー表示
+│   │   │   ├── ErrorHint.vue
+│   │   │   └── QueryErrorDisplay.vue
+│   │   ├── group-by/         # GROUP BY
+│   │   │   ├── GroupByRow.vue
+│   │   │   └── GroupByTab.vue
+│   │   ├── join/             # JOIN提案
+│   │   │   ├── JoinSuggestionItem.vue
+│   │   │   └── JoinSuggestionList.vue
+│   │   ├── limit/            # LIMIT
+│   │   │   └── LimitTab.vue
+│   │   ├── order-by/         # ORDER BY
+│   │   │   ├── OrderByRow.vue
+│   │   │   └── OrderByTab.vue
+│   │   ├── result/           # 結果表示
+│   │   │   ├── ResultColumnHeader.vue
+│   │   │   ├── ResultPagination.vue
+│   │   │   ├── ResultRow.vue
+│   │   │   └── ResultTable.vue
+│   │   ├── select/           # SELECT
+│   │   │   ├── ColumnCheckbox.vue
+│   │   │   ├── ColumnSelector.vue
+│   │   │   ├── ExpressionItem.vue
+│   │   │   ├── ExpressionNodeItem.vue
+│   │   │   ├── SelectedColumnItem.vue
+│   │   │   ├── SelectedColumnList.vue
+│   │   │   ├── SelectTab.vue
+│   │   │   └── TableColumnGroup.vue
+│   │   ├── table/            # テーブル表示
+│   │   │   ├── DropZone.vue
+│   │   │   ├── TableCard.vue
+│   │   │   ├── TableCardColumn.vue
+│   │   │   └── TableCardHeader.vue
+│   │   ├── tree/             # ツリー表示
+│   │   │   ├── ColumnNode.vue
+│   │   │   ├── SchemaNode.vue
+│   │   │   ├── TableNode.vue
+│   │   │   ├── TreeNodeIcon.vue
+│   │   │   └── ViewNode.vue
+│   │   ├── where/            # WHERE
+│   │   │   ├── MultiValueInput.vue
+│   │   │   ├── OperatorSelect.vue
+│   │   │   └── RangeInput.vue
+│   │   ├── ArgumentEditor.vue
+│   │   ├── CenterPanel.vue
+│   │   ├── ConditionTabs.vue
+│   │   ├── CorrelatedConditionEditor.vue
+│   │   ├── DatabaseTree.vue
+│   │   ├── FunctionBuilder.vue
+│   │   ├── JoinPanel.vue
+│   │   ├── LeftPanel.vue
+│   │   ├── QueryBuilderToolbar.vue
+│   │   ├── QueryHistorySlideover.vue
+│   │   ├── QueryInfo.vue
+│   │   ├── QueryValidationDialog.vue
+│   │   ├── RelationLine.vue
+│   │   ├── ResizablePanel.vue
+│   │   ├── ResultPanel.vue
+│   │   ├── RightPanel.vue
+│   │   ├── SavedQuerySlideover.vue
+│   │   ├── SqlPreview.vue
+│   │   ├── SubqueryBuilder.vue
+│   │   └── TableRelationArea.vue
 │   ├── security/             # セキュリティ関連
-│   │   └── provider-change/
-│   └── settings/             # 設定関連
+│   │   ├── provider-change/
+│   │   │   ├── FromMasterPasswordDialog.vue
+│   │   │   ├── FromSimpleDialog.vue
+│   │   │   └── ProviderCard.vue
+│   │   ├── MasterPasswordSetupDialog.vue
+│   │   ├── MasterPasswordVerifyDialog.vue
+│   │   ├── PasswordRequirements.vue
+│   │   ├── PasswordStrengthMeter.vue
+│   │   ├── SecurityLevelDetails.vue
+│   │   └── SecurityProviderComparison.vue
+│   ├── settings/             # 設定関連
+│   │   └── EnvironmentSafetyCard.vue
+│   └── ConnectionTestResultDialog.vue
 │
 ├── composables/              # Composition API関数
+│   ├── useColumnResize.ts
 │   ├── useEnvironment.ts
 │   ├── useProviderChangeDialog.ts
 │   ├── useProviderSwitch.ts
+│   ├── useSqlFormatter.ts
+│   ├── useSqlIdentifierInput.ts
 │   ├── useTableSelection.ts
 │   ├── useTauri.ts
 │   ├── useTheme.ts
 │   └── useWindow.ts
 │
+├── data/                     # 静的データ
+│   └── function-catalog.ts
+│
 ├── pages/                    # ページコンポーネント
 │   ├── index.vue             # ランチャー
 │   ├── connection-form.vue   # 接続設定
+│   ├── mutation-builder.vue  # ミューテーションビルダー
 │   ├── query-builder.vue     # クエリビルダー
 │   └── settings.vue          # 設定
 │
 ├── stores/                   # Piniaストア
 │   ├── connection.ts
 │   ├── database-structure.ts
+│   ├── mutation-builder.ts
 │   ├── query-builder.ts
+│   ├── query-history.ts
+│   ├── safety.ts
+│   ├── saved-query.ts
 │   ├── security.ts
 │   ├── settings.ts
 │   ├── theme.ts
 │   └── window.ts
 │
+├── tests/                    # フロントエンドテスト
+│   └── expression-node.test.ts
+│
 ├── types/                    # TypeScript型定義
 │   ├── index.ts              # 共通型
 │   ├── database-structure.ts
+│   ├── export.ts
+│   ├── expression-node.ts
+│   ├── join-suggestion.ts
+│   ├── mutation-query.ts
+│   ├── mutation-result.ts
+│   ├── query.ts
+│   ├── query-analysis.ts
+│   ├── query-history.ts
 │   ├── query-model.ts
-│   └── query.ts
+│   ├── query-result.ts
+│   ├── query-validation.ts
+│   ├── safety-settings.ts
+│   └── saved-query.ts
 │
 ├── utils/                    # ユーティリティ関数
-│   └── query-converter.ts
+│   ├── error-messages.ts
+│   ├── expression-preview.ts
+│   ├── query-converter.ts
+│   ├── query-type-detector.ts
+│   └── query-validator.ts
 │
 ├── app.config.ts             # アプリ設定
 └── app.vue                   # ルートコンポーネント
@@ -113,7 +253,14 @@ src-tauri/
 │   ├── commands/             # Tauriコマンド
 │   │   ├── mod.rs
 │   │   ├── database_structure.rs
+│   │   ├── export_commands.rs
+│   │   ├── join_suggestions.rs
+│   │   ├── mutation_commands.rs
 │   │   ├── query.rs
+│   │   ├── query_analyzer.rs
+│   │   ├── query_history_commands.rs
+│   │   ├── query_storage_commands.rs
+│   │   ├── safety.rs
 │   │   ├── security.rs
 │   │   ├── settings.rs
 │   │   └── window.rs
@@ -124,16 +271,16 @@ src-tauri/
 │   │   ├── collection.rs
 │   │   ├── commands.rs
 │   │   ├── connection_test_service.rs
-│   │   ├── frontend_types.rs
+│   │   ├── error.rs
 │   │   ├── service.rs
 │   │   ├── storage.rs
-│   │   ├── tests.rs
-│   │   └── types.rs
+│   │   └── tests.rs
 │   │
 │   ├── crypto/               # 暗号化モジュール
 │   │   ├── mod.rs
 │   │   ├── encryption.rs
 │   │   ├── error.rs
+│   │   ├── password_cache.rs
 │   │   ├── types.rs
 │   │   ├── master_key/
 │   │   │   ├── mod.rs
@@ -158,22 +305,45 @@ src-tauri/
 │   │
 │   ├── database/             # DB接続モジュール
 │   │   ├── mod.rs
-│   │   ├── postgresql_inspector.rs
+│   │   ├── mysql_executor.rs
 │   │   ├── mysql_inspector.rs
+│   │   ├── postgresql_executor.rs
+│   │   ├── postgresql_inspector.rs
+│   │   ├── sqlite_executor.rs
 │   │   └── sqlite_inspector.rs
 │   │
 │   ├── models/               # データモデル
 │   │   ├── mod.rs
 │   │   ├── database_structure.rs
 │   │   ├── database_structure_test.rs
-│   │   ├── query.rs
+│   │   ├── export.rs
+│   │   ├── join_suggestion.rs
+│   │   ├── mutation_result.rs
+│   │   ├── query_analysis.rs
+│   │   ├── query_history.rs
+│   │   ├── query_result.rs
+│   │   ├── safety_settings.rs
+│   │   ├── saved_query.rs
 │   │   ├── window.rs
 │   │   └── window_test.rs
+│   │
+│   ├── query/                # クエリ処理モジュール
+│   │   ├── mod.rs
+│   │   └── mutation.rs
 │   │
 │   ├── services/             # サービス層
 │   │   ├── mod.rs
 │   │   ├── database_inspector.rs
 │   │   ├── database_inspector_test.rs
+│   │   ├── exporter.rs
+│   │   ├── query_analyzer.rs
+│   │   ├── query_analyzer_test.rs
+│   │   ├── query_executor.rs
+│   │   ├── query_executor_test.rs
+│   │   ├── query_history.rs
+│   │   ├── query_storage.rs
+│   │   ├── safety_config.rs
+│   │   ├── safety_config_test.rs
 │   │   └── window_manager.rs
 │   │
 │   ├── sql_generator/        # SQL生成エンジン
@@ -181,6 +351,7 @@ src-tauri/
 │   │   ├── builder.rs
 │   │   ├── dialect.rs
 │   │   ├── reserved_words.rs
+│   │   ├── tests.rs
 │   │   ├── clause/
 │   │   │   ├── mod.rs
 │   │   │   ├── from.rs
@@ -216,22 +387,25 @@ src-tauri/
 
 ```
 docs/
-├── 01_product_requirements.md      # プロダクト要求定義書
-├── 02_functional_design.md         # 機能設計書
-├── 03_architecture_specifications.md # 技術仕様書
-├── 04_repository_structure.md      # リポジトリ構造定義書（本ドキュメント）
-├── 05_development_guidelines.md    # 開発ガイドライン
-├── 06_ubiquitous_language.md       # ユビキタス言語定義書
-├── sql_editor_requirements_md.md   # レガシー要件定義（参考）
-├── sql_editor_wbs_v3.md            # WBS v3
-├── features/                       # 機能詳細仕様
-│   ├── connection.md
-│   ├── query-builder.md
-│   ├── security.md
-│   ├── settings.md
-│   └── window.md
-└── archive/                        # アーカイブ（過去のドキュメント）
-    └── 20251229/
+├── archive/                        # アーカイブ（過去のドキュメント）
+├── images/                         # ドキュメント用画像
+├── local/                          # ローカル開発用ドキュメント
+├── projects/                       # プロジェクト別ドキュメント
+├── steering/                       # 永続化ドキュメント（正式仕様）
+│   ├── 01_product_requirements.md      # プロダクト要求定義書
+│   ├── 02_functional_design.md         # 機能設計書
+│   ├── 03_architecture_specifications.md # 技術仕様書
+│   ├── 04_repository_structure.md      # リポジトリ構造定義書（本ドキュメント）
+│   ├── 05_development_guidelines.md    # 開発ガイドライン
+│   ├── 06_ubiquitous_language.md       # ユビキタス言語定義書
+│   └── features/                       # 機能詳細仕様
+│       ├── connection.md
+│       ├── query-builder.md
+│       ├── security.md
+│       ├── settings.md
+│       └── window.md
+└── working/                        # 開発作業ドキュメント（一時的）
+    └── {YYYYMMDD}_{要件名}/
 ```
 
 ---
@@ -432,3 +606,4 @@ src-tauri/target/
 | 日付 | バージョン | 変更内容 | 作成者 |
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
+| 2026-01-17 | 1.1 | Phase 2-6実装に伴う構造更新（api/、components/、stores/、types/、src-tauri/の各モジュール追加）、docs/steering/への構造変更を反映 | - |
