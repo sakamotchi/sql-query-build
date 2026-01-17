@@ -16,6 +16,7 @@
             "open": "Query Builder launched",
             "openDesc": "Connecting to {name}",
             "openMutation": "Mutation Builder launched",
+            "openSqlEditor": "SQL Editor launched",
             "error": "Failed to launch window",
             "unknownError": "An unknown error occurred"
         }
@@ -108,6 +109,7 @@
             "browseData": "Data Reference",
             "mutation": "Data Mutation",
             "queryBuilder": "Query Builder",
+            "editor": "SQL Editor",
             "connect": "Connect"
         },
         "fields": {

@@ -122,6 +122,35 @@ const handleMutation = async (connection: Connection) => {
   }
 }
 
+const handleOpenSqlEditor = async (connection: Connection) => {
+  try {
+    const existing = await windowApi.findWindowByConnection(connection.id, 'sql_editor')
+
+    if (existing) {
+      await windowApi.focusWindow(existing.label)
+      toast.add({
+        title: t('launcher.toasts.focus'),
+        description: t('launcher.toasts.focusDesc', { name: connection.name }),
+        color: 'primary',
+      })
+    } else {
+      await windowApi.openSqlEditor(connection.id, connection.name, connection.environment)
+      toast.add({
+        title: t('launcher.toasts.openSqlEditor'),
+        description: t('launcher.toasts.openDesc', { name: connection.name }),
+        color: 'primary',
+      })
+    }
+  } catch (error) {
+    console.error('Failed to open SQL editor:', error)
+    toast.add({
+      title: t('launcher.toasts.error'),
+      description: error instanceof Error ? error.message : t('launcher.toasts.unknownError'),
+      color: 'error',
+    })
+  }
+}
+
 const handleEdit = (connection: Connection) => {
   navigateToConnectionForm(connection.id)
 }
@@ -188,6 +217,7 @@ onMounted(() => {
               :connection="connection"
               @connect="handleConnect"
               @mutation="handleMutation"
+              @open-sql-editor="handleOpenSqlEditor"
               @edit="handleEdit"
               @delete="handleDelete"
             />
@@ -199,6 +229,7 @@ onMounted(() => {
               :loading="loading"
               @connect="handleConnect"
               @mutation="handleMutation"
+              @open-sql-editor="handleOpenSqlEditor"
               @edit="handleEdit"
               @delete="handleDelete"
             />

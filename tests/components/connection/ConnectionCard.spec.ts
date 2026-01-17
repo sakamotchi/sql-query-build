@@ -56,9 +56,11 @@ describe('ConnectionCard', () => {
     await buttons[1].trigger('click')
     await buttons[2].trigger('click')
     await buttons[3].trigger('click')
+    await buttons[4].trigger('click')
 
     expect(wrapper.emitted('connect')?.[0]?.[0]).toEqual(connection)
     expect(wrapper.emitted('mutation')?.[0]?.[0]).toEqual(connection)
+    expect(wrapper.emitted('open-sql-editor')?.[0]?.[0]).toEqual(connection)
     expect(wrapper.emitted('edit')?.[0]?.[0]).toEqual(connection)
     expect(wrapper.emitted('delete')?.[0]?.[0]).toEqual(connection)
   })

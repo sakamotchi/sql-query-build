@@ -71,7 +71,7 @@ export interface SecuritySettings {
 /**
  * ウィンドウの種類
  */
-export type WindowType = 'launcher' | 'query_builder' | 'mutation_builder' | 'settings'
+export type WindowType = 'launcher' | 'query_builder' | 'mutation_builder' | 'sql_editor' | 'settings'
 
 /**
  * ウィンドウ情報インターフェース（Tauriから返却される）
@@ -107,10 +107,10 @@ export interface WindowContext {
   /** ウィンドウの種類 */
   windowType: WindowType
 
-  /** 関連する接続ID（クエリビルダーの場合のみ） */
+  /** 関連する接続ID（クエリビルダー/ミューテーション/SQLエディタの場合） */
   connectionId?: string
 
-  /** 環境タイプ（クエリビルダーの場合のみ） */
+  /** 環境タイプ（クエリビルダー/ミューテーション/SQLエディタの場合） */
   environment?: Environment
 }
 

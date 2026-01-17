@@ -36,6 +36,26 @@ export const windowApi = {
   },
 
   /**
+   * SQLエディタウィンドウを開く
+   */
+  async openSqlEditor(
+    connectionId: string,
+    connectionName: string,
+    environment: string,
+  ): Promise<WindowInfo> {
+    try {
+      return await invoke('open_sql_editor_window', {
+        connectionId,
+        connectionName,
+        environment,
+      })
+    } catch (error) {
+      console.error('[windowApi] Failed to open SQL editor window:', error)
+      throw error
+    }
+  },
+
+  /**
    * 設定ウィンドウを開く
    */
   async openSettings(): Promise<WindowInfo> {
