@@ -18,6 +18,8 @@ let latestExecutionId = 0
 const MAX_HISTORY_COUNT = 1000
 const PANEL_HEIGHT_STORAGE_KEY = 'sql-editor-panel-height-percent'
 const LEFT_PANEL_VISIBLE_STORAGE_KEY = 'sql-editor-left-panel-visible'
+const SAVED_PANEL_OPEN_STORAGE_KEY = 'sql-editor-saved-panel-open'
+const HISTORY_PANEL_OPEN_STORAGE_KEY = 'sql-editor-history-panel-open'
 const DEFAULT_PANEL_HEIGHT_PERCENT = 55
 const MIN_PANEL_HEIGHT_PERCENT = 20
 const MAX_PANEL_HEIGHT_PERCENT = 80
@@ -76,6 +78,8 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       pendingCloseTabId: null,
       executingTabId: null,
       isLeftPanelVisible: true,
+      isSavedPanelOpen: true,
+      isHistoryPanelOpen: true,
     }
   },
 
@@ -314,6 +318,46 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       window.localStorage.setItem(
         LEFT_PANEL_VISIBLE_STORAGE_KEY,
         String(this.isLeftPanelVisible)
+      )
+    },
+
+    toggleSavedPanelOpen() {
+      this.isSavedPanelOpen = !this.isSavedPanelOpen
+      this.persistSavedPanelOpen()
+    },
+
+    loadSavedPanelOpen() {
+      if (typeof window === 'undefined') return
+      const stored = window.localStorage.getItem(SAVED_PANEL_OPEN_STORAGE_KEY)
+      if (stored === null) return
+      this.isSavedPanelOpen = stored === 'true'
+    },
+
+    persistSavedPanelOpen() {
+      if (typeof window === 'undefined') return
+      window.localStorage.setItem(
+        SAVED_PANEL_OPEN_STORAGE_KEY,
+        String(this.isSavedPanelOpen)
+      )
+    },
+
+    toggleHistoryPanelOpen() {
+      this.isHistoryPanelOpen = !this.isHistoryPanelOpen
+      this.persistHistoryPanelOpen()
+    },
+
+    loadHistoryPanelOpen() {
+      if (typeof window === 'undefined') return
+      const stored = window.localStorage.getItem(HISTORY_PANEL_OPEN_STORAGE_KEY)
+      if (stored === null) return
+      this.isHistoryPanelOpen = stored === 'true'
+    },
+
+    persistHistoryPanelOpen() {
+      if (typeof window === 'undefined') return
+      window.localStorage.setItem(
+        HISTORY_PANEL_OPEN_STORAGE_KEY,
+        String(this.isHistoryPanelOpen)
       )
     },
 

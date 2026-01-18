@@ -59,6 +59,10 @@ export interface SqlEditorState {
   executingTabId: string | null
   /** 左パネルの表示状態 */
   isLeftPanelVisible: boolean
+  /** 保存クエリパネルの開閉状態 */
+  isSavedPanelOpen: boolean
+  /** 履歴パネルの開閉状態 */
+  isHistoryPanelOpen: boolean
 }
 
 /**
