@@ -53,7 +53,6 @@ export interface Connection {
  * アプリケーション設定インターフェース
  */
 export interface AppSettings {
-  theme: ColorMode
   language: Language
   autoSave: boolean
   windowRestore: boolean
