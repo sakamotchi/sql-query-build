@@ -17,6 +17,10 @@ export interface SqlEditorState {
   result: QueryExecuteResult | null
   /** エラー情報（Phase 3で使用） */
   error: QueryExecuteError | null
+  /** 実行中のクエリID（キャンセル用） */
+  executingQueryId: string | null
+  /** 現在の選択SQL（未選択時はnull） */
+  selectionSql: string | null
 }
 
 /**

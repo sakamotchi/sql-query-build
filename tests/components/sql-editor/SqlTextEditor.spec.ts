@@ -7,6 +7,7 @@ import SqlTextEditor from '~/components/sql-editor/SqlTextEditor.vue'
 
 const mocks = vi.hoisted(() => {
   const onDidChangeHandlers: Array<() => void> = []
+  const onDidChangeSelectionHandlers: Array<() => void> = []
   let currentValue = ''
 
   const editorInstance = {
@@ -14,15 +15,24 @@ const mocks = vi.hoisted(() => {
     setValue: vi.fn((value: string) => {
       currentValue = value
     }),
+    addAction: vi.fn(),
+    getSelection: vi.fn(() => null),
+    getModel: vi.fn(() => null),
     onDidChangeModelContent: vi.fn((handler: () => void) => {
       onDidChangeHandlers.push(handler)
       return { dispose: vi.fn() }
     }),
+    onDidChangeCursorSelection: vi.fn((handler: () => void) => {
+      onDidChangeSelectionHandlers.push(handler)
+      return { dispose: vi.fn() }
+    }),
+    deltaDecorations: vi.fn(() => []),
     dispose: vi.fn(),
   }
 
   return {
     onDidChangeHandlers,
+    onDidChangeSelectionHandlers,
     getCurrentValue: () => currentValue,
     setCurrentValue: (value: string) => {
       currentValue = value
@@ -38,6 +48,16 @@ vi.mock('monaco-editor', () => ({
     create: mocks.createMock,
     setTheme: mocks.setThemeMock,
   },
+  KeyMod: { CtrlCmd: 1 },
+  KeyCode: { Enter: 3, Escape: 9 },
+  Range: class {
+    constructor(
+      public startLineNumber: number,
+      public startColumn: number,
+      public endLineNumber: number,
+      public endColumn: number
+    ) {}
+  },
 }))
 
 describe('SqlTextEditor', () => {
@@ -50,6 +70,9 @@ describe('SqlTextEditor', () => {
     mocks.editorInstance.getValue.mockClear()
     mocks.editorInstance.setValue.mockClear()
     mocks.editorInstance.onDidChangeModelContent.mockClear()
+    mocks.editorInstance.onDidChangeCursorSelection.mockClear()
+    mocks.editorInstance.addAction.mockClear()
+    mocks.editorInstance.deltaDecorations.mockClear()
     mocks.editorInstance.dispose.mockClear()
   })
 

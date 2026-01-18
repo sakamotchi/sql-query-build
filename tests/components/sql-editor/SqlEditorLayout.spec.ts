@@ -9,6 +9,9 @@ const stubs = {
   SqlTextEditor: {
     template: '<div data-testid="editor"></div>',
   },
+  ResultPanel: {
+    template: '<div data-testid="result"></div>',
+  },
 }
 
 describe('SqlEditorLayout', () => {
@@ -19,6 +22,6 @@ describe('SqlEditorLayout', () => {
 
     expect(wrapper.find('[data-testid="toolbar"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="editor"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('結果パネル（Phase 3で実装）')
+    expect(wrapper.find('[data-testid="result"]').exists()).toBe(true)
   })
 })

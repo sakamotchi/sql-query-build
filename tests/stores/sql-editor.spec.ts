@@ -1,10 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useSqlEditorStore } from '~/stores/sql-editor'
+import { queryApi } from '~/api/query'
+
+vi.mock('~/api/query', () => ({
+  queryApi: {
+    executeQuery: vi.fn(),
+    cancelQuery: vi.fn(),
+  },
+}))
 
 describe('SqlEditorStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    vi.clearAllMocks()
   })
 
   it('初期状態が正しい', () => {
@@ -15,6 +24,8 @@ describe('SqlEditorStore', () => {
     expect(store.isExecuting).toBe(false)
     expect(store.result).toBeNull()
     expect(store.error).toBeNull()
+    expect(store.executingQueryId).toBeNull()
+    expect(store.selectionSql).toBeNull()
   })
 
   it('setConnectionでconnectionIdが設定される', () => {
@@ -48,5 +59,80 @@ describe('SqlEditorStore', () => {
     expect(store.canExecute).toBe(true)
     store.isExecuting = true
     expect(store.canExecute).toBe(false)
+  })
+
+  it('接続なしでexecuteQueryするとエラーになる', async () => {
+    const store = useSqlEditorStore()
+    store.updateSql('SELECT 1')
+
+    await store.executeQuery()
+
+    expect(store.error?.message).toBe('接続が選択されていません')
+    expect(store.isExecuting).toBe(false)
+  })
+
+  it('選択範囲が空の場合はエラーになる', async () => {
+    const store = useSqlEditorStore()
+    store.setConnection('conn-1')
+    store.updateSql('SELECT 1')
+    store.setSelectionSql('   ')
+
+    await store.executeQuery()
+
+    expect(store.error?.message).toBe('選択範囲が空です')
+    expect(store.isExecuting).toBe(false)
+  })
+
+  it('executeQueryが成功すると結果が保存される', async () => {
+    const store = useSqlEditorStore()
+    store.setConnection('conn-1')
+    store.updateSql('SELECT 1')
+
+    vi.mocked(queryApi.executeQuery).mockResolvedValueOnce({
+      queryId: 'q-1',
+      result: {
+        columns: [],
+        rows: [],
+        rowCount: 0,
+        executionTimeMs: 12,
+        warnings: [],
+      },
+    })
+
+    await store.executeQuery()
+
+    expect(store.result).toBeTruthy()
+    expect(store.error).toBeNull()
+    expect(store.isExecuting).toBe(false)
+  })
+
+  it('executeQueryがJSONエラーを受け取った場合はパースされる', async () => {
+    const store = useSqlEditorStore()
+    store.setConnection('conn-1')
+    store.updateSql('SELECT * FROM')
+
+    vi.mocked(queryApi.executeQuery).mockRejectedValueOnce(
+      JSON.stringify({ code: 'syntax_error', message: 'Syntax error', details: { line: 1 } })
+    )
+
+    await store.executeQuery()
+
+    expect(store.error).toMatchObject({
+      code: 'syntax_error',
+      message: 'Syntax error',
+      details: { line: 1 },
+    })
+  })
+
+  it('cancelQueryでキャンセル状態になる', async () => {
+    const store = useSqlEditorStore()
+    store.isExecuting = true
+    store.executingQueryId = 'q-1'
+
+    await store.cancelQuery()
+
+    expect(store.isExecuting).toBe(false)
+    expect(store.error?.code).toBe('query_cancelled')
+    expect(queryApi.cancelQuery).toHaveBeenCalledWith('q-1')
   })
 })

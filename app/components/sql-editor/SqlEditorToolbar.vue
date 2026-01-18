@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
+import { useSqlEditorStore } from '~/stores/sql-editor'
 
-function handleExecute() {
-  console.log('Execute button clicked (not implemented yet)')
+const sqlEditorStore = useSqlEditorStore()
+const { canExecute, isExecuting } = storeToRefs(sqlEditorStore)
+
+async function handleExecute() {
+  await sqlEditorStore.executeQuery()
 }
 
-function handleStop() {
-  console.log('Stop button clicked (not implemented yet)')
+async function handleStop() {
+  await sqlEditorStore.cancelQuery()
 }
 
 function handleSave() {
@@ -19,7 +24,7 @@ function handleSave() {
       <UButton
         icon="i-heroicons-play"
         label="実行"
-        :disabled="true"
+        :disabled="!canExecute"
         color="primary"
         @click="handleExecute"
       />
@@ -27,7 +32,7 @@ function handleSave() {
       <UButton
         icon="i-heroicons-stop"
         label="停止"
-        :disabled="true"
+        :disabled="!isExecuting"
         color="neutral"
         variant="soft"
         @click="handleStop"
