@@ -57,6 +57,8 @@ export interface SqlEditorState {
   pendingCloseTabId: string | null
   /** 実行中のタブID */
   executingTabId: string | null
+  /** 左パネルの表示状態 */
+  isLeftPanelVisible: boolean
 }
 
 /**

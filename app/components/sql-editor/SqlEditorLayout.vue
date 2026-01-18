@@ -8,7 +8,7 @@ import EditorTabs from '~/components/sql-editor/EditorTabs.vue'
 import { useSqlEditorStore } from '~/stores/sql-editor'
 
 const sqlEditorStore = useSqlEditorStore()
-const { editorPanelHeightPercent } = storeToRefs(sqlEditorStore)
+const { editorPanelHeightPercent, isLeftPanelVisible } = storeToRefs(sqlEditorStore)
 
 const mainPanelRef = ref<HTMLElement | null>(null)
 const isResizing = ref(false)
@@ -38,6 +38,7 @@ const stopResize = () => {
 
 onMounted(() => {
   sqlEditorStore.loadEditorPanelHeight()
+  sqlEditorStore.loadLeftPanelVisibility()
 })
 
 onBeforeUnmount(() => {
@@ -52,7 +53,10 @@ onBeforeUnmount(() => {
     <EditorTabs class="flex-shrink-0" />
 
     <div class="flex-1 flex overflow-hidden">
-      <div class="w-80 min-w-[18rem] max-w-[22rem] h-full flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-700">
+      <div
+        v-if="isLeftPanelVisible"
+        class="w-80 min-w-[18rem] max-w-[22rem] h-full flex-shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-700"
+      >
         <div class="flex-1 min-h-0">
           <SqlEditorSavedPanel />
         </div>

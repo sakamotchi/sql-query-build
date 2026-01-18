@@ -8,7 +8,7 @@ import type { Environment } from '~/types'
 const sqlEditorStore = useSqlEditorStore()
 const windowStore = useWindowStore()
 const connectionStore = useConnectionStore()
-const { canExecute, isExecuting, sql } = storeToRefs(sqlEditorStore)
+const { canExecute, isExecuting, sql, isLeftPanelVisible } = storeToRefs(sqlEditorStore)
 const { getEnvironmentColors } = useEnvironment()
 const { toggleColorMode, isDark } = useTheme()
 const { t } = useI18n()
@@ -78,6 +78,10 @@ function handleSaveAsNew() {
 function handleFormat() {
   sqlEditorStore.requestFormat()
 }
+
+function handleToggleLeftPanel() {
+  sqlEditorStore.toggleLeftPanelVisibility()
+}
 </script>
 
 <template>
@@ -110,6 +114,17 @@ function handleFormat() {
         color="neutral"
         variant="outline"
         @click="handleFormat"
+      />
+
+      <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
+
+      <UButton
+        :icon="isLeftPanelVisible ? 'i-heroicons-bars-3-bottom-left' : 'i-heroicons-bars-3-bottom-left-20-solid'"
+        size="sm"
+        color="neutral"
+        variant="ghost"
+        :title="isLeftPanelVisible ? 'パネルを非表示' : 'パネルを表示'"
+        @click="handleToggleLeftPanel"
       />
 
       <div class="flex-1" />

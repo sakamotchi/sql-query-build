@@ -17,6 +17,7 @@ import type { QueryExecuteError } from '~/types/query-result'
 let latestExecutionId = 0
 const MAX_HISTORY_COUNT = 1000
 const PANEL_HEIGHT_STORAGE_KEY = 'sql-editor-panel-height-percent'
+const LEFT_PANEL_VISIBLE_STORAGE_KEY = 'sql-editor-left-panel-visible'
 const DEFAULT_PANEL_HEIGHT_PERCENT = 55
 const MIN_PANEL_HEIGHT_PERCENT = 20
 const MAX_PANEL_HEIGHT_PERCENT = 80
@@ -74,6 +75,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       formatRequestId: 0,
       pendingCloseTabId: null,
       executingTabId: null,
+      isLeftPanelVisible: true,
     }
   },
 
@@ -292,6 +294,26 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       window.localStorage.setItem(
         PANEL_HEIGHT_STORAGE_KEY,
         String(this.editorPanelHeightPercent)
+      )
+    },
+
+    toggleLeftPanelVisibility() {
+      this.isLeftPanelVisible = !this.isLeftPanelVisible
+      this.persistLeftPanelVisibility()
+    },
+
+    loadLeftPanelVisibility() {
+      if (typeof window === 'undefined') return
+      const stored = window.localStorage.getItem(LEFT_PANEL_VISIBLE_STORAGE_KEY)
+      if (stored === null) return
+      this.isLeftPanelVisible = stored === 'true'
+    },
+
+    persistLeftPanelVisibility() {
+      if (typeof window === 'undefined') return
+      window.localStorage.setItem(
+        LEFT_PANEL_VISIBLE_STORAGE_KEY,
+        String(this.isLeftPanelVisible)
       )
     },
 
