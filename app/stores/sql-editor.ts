@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { format as formatSql } from 'sql-formatter'
 import { useConnectionStore } from '~/stores/connection'
 import { queryApi } from '~/api/query'
 import { sqlEditorApi } from '~/api/sql-editor'
@@ -9,34 +10,72 @@ import type {
   SavedQueryMetadata,
   SqlEditorState,
   SqlEditorHistoryEntry,
+  SqlEditorTab,
 } from '~/types/sql-editor'
 import type { QueryExecuteError } from '~/types/query-result'
 
 let latestExecutionId = 0
 const MAX_HISTORY_COUNT = 1000
+const PANEL_HEIGHT_STORAGE_KEY = 'sql-editor-panel-height-percent'
+const DEFAULT_PANEL_HEIGHT_PERCENT = 55
+const MIN_PANEL_HEIGHT_PERCENT = 20
+const MAX_PANEL_HEIGHT_PERCENT = 80
+
+const createTabId = () => {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID()
+  }
+  return `tab_${Date.now()}_${Math.random().toString(16).slice(2)}`
+}
+
+const createEditorTab = (name: string): SqlEditorTab => ({
+  id: createTabId(),
+  name,
+  sql: '',
+  isDirty: false,
+  result: null,
+  error: null,
+  selectionSql: null,
+  currentQuery: null,
+  createdAt: new Date().toISOString(),
+})
+
+const clampPanelHeight = (value: number) =>
+  Math.min(Math.max(value, MIN_PANEL_HEIGHT_PERCENT), MAX_PANEL_HEIGHT_PERCENT)
 
 export const useSqlEditorStore = defineStore('sql-editor', {
-  state: (): SqlEditorState => ({
-    connectionId: null,
-    sql: '',
-    isDirty: false,
-    isExecuting: false,
-    result: null,
-    error: null,
-    executingQueryId: null,
-    selectionSql: null,
-    savedQueries: [],
-    currentQuery: null,
-    isSavedQueriesLoading: false,
-    savedQueryError: null,
-    savedQuerySqlCache: {},
-    isSaveDialogOpen: false,
-    editingQueryId: null,
-    histories: [],
-    isLoadingHistories: false,
-    historySearchKeyword: '',
-    historySuccessOnly: false,
-  }),
+  state: (): SqlEditorState => {
+    const initialTab = createEditorTab('Untitled 1')
+
+    return {
+      connectionId: null,
+      sql: initialTab.sql,
+      isDirty: initialTab.isDirty,
+      isExecuting: false,
+      result: initialTab.result,
+      error: initialTab.error,
+      executingQueryId: null,
+      selectionSql: initialTab.selectionSql,
+      savedQueries: [],
+      currentQuery: initialTab.currentQuery,
+      isSavedQueriesLoading: false,
+      savedQueryError: null,
+      savedQuerySqlCache: {},
+      isSaveDialogOpen: false,
+      editingQueryId: null,
+      histories: [],
+      isLoadingHistories: false,
+      historySearchKeyword: '',
+      historySuccessOnly: false,
+      tabs: [initialTab],
+      activeTabId: initialTab.id,
+      nextTabIndex: 2,
+      editorPanelHeightPercent: DEFAULT_PANEL_HEIGHT_PERCENT,
+      formatRequestId: 0,
+      pendingCloseTabId: null,
+      executingTabId: null,
+    }
+  },
 
   getters: {
     /**
@@ -46,6 +85,21 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       if (!state.connectionId) return null
       const connectionStore = useConnectionStore()
       return connectionStore.getConnectionById(state.connectionId) || null
+    },
+
+    /**
+     * アクティブなタブ
+     */
+    activeTab(state): SqlEditorTab | null {
+      if (!state.activeTabId) return null
+      return state.tabs.find((tab) => tab.id === state.activeTabId) || null
+    },
+
+    /**
+     * 未保存の変更があるか
+     */
+    hasUnsavedChanges(state): boolean {
+      return state.tabs.some((tab) => tab.isDirty)
     },
 
     /**
@@ -97,18 +151,174 @@ export const useSqlEditorStore = defineStore('sql-editor', {
      */
     setConnection(connectionId: string) {
       this.connectionId = connectionId
+      this.isExecuting = false
+      this.executingQueryId = null
+      this.executingTabId = null
       this.savedQueries = []
       this.savedQuerySqlCache = {}
       this.currentQuery = null
       this.savedQueryError = null
       this.isSaveDialogOpen = false
       this.editingQueryId = null
+      this.pendingCloseTabId = null
       this.histories = []
       this.isLoadingHistories = false
       this.historySearchKeyword = ''
       this.historySuccessOnly = false
+      this.initializeTabs()
       void this.loadSavedQueries()
       void this.fetchHistories()
+    },
+
+    initializeTabs() {
+      const initialTab = createEditorTab('Untitled 1')
+      this.tabs = [initialTab]
+      this.activeTabId = initialTab.id
+      this.nextTabIndex = 2
+      this.applyTabToState(initialTab)
+    },
+
+    applyTabToState(tab: SqlEditorTab | null) {
+      if (!tab) return
+      this.sql = tab.sql
+      this.isDirty = tab.isDirty
+      this.result = tab.result
+      this.error = tab.error
+      this.selectionSql = tab.selectionSql
+      this.currentQuery = tab.currentQuery
+    },
+
+    syncActiveTabFromState() {
+      const tab = this.activeTab
+      if (!tab) return
+      tab.sql = this.sql
+      tab.isDirty = this.isDirty
+      tab.result = this.result
+      tab.error = this.error
+      tab.selectionSql = this.selectionSql
+      tab.currentQuery = this.currentQuery
+    },
+
+    addTab(name?: string) {
+      const tabName = name?.trim() ? name.trim() : `Untitled ${this.nextTabIndex}`
+      const newTab = createEditorTab(tabName)
+      this.tabs.push(newTab)
+      this.nextTabIndex += 1
+      this.switchTab(newTab.id)
+    },
+
+    switchTab(tabId: string) {
+      if (this.activeTabId === tabId) return
+      const targetTab = this.tabs.find((tab) => tab.id === tabId)
+      if (!targetTab) return
+
+      this.syncActiveTabFromState()
+      this.activeTabId = tabId
+      this.applyTabToState(targetTab)
+    },
+
+    closeTab(tabId: string) {
+      const index = this.tabs.findIndex((tab) => tab.id === tabId)
+      if (index === -1) return
+
+      const wasActive = this.activeTabId === tabId
+      this.tabs.splice(index, 1)
+      if (this.pendingCloseTabId === tabId) {
+        this.pendingCloseTabId = null
+      }
+
+      if (this.tabs.length === 0) {
+        const newTab = createEditorTab(`Untitled ${this.nextTabIndex}`)
+        this.nextTabIndex += 1
+        this.tabs = [newTab]
+        this.activeTabId = newTab.id
+        this.applyTabToState(newTab)
+        return
+      }
+
+      if (wasActive) {
+        const nextIndex = Math.min(index, this.tabs.length - 1)
+        const nextTab = this.tabs[nextIndex]
+        this.activeTabId = nextTab.id
+        this.applyTabToState(nextTab)
+      }
+    },
+
+    renameTab(tabId: string, name: string) {
+      const tab = this.tabs.find((target) => target.id === tabId)
+      if (!tab) return
+      tab.name = name
+    },
+
+    setCursorPosition(position: { lineNumber: number; column: number } | null) {
+      const tab = this.activeTab
+      if (!tab) return
+      tab.cursorPosition = position ?? undefined
+    },
+
+    requestFormat() {
+      this.formatRequestId += 1
+    },
+
+    formatSqlText(sql: string): string | null {
+      if (!sql.trim()) return null
+      try {
+        return formatSql(sql, {
+          language: 'postgresql',
+          uppercase: true,
+          indent: '  ',
+        })
+      } catch (error) {
+        console.error('SQL format error:', error)
+        return null
+      }
+    },
+
+    setEditorPanelHeightPercent(value: number) {
+      this.editorPanelHeightPercent = clampPanelHeight(value)
+    },
+
+    loadEditorPanelHeight() {
+      if (typeof window === 'undefined') return
+      const stored = window.localStorage.getItem(PANEL_HEIGHT_STORAGE_KEY)
+      if (!stored) return
+      const parsed = Number(stored)
+      if (Number.isNaN(parsed)) return
+      this.editorPanelHeightPercent = clampPanelHeight(parsed)
+    },
+
+    persistEditorPanelHeight() {
+      if (typeof window === 'undefined') return
+      window.localStorage.setItem(
+        PANEL_HEIGHT_STORAGE_KEY,
+        String(this.editorPanelHeightPercent)
+      )
+    },
+
+    setPendingCloseTab(tabId: string | null) {
+      this.pendingCloseTabId = tabId
+    },
+
+    clearPendingCloseTab() {
+      this.pendingCloseTabId = null
+    },
+
+    async saveActiveTabWithoutDialog(): Promise<SavedQuery | null> {
+      if (!this.connectionId) {
+        throw new Error('接続が選択されていません')
+      }
+      if (!this.currentQuery) return null
+
+      const request: SaveQueryRequest = {
+        id: this.currentQuery.id,
+        connectionId: this.currentQuery.connectionId,
+        name: this.currentQuery.name,
+        description: this.currentQuery.description,
+        sql: this.sql,
+        tags: this.currentQuery.tags,
+      }
+
+      return await this.saveCurrentQuery(request)
     },
 
     /**
@@ -118,6 +328,11 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       if (this.sql === sql) return
       this.sql = sql
       this.isDirty = true
+      const tab = this.activeTab
+      if (tab) {
+        tab.sql = sql
+        tab.isDirty = true
+      }
     },
 
     /**
@@ -131,6 +346,17 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       this.executingQueryId = null
       this.selectionSql = null
       this.currentQuery = null
+      this.executingTabId = null
+      const tab = this.activeTab
+      if (tab) {
+        tab.sql = ''
+        tab.isDirty = false
+        tab.result = null
+        tab.error = null
+        tab.selectionSql = null
+        tab.currentQuery = null
+        tab.savedQueryId = undefined
+      }
     },
 
     /**
@@ -236,6 +462,14 @@ export const useSqlEditorStore = defineStore('sql-editor', {
           this.currentQuery = saved
           this.sql = saved.sql
           this.isDirty = false
+          const tab = this.activeTab
+          if (tab) {
+            tab.currentQuery = saved
+            tab.savedQueryId = saved.id
+            tab.sql = saved.sql
+            tab.isDirty = false
+            tab.name = saved.name
+          }
         } else if (this.currentQuery?.id === saved.id) {
           this.currentQuery = {
             ...this.currentQuery,
@@ -243,6 +477,11 @@ export const useSqlEditorStore = defineStore('sql-editor', {
             description: saved.description,
             tags: saved.tags,
             updatedAt: saved.updatedAt,
+          }
+          const tab = this.activeTab
+          if (tab && tab.savedQueryId === saved.id) {
+            tab.currentQuery = this.currentQuery
+            tab.name = saved.name
           }
         }
 
@@ -267,6 +506,15 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         this.isDirty = false
         this.selectionSql = null
         this.savedQuerySqlCache[id] = query.sql
+        const tab = this.activeTab
+        if (tab) {
+          tab.sql = query.sql
+          tab.isDirty = false
+          tab.selectionSql = null
+          tab.currentQuery = query
+          tab.savedQueryId = query.id
+          tab.name = query.name
+        }
         return query
       } catch (error) {
         this.savedQueryError = normalizeSavedQueryError(error)
@@ -288,6 +536,11 @@ export const useSqlEditorStore = defineStore('sql-editor', {
 
         if (this.currentQuery?.id === id) {
           this.currentQuery = null
+          const tab = this.activeTab
+          if (tab) {
+            tab.currentQuery = null
+            tab.savedQueryId = undefined
+          }
         }
       } catch (error) {
         this.savedQueryError = normalizeSavedQueryError(error)
@@ -304,27 +557,56 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       await this.executeSqlText(query.sql)
     },
 
+    updateTabExecutionState(
+      tabId: string | null,
+      result: SqlEditorTab['result'],
+      error: SqlEditorTab['error']
+    ) {
+      if (!tabId) return
+      const tab = this.tabs.find((target) => target.id === tabId)
+      if (!tab) return
+
+      tab.result = result
+      tab.error = error
+
+      if (this.activeTabId === tabId) {
+        this.result = result
+        this.error = error
+      }
+    },
+
     /**
      * SQL文字列を実行
      */
     async executeSqlText(sqlToExecute: string, emptyMessage = '実行するSQLが空です') {
       if (this.isExecuting) return
       if (!this.connectionId) {
-        this.error = createClientError('接続が選択されていません')
+        const connectionError = createClientError('接続が選択されていません')
+        this.error = connectionError
+        const tab = this.activeTab
+        if (tab) {
+          tab.error = connectionError
+        }
         return
       }
 
       const trimmedSql = sqlToExecute.trim()
       if (!trimmedSql) {
-        this.error = createClientError(emptyMessage)
+        const emptyError = createClientError(emptyMessage)
+        this.error = emptyError
+        const tab = this.activeTab
+        if (tab) {
+          tab.error = emptyError
+        }
         return
       }
 
       const executionId = ++latestExecutionId
+      const targetTabId = this.activeTabId
       this.isExecuting = true
-      this.error = null
-      this.result = null
       this.executingQueryId = null
+      this.executingTabId = targetTabId
+      this.updateTabExecutionState(targetTabId, null, null)
       const startTime = Date.now()
 
       try {
@@ -339,7 +621,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         }
 
         this.executingQueryId = response.queryId
-        this.result = response.result
+        this.updateTabExecutionState(targetTabId, response.result, null)
         void this.addHistory({
           connectionId: this.connectionId,
           sql: trimmedSql,
@@ -352,7 +634,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
           return
         }
         const normalizedError = normalizeQueryError(error)
-        this.error = normalizedError
+        this.updateTabExecutionState(targetTabId, null, normalizedError)
         void this.addHistory({
           connectionId: this.connectionId,
           sql: trimmedSql,
@@ -364,6 +646,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         if (executionId === latestExecutionId) {
           this.isExecuting = false
           this.executingQueryId = null
+          this.executingTabId = null
         }
       }
     },
@@ -376,9 +659,14 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       const sqlToExecute = selectionSql ?? this.sql
 
       if (!sqlToExecute.trim()) {
-        this.error = createClientError(
+        const clientError = createClientError(
           selectionSql !== null ? '選択範囲が空です' : '実行するSQLが空です'
         )
+        this.error = clientError
+        const tab = this.activeTab
+        if (tab) {
+          tab.error = clientError
+        }
         return
       }
 
@@ -432,6 +720,14 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       this.isDirty = false
       this.selectionSql = null
       this.currentQuery = null
+      const tab = this.activeTab
+      if (tab) {
+        tab.sql = history.sql
+        tab.isDirty = false
+        tab.selectionSql = null
+        tab.currentQuery = null
+        tab.savedQueryId = undefined
+      }
     },
 
     /**
@@ -462,12 +758,14 @@ export const useSqlEditorStore = defineStore('sql-editor', {
      */
     async cancelQuery() {
       if (!this.isExecuting) return
+      const targetTabId = this.executingTabId ?? this.activeTabId
       this.isExecuting = false
-      this.result = null
-      this.error = {
+      const cancelledError = {
         code: 'query_cancelled',
         message: 'クエリの実行をキャンセルしました。',
       }
+      this.updateTabExecutionState(targetTabId, null, cancelledError)
+      this.executingTabId = null
 
       if (!this.executingQueryId) return
       try {
@@ -482,6 +780,10 @@ export const useSqlEditorStore = defineStore('sql-editor', {
      */
     setSelectionSql(selectionSql: string | null) {
       this.selectionSql = selectionSql
+      const tab = this.activeTab
+      if (tab) {
+        tab.selectionSql = selectionSql
+      }
     },
   },
 })

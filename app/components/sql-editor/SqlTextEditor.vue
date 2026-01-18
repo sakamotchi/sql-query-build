@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import * as monaco from 'monaco-editor'
 import { useSqlEditorStore } from '~/stores/sql-editor'
 
 const sqlEditorStore = useSqlEditorStore()
-const { sql: currentSql, error } = storeToRefs(sqlEditorStore)
+const { sql: currentSql, error, formatRequestId, activeTabId } = storeToRefs(sqlEditorStore)
 const colorMode = useColorMode()
 
 const editorElement = ref<HTMLElement | null>(null)
@@ -29,6 +29,12 @@ onMounted(() => {
     scrollBeyondLastLine: false,
     wordWrap: 'on',
     glyphMargin: true,
+    matchBrackets: 'always',
+    bracketPairColorization: { enabled: true },
+    find: {
+      seedSearchStringFromSelection: 'always',
+      autoFindInSelection: 'never',
+    },
   })
 
   editor.addAction({
@@ -58,6 +64,24 @@ onMounted(() => {
     },
   })
 
+  editor.addAction({
+    id: 'format-sql',
+    label: 'Format SQL',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF],
+    run: () => {
+      sqlEditorStore.requestFormat()
+    },
+  })
+
+  editor.addAction({
+    id: 'new-tab',
+    label: 'New Tab',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyN],
+    run: () => {
+      sqlEditorStore.addTab()
+    },
+  })
+
   editor.onDidChangeModelContent(() => {
     const value = editor?.getValue() ?? ''
     sqlEditorStore.updateSql(value)
@@ -80,6 +104,13 @@ onMounted(() => {
     const selectedSql = model.getValueInRange(selection)
     sqlEditorStore.setSelectionSql(selectedSql)
   })
+
+  editor.onDidChangeCursorPosition((event) => {
+    sqlEditorStore.setCursorPosition({
+      lineNumber: event.position.lineNumber,
+      column: event.position.column,
+    })
+  })
 })
 
 watch(
@@ -98,6 +129,41 @@ watch(
     if (newSql !== currentValue) {
       editor.setValue(newSql)
     }
+  }
+)
+
+watch(
+  () => formatRequestId.value,
+  () => {
+    if (!editor) return
+    const formatted = sqlEditorStore.formatSqlText(editor.getValue())
+    if (!formatted || formatted === editor.getValue()) return
+    const model = editor.getModel()
+    if (!model) return
+    const selection = editor.getSelection()
+    editor.pushUndoStop()
+    editor.executeEdits('sql-format', [
+      {
+        range: model.getFullModelRange(),
+        text: formatted,
+      },
+    ])
+    editor.pushUndoStop()
+    if (selection) {
+      editor.setSelection(selection)
+    }
+  }
+)
+
+watch(
+  () => activeTabId.value,
+  async () => {
+    if (!editor) return
+    await nextTick()
+    const position = sqlEditorStore.activeTab?.cursorPosition
+    if (!position) return
+    editor.setPosition(position)
+    editor.revealPositionInCenterIfOutsideViewport(position)
   }
 )
 

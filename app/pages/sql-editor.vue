@@ -34,6 +34,20 @@ onMounted(async () => {
   }
 })
 
+const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  if (!sqlEditorStore.hasUnsavedChanges) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
 definePageMeta({
   layout: false,
 })
@@ -41,13 +55,6 @@ definePageMeta({
 
 <template>
   <div class="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-    <EnvironmentHeader
-      v-if="connection"
-      :environment="connection.environment"
-    />
-
-    <div class="flex-1 min-h-0">
-      <SqlEditorLayout />
-    </div>
+    <SqlEditorLayout />
   </div>
 </template>

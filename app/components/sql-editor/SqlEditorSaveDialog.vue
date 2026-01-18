@@ -17,6 +17,7 @@ const {
   connectionId,
   sql,
   savedQueryError,
+  pendingCloseTabId,
 } = storeToRefs(sqlEditorStore)
 const toast = useToast()
 
@@ -25,6 +26,7 @@ const isOpen = computed({
   set: (val) => {
     if (!val) {
       sqlEditorStore.closeSaveDialog()
+      sqlEditorStore.clearPendingCloseTab()
     }
   },
 })
@@ -146,7 +148,12 @@ const handleSave = async () => {
       })
     }
 
+    const pendingTabId = pendingCloseTabId.value
     sqlEditorStore.closeSaveDialog()
+    if (pendingTabId) {
+      sqlEditorStore.closeTab(pendingTabId)
+      sqlEditorStore.clearPendingCloseTab()
+    }
   } catch (error) {
     toast.add({
       title: 'クエリの保存に失敗しました',

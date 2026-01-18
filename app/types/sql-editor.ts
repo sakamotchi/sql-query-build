@@ -43,6 +43,20 @@ export interface SqlEditorState {
   historySearchKeyword: string
   /** 成功のみフィルタ */
   historySuccessOnly: boolean
+  /** タブ一覧 */
+  tabs: SqlEditorTab[]
+  /** アクティブなタブID */
+  activeTabId: string | null
+  /** 次に付与するタブ連番 */
+  nextTabIndex: number
+  /** パネルリサイズの高さ（%） */
+  editorPanelHeightPercent: number
+  /** SQLフォーマット要求カウンタ */
+  formatRequestId: number
+  /** 保存後に閉じるタブID */
+  pendingCloseTabId: string | null
+  /** 実行中のタブID */
+  executingTabId: string | null
 }
 
 /**
@@ -57,6 +71,18 @@ export interface SqlEditorTab {
   sql: string
   /** 変更フラグ */
   isDirty: boolean
+  /** 実行結果 */
+  result: QueryExecuteResult | null
+  /** エラー情報 */
+  error: QueryExecuteError | null
+  /** 選択中SQL */
+  selectionSql: string | null
+  /** 読み込み中の保存クエリ */
+  currentQuery: SavedQuery | null
+  /** 保存済みクエリID */
+  savedQueryId?: string
+  /** カーソル位置 */
+  cursorPosition?: { lineNumber: number; column: number }
   /** 作成日時 */
   createdAt: string
 }

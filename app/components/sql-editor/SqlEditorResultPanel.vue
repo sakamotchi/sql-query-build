@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSqlEditorStore } from '~/stores/sql-editor'
 import ResultTable from '~/components/query-builder/result/ResultTable.vue'
+import ExportDialog from '~/components/query-builder/dialog/ExportDialog.vue'
 import { getErrorHint, getErrorIcon, getErrorMessage } from '~/utils/error-messages'
 
 const sqlEditorStore = useSqlEditorStore()
-const { result, error, isExecuting } = storeToRefs(sqlEditorStore)
+const { result, error, isExecuting, activeTabId, executingTabId } = storeToRefs(sqlEditorStore)
 
 const hasResult = computed(() => result.value !== null)
 const isSelectResult = computed(() => (result.value?.columns.length ?? 0) > 0)
+const isActiveExecuting = computed(() => isExecuting.value && activeTabId.value === executingTabId.value)
+const isExportDialogOpen = ref(false)
 
 const executionInfo = computed(() => {
   if (!result.value) return null
@@ -42,6 +45,11 @@ const errorLineInfo = computed(() => {
     column: error.value.details?.column,
   }
 })
+
+const openExportDialog = () => {
+  if (!hasResult.value) return
+  isExportDialogOpen.value = true
+}
 </script>
 
 <template>
@@ -49,9 +57,9 @@ const errorLineInfo = computed(() => {
     <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-800">
       <div class="flex items-center gap-2">
         <UIcon
-          :name="isExecuting ? 'i-heroicons-arrow-path' : 'i-heroicons-table-cells'"
+          :name="isActiveExecuting ? 'i-heroicons-arrow-path' : 'i-heroicons-table-cells'"
           class="text-lg"
-          :class="{ 'animate-spin text-gray-400': isExecuting }"
+          :class="{ 'animate-spin text-gray-400': isActiveExecuting }"
         />
         <span class="text-sm font-medium text-gray-700 dark:text-gray-200">結果</span>
         <template v-if="executionInfo && !error">
@@ -68,10 +76,20 @@ const errorLineInfo = computed(() => {
           </span>
         </template>
       </div>
+
+      <UButton
+        icon="i-heroicons-arrow-down-tray"
+        label="エクスポート"
+        size="sm"
+        variant="outline"
+        :disabled="!hasResult"
+        data-testid="export-button"
+        @click="openExportDialog"
+      />
     </div>
 
     <div class="flex-1 overflow-hidden flex flex-col">
-      <div v-if="isExecuting" class="flex-1 flex items-center justify-center">
+      <div v-if="isActiveExecuting" class="flex-1 flex items-center justify-center">
         <UIcon name="i-heroicons-arrow-path" class="animate-spin text-2xl text-gray-400" />
         <span class="ml-2 text-gray-500">実行中...</span>
       </div>
@@ -125,5 +143,10 @@ const errorLineInfo = computed(() => {
         </div>
       </template>
     </div>
+
+    <ExportDialog
+      v-model:open="isExportDialogOpen"
+      :query-result="result"
+    />
   </div>
 </template>
