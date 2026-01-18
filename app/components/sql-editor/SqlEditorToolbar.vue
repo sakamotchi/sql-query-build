@@ -10,6 +10,8 @@ const windowStore = useWindowStore()
 const connectionStore = useConnectionStore()
 const { canExecute, isExecuting, sql } = storeToRefs(sqlEditorStore)
 const { getEnvironmentColors } = useEnvironment()
+const { toggleColorMode, isDark } = useTheme()
+const { t } = useI18n()
 
 // 現在のアクティブな接続の環境を取得
 const activeConnection = computed(() => {
@@ -85,6 +87,18 @@ function handleFormat() {
         color="neutral"
         variant="soft"
         @click="handleSave"
+      />
+
+      <div class="w-px h-6 bg-gray-200 dark:bg-gray-700" />
+
+      <!-- ダークモード切り替え -->
+      <UButton
+        :icon="isDark ? 'i-heroicons-moon' : 'i-heroicons-sun'"
+        size="sm"
+        color="neutral"
+        variant="ghost"
+        :title="isDark ? t('common.theme.light') : t('common.theme.dark')"
+        @click="toggleColorMode"
       />
     </div>
   </div>
