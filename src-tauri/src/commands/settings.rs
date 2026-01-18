@@ -9,7 +9,6 @@ use crate::storage::FileStorage;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
-    pub theme: String,
     pub language: String,
     #[serde(rename = "autoSave")]
     pub auto_save: bool,
@@ -20,7 +19,6 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            theme: "auto".to_string(),
             language: "ja".to_string(),
             auto_save: true,
             window_restore: true,
@@ -76,9 +74,6 @@ pub async fn update_settings(
     };
 
     // 部分更新を適用
-    if let Some(theme) = settings.get("theme").and_then(|v| v.as_str()) {
-        current.theme = theme.to_string();
-    }
     if let Some(language) = settings.get("language").and_then(|v| v.as_str()) {
         current.language = language.to_string();
     }
@@ -196,7 +191,6 @@ mod tests {
     #[test]
     fn test_app_settings_default() {
         let settings = AppSettings::default();
-        assert_eq!(settings.theme, "auto");
         assert_eq!(settings.language, "ja");
         assert!(settings.auto_save);
         assert!(settings.window_restore);

@@ -33,8 +33,8 @@ function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'crea
     id: baseConnection.id,
     name: baseConnection.name,
     environment: baseConnection.environment,
-    themeColor: baseConnection.customColor?.primary || '#4CAF50',
-    themeBackgroundColor: baseConnection.customColor?.background || '#F1F8E9',
+    themeColor: baseConnection.customColor?.primary || null,
+    themeBackgroundColor: baseConnection.customColor?.background || null,
     host: baseConnection.host,
     port: baseConnection.port,
     database: baseConnection.database,
@@ -53,14 +53,14 @@ function toRustConnection(connection: Connection | Omit<Connection, 'id' | 'crea
 // RustのFrontendConnection型からフロントエンド型に変換
 function fromRustConnection(rustConnection: any): Connection {
   const { themeColor, themeBackgroundColor, ...rest } = rustConnection
-  
+
   // customColorの再構築
-  // themeColorが存在すればカスタムカラーとして扱う
+  // themeColorとthemeBackgroundColorが両方nullでない場合のみカスタムカラーとして扱う
   let customColor = undefined
-  if (themeColor) {
+  if (themeColor && themeBackgroundColor) {
     customColor = {
       primary: themeColor,
-      background: themeBackgroundColor || '#F1F8E9' // フォールバック（通常は両方設定される）
+      background: themeBackgroundColor
     }
   }
 

@@ -29,6 +29,7 @@ const messages: Record<LocaleCode, LocaleMessages> = {
 }
 
 const locale = ref<LocaleCode>('ja')
+const colorMode = ref('light')
 
 const resolveMessage = (key: string, target: LocaleMessages): string | undefined => {
   return key.split('.').reduce<unknown>((current, part) => {
@@ -62,16 +63,18 @@ const setLocale = async (nextLocale: string) => {
   }
 }
 
-const useI18n = () => ({
-  t,
-  locale,
-  setLocale,
-})
+function useI18n() {
+  return {
+    t,
+    locale,
+    setLocale,
+  }
+}
 
-// Imports from aliased mock
-import { useNuxtApp, useState, useToast } from './mocks/nuxt-app'
+import { useNuxtApp, useState, useToast, useColorMode, useAppConfig } from './mocks/nuxt-app'
 
 vi.stubGlobal('useI18n', useI18n)
+vi.stubGlobal('useColorMode', useColorMode)
 
 vi.mock('vue-i18n', () => ({
   useI18n,
@@ -80,21 +83,32 @@ vi.mock('vue-i18n', () => ({
 vi.stubGlobal('useToast', useToast)
 vi.stubGlobal('useNuxtApp', useNuxtApp)
 vi.stubGlobal('useState', useState)
+vi.stubGlobal('useAppConfig', useAppConfig)
 
 vi.mock('#imports', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('#imports')
+  const mocks = await import('./mocks/nuxt-app')
   return {
-    ...actual,
+    ...mocks,
     useI18n,
-    useToast,
-    useState,
-    useNuxtApp,
   }
 })
 
 vi.mock('nuxt/app', async () => {
-  return await vi.importActual('./mocks/nuxt-app')
+  const mocks = await import('./mocks/nuxt-app')
+  return {
+    ...mocks,
+    useI18n,
+  }
 })
 
+vi.mock('@nuxtjs/color-mode/dist/runtime/composables', async () => {
+  return {
+    useColorMode,
+  }
+})
 
-
+vi.mock('@nuxtjs/color-mode/dist/runtime/composables.js', async () => {
+  return {
+    useColorMode,
+  }
+})

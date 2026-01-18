@@ -27,7 +27,8 @@ impl WindowManager {
         app_handle: &AppHandle,
         options: WindowCreateOptions,
     ) -> Result<WindowInfo, String> {
-        let label = self.generate_window_label(&options.window_type, &options.connection_id);
+        let window_type = options.window_type.clone();
+        let label = self.generate_window_label(&window_type, &options.connection_id);
         let environment = options.environment.clone();
 
         // 同じ接続のウィンドウが既に存在するかチェック
@@ -57,7 +58,7 @@ impl WindowManager {
             .unwrap_or((options.width.unwrap_or(1200), options.height.unwrap_or(800)));
 
         // URLの決定
-        let url = match options.window_type {
+        let url = match window_type.clone() {
             WindowType::Launcher => WebviewUrl::App("index.html".into()),
             WindowType::QueryBuilder => {
                 let path = match (&options.connection_id, environment.as_deref()) {
@@ -81,14 +82,30 @@ impl WindowManager {
                 };
                 WebviewUrl::App(path.into())
             }
+            WindowType::SqlEditor => {
+                let path = match (&options.connection_id, environment.as_deref()) {
+                    (Some(id), Some(env)) => {
+                        format!("sql-editor?connectionId={}&environment={}", id, env)
+                    }
+                    (Some(id), None) => format!("sql-editor?connectionId={}", id),
+                    (None, Some(env)) => format!("sql-editor?environment={}", env),
+                    (None, None) => "sql-editor".to_string(),
+                };
+                WebviewUrl::App(path.into())
+            }
             WindowType::Settings => WebviewUrl::App("settings".into()),
+        };
+
+        let (min_width, min_height) = match window_type.clone() {
+            WindowType::SqlEditor => (1024.0, 768.0),
+            _ => (800.0, 600.0),
         };
 
         // ウィンドウを作成
         let mut builder = WebviewWindowBuilder::new(app_handle, &label, url)
             .title(&options.title)
             .inner_size(width as f64, height as f64)
-            .min_inner_size(800.0, 600.0)
+            .min_inner_size(min_width, min_height)
             .resizable(true)
             .decorations(true);
 
@@ -119,7 +136,7 @@ impl WindowManager {
 
         // ウィンドウ状態を記録
         let mut window_state =
-            WindowState::new(options.window_type.clone(), options.connection_id.clone());
+            WindowState::new(window_type.clone(), options.connection_id.clone());
         window_state.id = label.clone();
         self.windows
             .lock()
@@ -132,11 +149,35 @@ impl WindowManager {
         Ok(WindowInfo {
             label,
             title: options.title,
-            window_type: options.window_type,
+            window_type,
             connection_id: options.connection_id,
             focused: true,
             visible: true,
         })
+    }
+
+    /// SQLエディタウィンドウを開く
+    pub fn open_sql_editor_window(
+        &self,
+        app_handle: &AppHandle,
+        connection_id: String,
+        connection_name: String,
+        environment: String,
+    ) -> Result<WindowInfo, String> {
+        let title = format_sql_editor_title(&connection_name, &environment);
+
+        let options = WindowCreateOptions {
+            title,
+            window_type: WindowType::SqlEditor,
+            connection_id: Some(connection_id),
+            environment: Some(environment),
+            width: Some(1280),
+            height: Some(900),
+            center: true,
+            restore_state: true,
+        };
+
+        self.create_window(app_handle, options)
     }
 
     /// ウィンドウを閉じる
@@ -303,6 +344,10 @@ impl WindowManager {
                 Some(id) => format!("mutation-builder-{}", id),
                 None => format!("mutation-builder-{}", uuid::Uuid::new_v4()),
             },
+            WindowType::SqlEditor => match connection_id {
+                Some(id) => format!("sql_editor_{}", id),
+                None => format!("sql_editor_{}", uuid::Uuid::new_v4()),
+            },
             WindowType::Settings => "settings".to_string(),
         }
     }
@@ -396,8 +441,51 @@ impl WindowManager {
             WindowType::Launcher => "SQL Query Builder".to_string(),
             WindowType::QueryBuilder => "SQL Query Builder".to_string(),
             WindowType::MutationBuilder => "データ変更".to_string(),
+            WindowType::SqlEditor => "SQLエディタ".to_string(),
             WindowType::Settings => "設定 - SQL Query Builder".to_string(),
         }
+    }
+}
+
+fn format_sql_editor_title(connection_name: &str, environment: &str) -> String {
+    if environment == "production" {
+        return format!("[本番] {} - SQLエディタ ⚠️", connection_name);
+    }
+
+    let env_label = match environment {
+        "development" => "開発",
+        "test" | "testing" => "テスト",
+        "staging" => "ステージング",
+        _ => environment,
+    };
+
+    format!("[{}] {} - SQLエディタ", env_label, connection_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sql_editor_label_format() {
+        let manager = WindowManager::new();
+        let label = manager.generate_window_label(
+            &WindowType::SqlEditor,
+            &Some("test-uuid-123".to_string()),
+        );
+        assert_eq!(label, "sql_editor_test-uuid-123");
+    }
+
+    #[test]
+    fn test_sql_editor_title_format_development() {
+        let title = format_sql_editor_title("PostgreSQL開発", "development");
+        assert_eq!(title, "[開発] PostgreSQL開発 - SQLエディタ");
+    }
+
+    #[test]
+    fn test_sql_editor_title_format_production() {
+        let title = format_sql_editor_title("PostgreSQL本番", "production");
+        assert_eq!(title, "[本番] PostgreSQL本番 - SQLエディタ ⚠️");
     }
 }
 

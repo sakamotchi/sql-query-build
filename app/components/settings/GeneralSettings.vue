@@ -1,32 +1,19 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useSettingsStore } from '~/stores/settings'
-import { useTheme } from '~/composables/useTheme'
 import type { AppSettings } from '~/types'
 
 const settingsStore = useSettingsStore()
-const { setColorMode } = useTheme()
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
 
 const { settings, loading, error } = storeToRefs(settingsStore)
 
-const form = reactive<Pick<AppSettings, 'theme' | 'language'>>({
-  theme: settings.value.theme,
+const form = reactive<Pick<AppSettings, 'language'>>({
   language: settings.value.language
 })
 
 const saving = ref(false)
-// message ref is no longer needed for success, only keeping it if it was used for errors locally, 
-// but errors seem to come from store or local catch. 
-// The original code used `message` for both success and error (if caught locally).
-// Let's check how error is handled. 
-// local `error` ref from storeToRefs(settingsStore) handles store errors.
-// local `message` was used for "Saved" or "Save Failed".
-// I will use toast for both success and failure in saveSettings to be consistent, or keep UAlert for error.
-// Best practice: Toast for transient actions (save), Alert for persistent inconsistencies.
-// Save failure is transient => Toast is fine, or Alert. 
-// I'll stick to Toast for success. For error, I'll assume store error handling or keep it simple.
 
 watch(
   settings,
@@ -37,13 +24,6 @@ watch(
   { deep: true }
 )
 
-watch(
-  () => form.theme,
-  (mode) => {
-    setColorMode(mode)
-  }
-)
-
 const saveSettings = async () => {
   saving.value = true
   try {
@@ -52,15 +32,13 @@ const saveSettings = async () => {
     if (locale.value !== form.language) {
       await setLocale(form.language)
     }
-    
+
     toast.add({
       title: t('settings.general.messages.saved'),
       icon: 'i-heroicons-check-circle',
       color: 'primary'
     })
   } catch (e) {
-    // If store sets `error`, it might be displayed by UAlert below if we keep it.
-    // If we want toast for error too:
     toast.add({
       title: t('settings.general.messages.saveFailed'),
       description: e instanceof Error ? e.message : undefined,
@@ -83,17 +61,6 @@ const saveSettings = async () => {
     </template>
 
     <div class="space-y-6">
-      <UFormField :label="t('settings.general.theme.label')" :hint="t('settings.general.theme.hint')">
-        <USelect
-          v-model="form.theme"
-          :items="[
-            { label: t('settings.general.theme.options.light'), value: 'light' },
-            { label: t('settings.general.theme.options.dark'), value: 'dark' },
-            { label: t('settings.general.theme.options.auto'), value: 'auto' }
-          ]"
-        />
-      </UFormField>
-
       <UFormField :label="t('settings.general.language.label')" :hint="t('settings.general.language.hint')">
         <USelect
           v-model="form.language"

@@ -32,6 +32,21 @@ export const useRuntimeConfig = () => ({
   app: { baseURL: '/' }
 })
 
+export const useAppConfig = () => ({
+  ui: {
+    button: {},
+    input: {},
+    select: {},
+    textarea: {},
+    card: {},
+    badge: {},
+    tooltip: {},
+    dropdown: {},
+    modal: {},
+    notification: {},
+  }
+})
+
 export const useHead = vi.fn()
 export const useI18n = () => ({
   t: (key: string) => key,
@@ -40,3 +55,9 @@ export const useI18n = () => ({
 })
 
 // Add other commonly used Nuxt composables here as needed
+export const useColorMode = () => ({
+  value: ref('light'),
+  preference: ref('light'),
+  unknown: false,
+  forced: false,
+})

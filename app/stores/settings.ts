@@ -3,7 +3,6 @@ import { useTauri } from '~/composables/useTauri'
 import type { AppSettings } from '~/types'
 
 const defaultSettings: AppSettings = {
-  theme: 'auto',
   language: 'ja',
   autoSave: true,
   windowRestore: true
