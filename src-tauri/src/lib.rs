@@ -19,6 +19,7 @@ use crypto::{
 };
 use services::query_executor::{ConnectionPoolManager, QueryCancellationManager};
 use services::query_storage::QueryStorage;
+use services::sql_editor_query_storage::SqlEditorQueryStorage;
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -163,6 +164,12 @@ pub fn run() {
     // QueryStorageを初期化
     let query_storage = Arc::new(QueryStorage::new(Arc::clone(&saved_queries_storage)));
 
+    // SqlEditorQueryStorageを初期化
+    let sql_editor_query_storage = Arc::new(
+        SqlEditorQueryStorage::new(path_manager.saved_editor_dir())
+            .expect("Failed to initialize SqlEditorQueryStorage"),
+    );
+
     // QueryHistoryStateを初期化
     let query_history_state = QueryHistoryState::default();
     // PathManagerをStateとして管理するために再作成（ProjectDirsがCloneできないため）
@@ -187,6 +194,7 @@ pub fn run() {
         .manage(connection_pool_manager)
         .manage(query_cancellation_manager)
         .manage(query_storage)
+        .manage(sql_editor_query_storage)
         .manage(query_history_state)
         .manage(path_manager_managed)
         .manage(Arc::clone(&security_config_storage))
@@ -266,6 +274,11 @@ pub fn run() {
             commands::query_storage_commands::delete_query,
             commands::query_storage_commands::list_saved_queries,
             commands::query_storage_commands::search_saved_queries,
+            commands::sql_editor::save_sql_query,
+            commands::sql_editor::load_sql_query,
+            commands::sql_editor::list_sql_queries,
+            commands::sql_editor::search_sql_queries,
+            commands::sql_editor::delete_sql_query,
             commands::query_history_commands::add_query_history,
             commands::query_history_commands::load_query_history,
             commands::query_history_commands::delete_query_history,

@@ -49,6 +49,15 @@ onMounted(() => {
     },
   })
 
+  editor.addAction({
+    id: 'save-query',
+    label: 'Save Query',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+    run: () => {
+      sqlEditorStore.openSaveDialog()
+    },
+  })
+
   editor.onDidChangeModelContent(() => {
     const value = editor?.getValue() ?? ''
     sqlEditorStore.updateSql(value)

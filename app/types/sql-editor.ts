@@ -21,6 +21,20 @@ export interface SqlEditorState {
   executingQueryId: string | null
   /** 現在の選択SQL（未選択時はnull） */
   selectionSql: string | null
+  /** 保存済みクエリ一覧 */
+  savedQueries: SavedQueryMetadata[]
+  /** 読み込み中の保存クエリ */
+  currentQuery: SavedQuery | null
+  /** 保存クエリの読み込み中フラグ */
+  isSavedQueriesLoading: boolean
+  /** 保存クエリ関連のエラー */
+  savedQueryError: string | null
+  /** 保存クエリSQLキャッシュ */
+  savedQuerySqlCache: Record<string, string>
+  /** 保存ダイアログの表示状態 */
+  isSaveDialogOpen: boolean
+  /** 編集対象の保存クエリID */
+  editingQueryId: string | null
 }
 
 /**
@@ -37,6 +51,54 @@ export interface SqlEditorTab {
   isDirty: boolean
   /** 作成日時 */
   createdAt: string
+}
+
+/**
+ * 保存クエリ（完全版）
+ */
+export interface SavedQuery {
+  id: string
+  connectionId: string
+  name: string
+  description?: string
+  sql: string
+  tags: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * 保存クエリメタデータ（一覧表示用）
+ */
+export interface SavedQueryMetadata {
+  id: string
+  connectionId: string
+  name: string
+  description?: string
+  tags: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * クエリ保存リクエスト
+ */
+export interface SaveQueryRequest {
+  id?: string
+  connectionId: string
+  name: string
+  description?: string
+  sql: string
+  tags: string[]
+}
+
+/**
+ * クエリ検索リクエスト
+ */
+export interface SearchQueryRequest {
+  keyword?: string
+  tags?: string[]
+  connectionId?: string
 }
 
 /**

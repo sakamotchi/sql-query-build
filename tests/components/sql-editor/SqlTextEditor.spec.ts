@@ -49,7 +49,7 @@ vi.mock('monaco-editor', () => ({
     setTheme: mocks.setThemeMock,
   },
   KeyMod: { CtrlCmd: 1 },
-  KeyCode: { Enter: 3, Escape: 9 },
+  KeyCode: { Enter: 3, Escape: 9, KeyS: 31 },
   Range: class {
     constructor(
       public startLineNumber: number,
@@ -60,7 +60,7 @@ vi.mock('monaco-editor', () => ({
   },
 }))
 
-vi.mock('#app/composables/color', () => ({
+vi.mock('@nuxtjs/color-mode/dist/runtime/composables', () => ({
   useColorMode: () => ({
     preference: 'light',
     value: 'light',

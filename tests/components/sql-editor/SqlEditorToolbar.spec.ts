@@ -36,7 +36,7 @@ describe('SqlEditorToolbar', () => {
     const buttons = wrapper.findAll('button')
     expect(buttons[0]?.attributes('disabled')).toBeDefined()
     expect(buttons[1]?.attributes('disabled')).toBeDefined()
-    expect(buttons[2]?.attributes('disabled')).toBeDefined()
+    expect(buttons[2]?.attributes('disabled')).toBeUndefined()
   })
 
   it('SQL入力済みで実行ボタンが有効になる', () => {

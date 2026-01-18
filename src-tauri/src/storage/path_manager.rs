@@ -29,7 +29,17 @@ impl PathManager {
 
     /// 保存済みクエリディレクトリのパスを取得
     pub fn saved_queries_dir(&self) -> PathBuf {
-        self.queries_dir().join("saved")
+        self.saved_builder_dir()
+    }
+
+    /// クエリビルダー用の保存ディレクトリのパスを取得
+    pub fn saved_builder_dir(&self) -> PathBuf {
+        self.queries_dir().join("saved_builder")
+    }
+
+    /// SQLエディタ用の保存ディレクトリのパスを取得
+    pub fn saved_editor_dir(&self) -> PathBuf {
+        self.queries_dir().join("saved_editor")
     }
 
     /// クエリ履歴ディレクトリのパスを取得
@@ -54,9 +64,12 @@ impl PathManager {
 
     /// 全ての必要なディレクトリを初期化
     pub fn initialize_directories(&self) -> std::io::Result<()> {
+        self.migrate_legacy_saved_queries_dir();
+
         let dirs = vec![
             self.connections_dir(),
             self.saved_queries_dir(),
+            self.saved_editor_dir(),
             self.history_dir(),
             self.settings_dir(),
             self.audit_logs_dir(),
@@ -67,6 +80,49 @@ impl PathManager {
         }
 
         Ok(())
+    }
+
+    fn migrate_legacy_saved_queries_dir(&self) {
+        let legacy_dir = self.queries_dir().join("saved");
+        let new_dir = self.saved_builder_dir();
+
+        if !legacy_dir.exists() || new_dir.exists() {
+            return;
+        }
+
+        if let Err(err) = std::fs::rename(&legacy_dir, &new_dir) {
+            eprintln!(
+                "Failed to migrate saved queries directory: {}. Trying to copy files.",
+                err
+            );
+
+            if let Err(err) = std::fs::create_dir_all(&new_dir) {
+                eprintln!("Failed to create saved_builder directory: {}", err);
+                return;
+            }
+
+            let entries = match std::fs::read_dir(&legacy_dir) {
+                Ok(entries) => entries,
+                Err(err) => {
+                    eprintln!("Failed to read legacy saved queries directory: {}", err);
+                    return;
+                }
+            };
+
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if !path.is_file() {
+                    continue;
+                }
+
+                if let Some(file_name) = path.file_name() {
+                    let dest = new_dir.join(file_name);
+                    if let Err(err) = std::fs::copy(&path, &dest) {
+                        eprintln!("Failed to copy {}: {}", path.display(), err);
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -100,5 +100,3 @@ vi.mock('#imports', async () => {
 vi.mock('nuxt/app', async () => {
   return await vi.importActual('./mocks/nuxt-app')
 })
-
-

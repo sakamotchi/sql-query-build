@@ -14,7 +14,7 @@ async function handleStop() {
 }
 
 function handleSave() {
-  console.log('Save button clicked (not implemented yet)')
+  sqlEditorStore.openSaveDialog()
 }
 </script>
 
@@ -43,7 +43,6 @@ function handleSave() {
       <UButton
         icon="i-heroicons-bookmark"
         label="保存"
-        :disabled="true"
         color="neutral"
         variant="soft"
         @click="handleSave"
