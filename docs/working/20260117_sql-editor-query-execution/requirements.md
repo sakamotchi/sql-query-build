@@ -139,7 +139,7 @@ SQLエディタに入力したSQLを実行し、結果を表示する機能を�
 
 ### 新規作成
 
-- `app/components/sql-editor/ResultPanel.vue` - 結果パネルコンポーネント（または既存を流用）
+- `app/components/sql-editor/SqlEditorResultPanel.vue` - 結果パネルコンポーネント
 
 ### 既存ファイルの更新
 

@@ -8,7 +8,7 @@
 Frontend (Vue/Nuxt)
 ├── SqlEditorToolbar.vue (実行・停止ボタン)
 ├── SqlTextEditor.vue (キーボードショートカット、選択範囲取得、エラーハイライト)
-├── ResultPanel.vue (結果表示)
+├── SqlEditorResultPanel.vue (結果表示)
 └── sql-editor.ts (Pinia Store: 実行ロジック、状態管理)
     ↓ invoke()
 Tauri API
@@ -26,7 +26,7 @@ Rust Backend (既存を流用)
 #### フロントエンド
 
 **新規作成**:
-- `app/components/sql-editor/ResultPanel.vue` - 結果パネルコンポーネント
+- `app/components/sql-editor/SqlEditorSqlEditorResultPanel.vue` - 結果パネルコンポーネント
 
 **既存ファイルの更新**:
 - `app/components/sql-editor/SqlEditorToolbar.vue` - 実行・停止ボタンの実装
@@ -61,8 +61,8 @@ Phase 3では、既存のクエリ実行APIを活用して、SQLエディタに�
    - Monaco Editorの `getSelection()` で選択範囲を取得
    - 選択範囲がある場合は選択部分のみ実行、なければ全体を実行
 
-4. **結果パネルの実装** (ResultPanel.vue)
-   - 既存の `app/components/query-builder/ResultPanel.vue` を参考
+4. **結果パネルの実装** (SqlEditorResultPanel.vue)
+   - 既存の `app/components/query-builder/SqlEditorResultPanel.vue` を参考
    - または新規に作成（シンプル版）
    - SELECT結果: テーブル形式で表示
    - INSERT/UPDATE/DELETE結果: 影響行数を表示
@@ -80,7 +80,7 @@ Phase 3では、既存のクエリ実行APIを活用して、SQLエディタに�
    - ストアの `error` を監視
    - エラー行番号が取得できる場合、Monaco Editorの `deltaDecorations()` を使用してハイライト
 
-7. **実行時間・影響行数の表示** (ResultPanel.vue)
+7. **実行時間・影響行数の表示** (SqlEditorResultPanel.vue)
    - `QueryExecuteResponse` の `execution_time_ms`, `rows_affected` を表示
 
 ## データ構造
@@ -258,7 +258,7 @@ SqlEditorLayout.vue
 ├── div.flex (メインコンテンツエリア)
 │   ├── サイドパネル (Phase 4-5で実装)
 │   └── SqlTextEditor.vue (Monaco Editor)
-└── ResultPanel.vue
+└── SqlEditorResultPanel.vue
     ├── 統計情報表示 (実行時間、件数等)
     ├── ResultTable.vue (または既存のResultTableを流用)
     └── エラー表示エリア (UAlert)
@@ -450,7 +450,7 @@ watch(isDark, (dark) => {
 </style>
 ```
 
-### 3. ResultPanel.vue（新規作成）
+### 3. SqlEditorResultPanel.vue（新規作成）
 
 ```vue
 <script setup lang="ts">

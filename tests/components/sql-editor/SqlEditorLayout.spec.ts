@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
 import SqlEditorLayout from '~/components/sql-editor/SqlEditorLayout.vue'
 
 const stubs = {
@@ -9,12 +10,17 @@ const stubs = {
   SqlTextEditor: {
     template: '<div data-testid="editor"></div>',
   },
-  ResultPanel: {
+  SqlEditorResultPanel: {
     template: '<div data-testid="result"></div>',
   },
 }
 
 describe('SqlEditorLayout', () => {
+  beforeEach(() => {
+    // Piniaストアの初期化
+    setActivePinia(createPinia())
+  })
+
   it('レイアウト構成要素が表示される', () => {
     const wrapper = mount(SqlEditorLayout, {
       global: { stubs },

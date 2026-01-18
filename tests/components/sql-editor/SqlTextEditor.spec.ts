@@ -60,6 +60,13 @@ vi.mock('monaco-editor', () => ({
   },
 }))
 
+vi.mock('#app/composables/color', () => ({
+  useColorMode: () => ({
+    preference: 'light',
+    value: 'light',
+  }),
+}))
+
 describe('SqlTextEditor', () => {
   beforeEach(() => {
     setActivePinia(createPinia())

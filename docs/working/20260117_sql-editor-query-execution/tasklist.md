@@ -70,9 +70,9 @@
 
 **見積**: 2h
 
-**対象ファイル**: `app/components/sql-editor/ResultPanel.vue` (新規作成)
+**対象ファイル**: `app/components/sql-editor/SqlEditorResultPanel.vue` (新規作成)
 
-- [ ] ResultPanel.vueコンポーネントを作成
+- [ ] SqlEditorResultPanel.vueコンポーネントを作成
 - [ ] ローディング状態の表示（`isExecuting`）
 - [ ] エラー表示（`UAlert`コンポーネント使用）
 - [ ] SELECT結果のテーブル表示

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import ResultPanel from '~/components/sql-editor/ResultPanel.vue'
 </script>
 
 <template>
@@ -12,7 +11,7 @@ import ResultPanel from '~/components/sql-editor/ResultPanel.vue'
       </div>
 
       <div class="flex-1 min-h-0 border-t border-gray-200 dark:border-gray-700">
-        <ResultPanel class="h-full" />
+        <SqlEditorResultPanel class="h-full" />
       </div>
     </div>
   </div>

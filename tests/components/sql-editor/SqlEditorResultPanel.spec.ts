@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { useSqlEditorStore } from '~/stores/sql-editor'
-import ResultPanel from '~/components/sql-editor/ResultPanel.vue'
+import SqlEditorResultPanel from '~/components/sql-editor/SqlEditorResultPanel.vue'
 
 const stubs = {
   UIcon: { template: '<span />' },
@@ -10,13 +10,13 @@ const stubs = {
   ResultTable: { template: '<div data-testid="result-table"></div>' },
 }
 
-describe('ResultPanel', () => {
+describe('SqlEditorResultPanel', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
   it('初期状態で案内文が表示される', () => {
-    const wrapper = mount(ResultPanel, {
+    const wrapper = mount(SqlEditorResultPanel, {
       global: { stubs },
     })
 
@@ -33,7 +33,7 @@ describe('ResultPanel', () => {
       warnings: [],
     }
 
-    const wrapper = mount(ResultPanel, {
+    const wrapper = mount(SqlEditorResultPanel, {
       global: { stubs },
     })
 
