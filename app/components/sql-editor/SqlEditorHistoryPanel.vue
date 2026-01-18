@@ -154,7 +154,7 @@ const formatSqlSnippet = (sql: string) => {
       />
       <UCheckbox
         :model-value="historySuccessOnly"
-        @update:model-value="store.setHistorySuccessOnly"
+        @update:model-value="(value) => store.setHistorySuccessOnly(value === true)"
         label="成功のみ表示"
       />
     </div>
