@@ -5,8 +5,13 @@ import { useSqlEditorStore } from '~/stores/sql-editor'
 import SqlEditorResultPanel from '~/components/sql-editor/SqlEditorResultPanel.vue'
 
 const stubs = {
-  UIcon: { template: '<span />' },
+  UIcon: { template: '<span />', props: ['name'] },
   UAlert: { template: '<div><slot /></div>', props: ['title', 'color', 'variant', 'icon'] },
+  UButton: { template: '<button><slot /></button>', props: ['label', 'disabled', 'icon', 'color', 'variant', 'size'] },
+  USelect: { template: '<select />', props: ['modelValue', 'options', 'placeholder'] },
+  UFormField: { template: '<div><slot /></div>', props: ['label', 'required', 'help'] },
+  UModal: { template: '<div v-if="open"><slot /><slot name="footer" /></div>', props: ['open', 'title', 'description'] },
+  ExportDialog: { template: '<div />', props: ['open', 'queryResult'] },
   ResultTable: { template: '<div data-testid="result-table"></div>' },
 }
 

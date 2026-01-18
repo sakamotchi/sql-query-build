@@ -245,8 +245,10 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       if (wasActive) {
         const nextIndex = Math.min(index, this.tabs.length - 1)
         const nextTab = this.tabs[nextIndex]
-        this.activeTabId = nextTab.id
-        this.applyTabToState(nextTab)
+        if (nextTab) {
+          this.activeTabId = nextTab.id
+          this.applyTabToState(nextTab)
+        }
       }
     },
 
@@ -271,8 +273,9 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       try {
         return formatSql(sql, {
           language: 'postgresql',
-          uppercase: true,
-          indent: '  ',
+          keywordCase: 'upper',
+          indentStyle: 'standard',
+          tabWidth: 2,
         })
       } catch (error) {
         console.error('SQL format error:', error)
@@ -826,7 +829,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       if (!this.isExecuting) return
       const targetTabId = this.executingTabId ?? this.activeTabId
       this.isExecuting = false
-      const cancelledError = {
+      const cancelledError: QueryExecuteError = {
         code: 'query_cancelled',
         message: 'クエリの実行をキャンセルしました。',
       }

@@ -17,7 +17,6 @@ describe('SettingsStore', () => {
   describe('初期状態', () => {
     it('デフォルト設定を持つ', () => {
       const store = useSettingsStore()
-      expect(store.settings.theme).toBe('auto')
       expect(store.settings.language).toBe('ja')
       expect(store.settings.autoSave).toBe(true)
       expect(store.settings.windowRestore).toBe(true)
@@ -28,7 +27,6 @@ describe('SettingsStore', () => {
     it('currentSettingsが設定オブジェクトを返す', () => {
       const store = useSettingsStore()
       expect(store.currentSettings).toEqual({
-        theme: 'auto',
         language: 'ja',
         autoSave: true,
         windowRestore: true

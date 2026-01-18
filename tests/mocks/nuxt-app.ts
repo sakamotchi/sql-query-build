@@ -32,6 +32,21 @@ export const useRuntimeConfig = () => ({
   app: { baseURL: '/' }
 })
 
+export const useAppConfig = () => ({
+  ui: {
+    button: {},
+    input: {},
+    select: {},
+    textarea: {},
+    card: {},
+    badge: {},
+    tooltip: {},
+    dropdown: {},
+    modal: {},
+    notification: {},
+  }
+})
+
 export const useHead = vi.fn()
 export const useI18n = () => ({
   t: (key: string) => key,

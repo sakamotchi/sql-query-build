@@ -22,6 +22,21 @@ const stubs = {
   SqlEditorSaveDialog: {
     template: '<div data-testid="save-dialog"></div>',
   },
+  EditorTabs: {
+    template: '<div data-testid="editor-tabs"></div>',
+  },
+  UButton: {
+    template: '<button><slot /></button>',
+    props: ['label', 'disabled', 'icon', 'color', 'variant', 'size'],
+  },
+  UIcon: {
+    template: '<span />',
+    props: ['name'],
+  },
+  UModal: {
+    template: '<div v-if="open"><slot /></div>',
+    props: ['open', 'title', 'description'],
+  },
 }
 
 describe('SqlEditorLayout', () => {

@@ -71,7 +71,7 @@ function useI18n() {
   }
 }
 
-import { useNuxtApp, useState, useToast, useColorMode } from './mocks/nuxt-app'
+import { useNuxtApp, useState, useToast, useColorMode, useAppConfig } from './mocks/nuxt-app'
 
 vi.stubGlobal('useI18n', useI18n)
 vi.stubGlobal('useColorMode', useColorMode)
@@ -83,6 +83,7 @@ vi.mock('vue-i18n', () => ({
 vi.stubGlobal('useToast', useToast)
 vi.stubGlobal('useNuxtApp', useNuxtApp)
 vi.stubGlobal('useState', useState)
+vi.stubGlobal('useAppConfig', useAppConfig)
 
 vi.mock('#imports', async () => {
   const mocks = await import('./mocks/nuxt-app')
