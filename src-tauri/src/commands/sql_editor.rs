@@ -2,7 +2,12 @@ use crate::models::sql_editor_query::{
     SaveSqlEditorQueryRequest, SearchSqlEditorQueryRequest, SqlEditorQuery,
     SqlEditorQueryMetadata,
 };
+use crate::models::sql_editor_history::{
+    AddSqlEditorHistoryRequest, SearchSqlEditorHistoryRequest, SqlEditorHistoryEntry,
+};
+use crate::services::sql_editor_history::SqlEditorHistoryService;
 use crate::services::sql_editor_query_storage::SqlEditorQueryStorage;
+use crate::storage::path_manager::PathManager;
 use std::sync::Arc;
 use tauri::State;
 
@@ -110,4 +115,32 @@ pub async fn delete_sql_query(
 ) -> Result<(), String> {
     validate_query_id(&id)?;
     storage.delete_query(&id)
+}
+
+#[tauri::command]
+pub async fn add_sql_editor_history(
+    request: AddSqlEditorHistoryRequest,
+    path_manager: State<'_, PathManager>,
+) -> Result<SqlEditorHistoryEntry, String> {
+    let service = SqlEditorHistoryService::new(&path_manager)?;
+    service.add_history(request)
+}
+
+#[tauri::command]
+pub async fn get_sql_editor_histories(
+    request: SearchSqlEditorHistoryRequest,
+    path_manager: State<'_, PathManager>,
+) -> Result<Vec<SqlEditorHistoryEntry>, String> {
+    let service = SqlEditorHistoryService::new(&path_manager)?;
+    service.get_histories(request)
+}
+
+#[tauri::command]
+pub async fn delete_sql_editor_history(
+    connection_id: String,
+    id: String,
+    path_manager: State<'_, PathManager>,
+) -> Result<(), String> {
+    let service = SqlEditorHistoryService::new(&path_manager)?;
+    service.delete_history(&connection_id, &id)
 }

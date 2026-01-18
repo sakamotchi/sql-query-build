@@ -35,6 +35,14 @@ export interface SqlEditorState {
   isSaveDialogOpen: boolean
   /** 編集対象の保存クエリID */
   editingQueryId: string | null
+  /** 実行履歴一覧 */
+  histories: SqlEditorHistoryEntry[]
+  /** 履歴読み込み中フラグ */
+  isLoadingHistories: boolean
+  /** 履歴検索キーワード */
+  historySearchKeyword: string
+  /** 成功のみフィルタ */
+  historySuccessOnly: boolean
 }
 
 /**
@@ -99,6 +107,51 @@ export interface SearchQueryRequest {
   keyword?: string
   tags?: string[]
   connectionId?: string
+}
+
+/**
+ * SQLエディタの実行履歴エントリ
+ * 注: Query Builder用の QueryHistory とは別の型です
+ */
+export interface SqlEditorHistoryEntry {
+  /** 履歴ID */
+  id: string
+  /** 接続ID */
+  connectionId: string
+  /** 実行したSQL文 */
+  sql: string
+  /** 実行日時（ISO 8601形式） */
+  executedAt: string
+  /** 実行時間（ミリ秒） */
+  executionTimeMs: number
+  /** 実行ステータス */
+  status: 'success' | 'error'
+  /** 結果行数（成功時のみ） */
+  rowCount?: number
+  /** エラーメッセージ（失敗時のみ） */
+  errorMessage?: string
+}
+
+/**
+ * 履歴追加リクエスト
+ */
+export interface AddSqlEditorHistoryRequest {
+  connectionId: string
+  sql: string
+  status: 'success' | 'error'
+  executionTimeMs: number
+  rowCount?: number
+  errorMessage?: string
+}
+
+/**
+ * 履歴検索リクエスト
+ */
+export interface SearchSqlEditorHistoryRequest {
+  connectionId?: string
+  keyword?: string
+  successOnly?: boolean
+  limit?: number
 }
 
 /**

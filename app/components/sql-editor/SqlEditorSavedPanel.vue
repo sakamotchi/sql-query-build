@@ -138,7 +138,7 @@ const clearFilters = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+  <div class="h-full flex flex-col bg-white dark:bg-gray-900">
     <div class="p-3 border-b border-gray-200 dark:border-gray-800 space-y-2">
       <UInput
         v-model="searchKeyword"

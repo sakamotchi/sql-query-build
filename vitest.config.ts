@@ -8,7 +8,7 @@ export default defineVitestConfig({
     setupFiles: ['./tests/setup.ts'],
     server: {
       deps: {
-        inline: ['nuxt', '@nuxt/ui'],
+        inline: ['nuxt', '@nuxt/ui', '@nuxtjs/color-mode'],
       },
     },
   },

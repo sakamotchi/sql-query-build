@@ -1,9 +1,12 @@
 import { invoke } from '@tauri-apps/api/core'
 import type {
+  AddSqlEditorHistoryRequest,
   SavedQuery,
   SavedQueryMetadata,
   SaveQueryRequest,
   SearchQueryRequest,
+  SearchSqlEditorHistoryRequest,
+  SqlEditorHistoryEntry,
 } from '~/types/sql-editor'
 
 export const sqlEditorApi = {
@@ -40,5 +43,28 @@ export const sqlEditorApi = {
    */
   async deleteQuery(id: string): Promise<void> {
     await invoke('delete_sql_query', { id })
+  },
+
+  /**
+   * 履歴を追加
+   */
+  async addHistory(request: AddSqlEditorHistoryRequest): Promise<SqlEditorHistoryEntry> {
+    return await invoke<SqlEditorHistoryEntry>('add_sql_editor_history', { request })
+  },
+
+  /**
+   * 履歴一覧を取得
+   */
+  async getHistories(
+    request: SearchSqlEditorHistoryRequest
+  ): Promise<SqlEditorHistoryEntry[]> {
+    return await invoke<SqlEditorHistoryEntry[]>('get_sql_editor_histories', { request })
+  },
+
+  /**
+   * 履歴を削除
+   */
+  async deleteHistory(connectionId: string, id: string): Promise<void> {
+    await invoke('delete_sql_editor_history', { connectionId, id })
   },
 }

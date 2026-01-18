@@ -6,6 +6,7 @@ pub mod query_executor;
 pub mod query_history;
 pub mod query_storage;
 pub mod sql_editor_query_storage;
+pub mod sql_editor_history;
 pub mod safety_config;
 pub mod window_manager;
 

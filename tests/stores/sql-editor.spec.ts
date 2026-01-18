@@ -18,6 +18,9 @@ vi.mock('~/api/sql-editor', () => ({
     listQueries: vi.fn(),
     searchQueries: vi.fn(),
     deleteQuery: vi.fn(),
+    addHistory: vi.fn(),
+    getHistories: vi.fn(),
+    deleteHistory: vi.fn(),
   },
 }))
 
@@ -26,6 +29,17 @@ describe('SqlEditorStore', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     vi.mocked(sqlEditorApi.listQueries).mockResolvedValue([])
+    vi.mocked(sqlEditorApi.getHistories).mockResolvedValue([])
+    vi.mocked(sqlEditorApi.addHistory).mockImplementation(async (request) => ({
+      id: 'history-1',
+      connectionId: request.connectionId,
+      sql: request.sql,
+      executedAt: new Date().toISOString(),
+      executionTimeMs: request.executionTimeMs,
+      status: request.status,
+      rowCount: request.rowCount,
+      errorMessage: request.errorMessage,
+    }))
   })
 
   it('初期状態が正しい', () => {
@@ -44,6 +58,10 @@ describe('SqlEditorStore', () => {
     expect(store.savedQueryError).toBeNull()
     expect(store.isSaveDialogOpen).toBe(false)
     expect(store.editingQueryId).toBeNull()
+    expect(store.histories).toEqual([])
+    expect(store.isLoadingHistories).toBe(false)
+    expect(store.historySearchKeyword).toBe('')
+    expect(store.historySuccessOnly).toBe(false)
   })
 
   it('setConnectionでconnectionIdが設定される', () => {
@@ -152,6 +170,61 @@ describe('SqlEditorStore', () => {
     expect(store.isExecuting).toBe(false)
     expect(store.error?.code).toBe('query_cancelled')
     expect(queryApi.cancelQuery).toHaveBeenCalledWith('q-1')
+  })
+
+  it('履歴をキーワードでフィルタできる', () => {
+    const store = useSqlEditorStore()
+    store.histories = [
+      {
+        id: '1',
+        connectionId: 'conn-1',
+        sql: 'SELECT * FROM users',
+        executedAt: '2026-01-18T00:00:00Z',
+        executionTimeMs: 10,
+        status: 'success',
+      },
+      {
+        id: '2',
+        connectionId: 'conn-1',
+        sql: 'SELECT * FROM orders',
+        executedAt: '2026-01-18T00:01:00Z',
+        executionTimeMs: 12,
+        status: 'success',
+      },
+    ]
+
+    store.setHistorySearchKeyword('users')
+
+    expect(store.filteredHistories).toHaveLength(1)
+    expect(store.filteredHistories[0]?.sql).toContain('users')
+  })
+
+  it('履歴を成功のみでフィルタできる', () => {
+    const store = useSqlEditorStore()
+    store.histories = [
+      {
+        id: '1',
+        connectionId: 'conn-1',
+        sql: 'SELECT * FROM users',
+        executedAt: '2026-01-18T00:00:00Z',
+        executionTimeMs: 10,
+        status: 'success',
+      },
+      {
+        id: '2',
+        connectionId: 'conn-1',
+        sql: 'INVALID SQL',
+        executedAt: '2026-01-18T00:01:00Z',
+        executionTimeMs: 5,
+        status: 'error',
+        errorMessage: 'syntax error',
+      },
+    ]
+
+    store.setHistorySuccessOnly(true)
+
+    expect(store.filteredHistories).toHaveLength(1)
+    expect(store.filteredHistories[0]?.status).toBe('success')
   })
 
   it('保存クエリ一覧を読み込める', async () => {

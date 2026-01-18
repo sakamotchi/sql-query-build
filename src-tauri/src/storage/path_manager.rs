@@ -47,6 +47,11 @@ impl PathManager {
         self.queries_dir().join("history")
     }
 
+    /// SQLエディタ履歴ディレクトリのパスを取得
+    pub fn sql_editor_histories_dir(&self) -> PathBuf {
+        self.data_dir().join("sql_editor_histories")
+    }
+
     /// 設定ディレクトリのパスを取得
     pub fn settings_dir(&self) -> PathBuf {
         self.data_dir().join("settings")
@@ -71,6 +76,7 @@ impl PathManager {
             self.saved_queries_dir(),
             self.saved_editor_dir(),
             self.history_dir(),
+            self.sql_editor_histories_dir(),
             self.settings_dir(),
             self.audit_logs_dir(),
         ];

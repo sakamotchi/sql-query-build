@@ -16,6 +16,9 @@ const stubs = {
   SqlEditorResultPanel: {
     template: '<div data-testid="result"></div>',
   },
+  SqlEditorHistoryPanel: {
+    template: '<div data-testid="history-panel"></div>',
+  },
   SqlEditorSaveDialog: {
     template: '<div data-testid="save-dialog"></div>',
   },
@@ -36,6 +39,7 @@ describe('SqlEditorLayout', () => {
     expect(wrapper.find('[data-testid="saved-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="editor"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="result"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="history-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="save-dialog"]').exists()).toBe(true)
   })
 })

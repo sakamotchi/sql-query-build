@@ -38,11 +38,14 @@ describe('windowApi.openSqlEditor', () => {
   })
 
   it('should handle errors', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.mocked(invoke).mockRejectedValue(new Error('Failed to open window'))
 
     await expect(
       windowApi.openSqlEditor('test-123', 'TestDB', 'development'),
     ).rejects.toThrow('Failed to open window')
+
+    consoleErrorSpy.mockRestore()
   })
 
   it('should handle production environment correctly', async () => {

@@ -3,14 +3,17 @@ import { useConnectionStore } from '~/stores/connection'
 import { queryApi } from '~/api/query'
 import { sqlEditorApi } from '~/api/sql-editor'
 import type {
+  AddSqlEditorHistoryRequest,
   SaveQueryRequest,
   SavedQuery,
   SavedQueryMetadata,
   SqlEditorState,
+  SqlEditorHistoryEntry,
 } from '~/types/sql-editor'
 import type { QueryExecuteError } from '~/types/query-result'
 
 let latestExecutionId = 0
+const MAX_HISTORY_COUNT = 1000
 
 export const useSqlEditorStore = defineStore('sql-editor', {
   state: (): SqlEditorState => ({
@@ -29,6 +32,10 @@ export const useSqlEditorStore = defineStore('sql-editor', {
     savedQuerySqlCache: {},
     isSaveDialogOpen: false,
     editingQueryId: null,
+    histories: [],
+    isLoadingHistories: false,
+    historySearchKeyword: '',
+    historySuccessOnly: false,
   }),
 
   getters: {
@@ -62,6 +69,26 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       if (!state.editingQueryId) return null
       return state.savedQueries.find((query) => query.id === state.editingQueryId) || null
     },
+
+    /**
+     * 検索・フィルタ適用済みの履歴一覧
+     */
+    filteredHistories(state): SqlEditorHistoryEntry[] {
+      const keyword = state.historySearchKeyword.trim().toLowerCase()
+      let filtered = state.histories
+
+      if (keyword) {
+        filtered = filtered.filter((history) =>
+          history.sql.toLowerCase().includes(keyword)
+        )
+      }
+
+      if (state.historySuccessOnly) {
+        filtered = filtered.filter((history) => history.status === 'success')
+      }
+
+      return filtered
+    },
   },
 
   actions: {
@@ -76,7 +103,12 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       this.savedQueryError = null
       this.isSaveDialogOpen = false
       this.editingQueryId = null
+      this.histories = []
+      this.isLoadingHistories = false
+      this.historySearchKeyword = ''
+      this.historySuccessOnly = false
       void this.loadSavedQueries()
+      void this.fetchHistories()
     },
 
     /**
@@ -282,7 +314,8 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         return
       }
 
-      if (!sqlToExecute.trim()) {
+      const trimmedSql = sqlToExecute.trim()
+      if (!trimmedSql) {
         this.error = createClientError(emptyMessage)
         return
       }
@@ -292,11 +325,12 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       this.error = null
       this.result = null
       this.executingQueryId = null
+      const startTime = Date.now()
 
       try {
         const response = await queryApi.executeQuery({
           connectionId: this.connectionId,
-          sql: sqlToExecute.trim(),
+          sql: trimmedSql,
           timeoutSeconds: 30,
         })
 
@@ -306,11 +340,26 @@ export const useSqlEditorStore = defineStore('sql-editor', {
 
         this.executingQueryId = response.queryId
         this.result = response.result
+        void this.addHistory({
+          connectionId: this.connectionId,
+          sql: trimmedSql,
+          status: 'success',
+          executionTimeMs: Date.now() - startTime,
+          rowCount: response.result.rowCount,
+        })
       } catch (error) {
         if (executionId !== latestExecutionId || !this.isExecuting) {
           return
         }
-        this.error = normalizeQueryError(error)
+        const normalizedError = normalizeQueryError(error)
+        this.error = normalizedError
+        void this.addHistory({
+          connectionId: this.connectionId,
+          sql: trimmedSql,
+          status: 'error',
+          executionTimeMs: Date.now() - startTime,
+          errorMessage: normalizedError.message,
+        })
       } finally {
         if (executionId === latestExecutionId) {
           this.isExecuting = false
@@ -334,6 +383,78 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       }
 
       await this.executeSqlText(sqlToExecute)
+    },
+
+    /**
+     * 履歴を追加（失敗は無視）
+     */
+    async addHistory(request: AddSqlEditorHistoryRequest) {
+      try {
+        const history = await sqlEditorApi.addHistory(request)
+        this.histories.unshift(history)
+        if (this.histories.length > MAX_HISTORY_COUNT) {
+          this.histories.length = MAX_HISTORY_COUNT
+        }
+      } catch (error) {
+        console.error('Failed to add history:', error)
+      }
+    },
+
+    /**
+     * 履歴一覧を取得
+     */
+    async fetchHistories() {
+      if (!this.connectionId) return
+
+      this.isLoadingHistories = true
+      try {
+        this.histories = await sqlEditorApi.getHistories({
+          connectionId: this.connectionId,
+        })
+      } catch (error) {
+        console.error('Failed to fetch histories:', error)
+        this.histories = []
+      } finally {
+        this.isLoadingHistories = false
+      }
+    },
+
+    /**
+     * 履歴を読み込み
+     */
+    async loadHistory(id: string) {
+      const history = this.histories.find((entry) => entry.id === id)
+      if (!history) {
+        throw new Error('履歴が見つかりません')
+      }
+
+      this.sql = history.sql
+      this.isDirty = false
+      this.selectionSql = null
+      this.currentQuery = null
+    },
+
+    /**
+     * 履歴を削除
+     */
+    async deleteHistory(id: string) {
+      if (!this.connectionId) return
+      await sqlEditorApi.deleteHistory(this.connectionId, id)
+      this.histories = this.histories.filter((entry) => entry.id !== id)
+    },
+
+    /**
+     * 履歴検索キーワードを更新
+     */
+    setHistorySearchKeyword(keyword: string) {
+      this.historySearchKeyword = keyword
+    },
+
+    /**
+     * 成功のみフィルタを更新
+     */
+    setHistorySuccessOnly(value: boolean) {
+      this.historySuccessOnly = value
     },
 
     /**

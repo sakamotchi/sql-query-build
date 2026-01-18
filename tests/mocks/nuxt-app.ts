@@ -40,3 +40,9 @@ export const useI18n = () => ({
 })
 
 // Add other commonly used Nuxt composables here as needed
+export const useColorMode = () => ({
+  value: ref('light'),
+  preference: ref('light'),
+  unknown: false,
+  forced: false,
+})
