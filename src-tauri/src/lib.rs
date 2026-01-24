@@ -10,6 +10,7 @@ pub mod sql;
 pub mod sql_generator;
 pub mod validators;
 pub mod storage;
+pub mod utils;
 
 use commands::query_history_commands::QueryHistoryState;
 use connection::{ConnectionService, ConnectionStorage};

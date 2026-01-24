@@ -64,6 +64,7 @@ impl QueryStorage {
                         name: query.name,
                         description: query.description,
                         tags: query.tags,
+                        folder_path: query.folder_path,
                         connection_id: query.connection_id,
                         created_at: query.created_at,
                         updated_at: query.updated_at,
@@ -110,7 +111,14 @@ impl QueryStorage {
 
                 // 接続IDでフィルタ
                 if let Some(conn_id) = &request.connection_id {
-                    if &q.connection_id != conn_id {
+                    if q.connection_id.as_deref() != Some(conn_id.as_str()) {
+                        return false;
+                    }
+                }
+
+                // フォルダパスでフィルタ
+                if let Some(folder_path) = &request.folder_path {
+                    if q.folder_path.as_deref() != Some(folder_path.as_str()) {
                         return false;
                     }
                 }
@@ -139,7 +147,8 @@ mod tests {
             name: "Test Query".to_string(),
             description: "Desc".to_string(),
             tags: vec!["tag1".to_string()],
-            connection_id: "conn1".to_string(),
+            folder_path: None,
+            connection_id: Some("conn1".to_string()),
             query: serde_json::json!({"sql": "SELECT 1"}),
             created_at: "".to_string(),
             updated_at: "".to_string(),
@@ -167,7 +176,8 @@ mod tests {
             name: "Alpha Query".to_string(),
             description: "First query".to_string(),
             tags: vec!["a".to_string(), "b".to_string()],
-            connection_id: "conn1".to_string(),
+            folder_path: Some("/開発環境".to_string()),
+            connection_id: Some("conn1".to_string()),
             query: serde_json::json!({}),
             created_at: "".to_string(),
             updated_at: "".to_string(),
@@ -179,7 +189,8 @@ mod tests {
             name: "Beta Query".to_string(),
             description: "Second query".to_string(),
             tags: vec!["b".to_string(), "c".to_string()],
-            connection_id: "conn2".to_string(),
+            folder_path: Some("/本番".to_string()),
+            connection_id: Some("conn2".to_string()),
             query: serde_json::json!({}),
             created_at: "".to_string(),
             updated_at: "".to_string(),
@@ -192,6 +203,7 @@ mod tests {
                 keyword: Some("Alpha".to_string()),
                 tags: None,
                 connection_id: None,
+                folder_path: None,
             })
             .unwrap();
         assert_eq!(res.len(), 1);
@@ -203,6 +215,7 @@ mod tests {
                 keyword: None,
                 tags: Some(vec!["b".to_string()]),
                 connection_id: None,
+                folder_path: None,
             })
             .unwrap();
         assert_eq!(res.len(), 2);
@@ -213,9 +226,22 @@ mod tests {
                 keyword: None,
                 tags: None,
                 connection_id: Some("conn2".to_string()),
+                folder_path: None,
             })
             .unwrap();
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].name, "Beta Query");
+
+        // Search by folder_path
+        let res = query_storage
+            .search_queries(SearchQueryRequest {
+                keyword: None,
+                tags: None,
+                connection_id: None,
+                folder_path: Some("/開発環境".to_string()),
+            })
+            .unwrap();
+        assert_eq!(res.len(), 1);
+        assert_eq!(res[0].name, "Alpha Query");
     }
 }

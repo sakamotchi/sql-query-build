@@ -7,7 +7,8 @@ pub struct SavedQuery {
     pub name: String,
     pub description: String,
     pub tags: Vec<String>,
-    pub connection_id: String,
+    pub folder_path: Option<String>,
+    pub connection_id: Option<String>,
     pub query: serde_json::Value, // QueryModel is complex, keeping as Value for storage simplicity or could import QueryModel if available
     pub created_at: String,
     pub updated_at: String,
@@ -20,7 +21,8 @@ pub struct SavedQueryMetadata {
     pub name: String,
     pub description: String,
     pub tags: Vec<String>,
-    pub connection_id: String,
+    pub folder_path: Option<String>,
+    pub connection_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -32,7 +34,8 @@ pub struct SaveQueryRequest {
     pub name: String,
     pub description: String,
     pub tags: Vec<String>,
-    pub connection_id: String,
+    pub folder_path: Option<String>,
+    pub connection_id: Option<String>,
     pub query: serde_json::Value,
 }
 
@@ -42,4 +45,5 @@ pub struct SearchQueryRequest {
     pub keyword: Option<String>,
     pub tags: Option<Vec<String>>,
     pub connection_id: Option<String>,
+    pub folder_path: Option<String>,
 }

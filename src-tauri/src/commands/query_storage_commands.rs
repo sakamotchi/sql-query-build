@@ -2,6 +2,7 @@ use crate::models::saved_query::{
     SaveQueryRequest, SavedQuery, SavedQueryMetadata, SearchQueryRequest,
 };
 use crate::services::query_storage::QueryStorage;
+use crate::utils::folder_validation::validate_folder_path;
 use std::sync::Arc;
 use tauri::State;
 
@@ -51,9 +52,14 @@ fn validate_save_request(request: &SaveQueryRequest) -> Result<(), String> {
     }
 
     // 接続IDのチェック
-    if request.connection_id.is_empty() {
-        return Err("接続IDが指定されていません".to_string());
+    if let Some(connection_id) = &request.connection_id {
+        if connection_id.is_empty() {
+            return Err("接続IDが指定されていません".to_string());
+        }
     }
+
+    // フォルダパスのチェック
+    validate_folder_path(&request.folder_path)?;
 
     // IDが指定されている場合はバリデーション
     if let Some(ref id) = request.id {
@@ -76,6 +82,7 @@ pub async fn save_query(
         name: request.name,
         description: request.description,
         tags: request.tags,
+        folder_path: request.folder_path,
         connection_id: request.connection_id,
         query: request.query,
         created_at: String::new(), // Service will set if empty
