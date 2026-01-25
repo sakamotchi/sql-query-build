@@ -53,6 +53,13 @@ export const sqlEditorApi = {
   },
 
   /**
+   * フォルダを作成
+   */
+  async createFolder(folderPath: string): Promise<void> {
+    await invoke('create_sql_editor_folder', { folderPath })
+  },
+
+  /**
    * クエリを指定フォルダに移動
    */
   async moveQuery(queryId: string, folderPath: string | null): Promise<void> {

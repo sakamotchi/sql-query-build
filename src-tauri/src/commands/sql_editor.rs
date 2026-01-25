@@ -129,6 +129,19 @@ pub async fn list_sql_editor_folders(
 }
 
 #[tauri::command]
+pub async fn create_sql_editor_folder(
+    folder_path: String,
+    storage: State<'_, Arc<SqlEditorQueryStorage>>,
+) -> Result<(), String> {
+    validate_folder_path(&Some(folder_path.clone()))?;
+    let existing_folders = storage.list_folders()?;
+    if existing_folders.contains(&folder_path) {
+        return Err(format!("フォルダは既に存在します: {}", folder_path));
+    }
+    storage.create_folder(folder_path)
+}
+
+#[tauri::command]
 pub async fn move_sql_editor_query(
     query_id: String,
     folder_path: Option<String>,

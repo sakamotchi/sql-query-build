@@ -216,6 +216,7 @@ const handleSave = async () => {
             searchable
             searchable-placeholder="フォルダを検索..."
             placeholder="ルート（フォルダなし）"
+            class="w-full"
           />
         </UFormField>
       </UForm>

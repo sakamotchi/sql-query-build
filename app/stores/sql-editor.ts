@@ -584,15 +584,15 @@ export const useSqlEditorStore = defineStore('sql-editor', {
     },
 
     /**
-     * フォルダを作成（フロントエンド側の一覧更新のみ）
+     * フォルダを作成
      */
-    createFolder(folderPath: string): boolean {
+    async createFolder(folderPath: string): Promise<void> {
       if (this.folders.includes(folderPath)) {
-        return false
+        throw new Error(`フォルダは既に存在します: ${folderPath}`)
       }
 
-      this.folders = [...this.folders, folderPath].sort()
-      return true
+      await sqlEditorApi.createFolder(folderPath)
+      await this.fetchFolders()
     },
 
     /**

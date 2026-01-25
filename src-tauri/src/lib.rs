@@ -285,6 +285,7 @@ pub fn run() {
             commands::sql_editor::search_sql_queries,
             commands::sql_editor::delete_sql_query,
             commands::sql_editor::list_sql_editor_folders,
+            commands::sql_editor::create_sql_editor_folder,
             commands::sql_editor::move_sql_editor_query,
             commands::sql_editor::rename_sql_editor_folder,
             commands::sql_editor::delete_sql_editor_folder,

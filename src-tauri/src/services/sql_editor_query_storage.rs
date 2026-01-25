@@ -32,6 +32,10 @@ impl SqlEditorQueryStorage {
         self.base_dir.join(format!("{}.sql", id))
     }
 
+    fn folders_metadata_path(&self) -> PathBuf {
+        self.base_dir.join(".folders.json")
+    }
+
     fn read_metadata_file(path: &Path) -> Result<SqlEditorQueryMetadata, String> {
         let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
         serde_json::from_str(&content).map_err(|e| e.to_string())
@@ -176,14 +180,56 @@ impl SqlEditorQueryStorage {
         Ok(queries)
     }
 
+    /// フォルダメタデータを読み込む
+    fn read_folders_metadata(&self) -> Result<Vec<String>, String> {
+        let path = self.folders_metadata_path();
+        if !path.exists() {
+            return Ok(Vec::new());
+        }
+
+        let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&content).map_err(|e| e.to_string())
+    }
+
+    /// フォルダメタデータを保存する
+    fn write_folders_metadata(&self, folders: &[String]) -> Result<(), String> {
+        let path = self.folders_metadata_path();
+        let json = serde_json::to_string_pretty(folders).map_err(|e| e.to_string())?;
+        fs::write(&path, json).map_err(|e| e.to_string())?;
+        set_secure_permissions(&path)?;
+        Ok(())
+    }
+
+    /// フォルダを作成する
+    pub fn create_folder(&self, folder_path: String) -> Result<(), String> {
+        let _lock = self.lock.write().map_err(|e| e.to_string())?;
+
+        let mut folders = self.read_folders_metadata()?;
+
+        if folders.contains(&folder_path) {
+            return Err(format!("フォルダは既に存在します: {}", folder_path));
+        }
+
+        folders.push(folder_path);
+        folders.sort();
+        self.write_folders_metadata(&folders)?;
+
+        Ok(())
+    }
+
     /// フォルダ一覧を取得する
     pub fn list_folders(&self) -> Result<Vec<String>, String> {
         let queries = self.list_queries()?;
 
+        // クエリから抽出したフォルダ
         let mut folders: Vec<String> = queries
             .into_iter()
             .filter_map(|q| q.folder_path)
             .collect();
+
+        // メタデータに保存されたフォルダを追加
+        let metadata_folders = self.read_folders_metadata()?;
+        folders.extend(metadata_folders);
 
         folders.sort();
         folders.dedup();
@@ -242,6 +288,8 @@ impl SqlEditorQueryStorage {
 
     /// フォルダを削除する（空のフォルダのみ）
     pub fn delete_folder(&self, folder_path: &str) -> Result<(), String> {
+        let _lock = self.lock.write().map_err(|e| e.to_string())?;
+
         let all_queries = self.list_queries()?;
 
         let has_queries = all_queries.iter().any(|q| match &q.folder_path {
@@ -255,6 +303,11 @@ impl SqlEditorQueryStorage {
                 folder_path
             ));
         }
+
+        // メタデータからフォルダを削除
+        let mut folders = self.read_folders_metadata()?;
+        folders.retain(|f| f != folder_path && !f.starts_with(&format!("{}/", folder_path)));
+        self.write_folders_metadata(&folders)?;
 
         Ok(())
     }

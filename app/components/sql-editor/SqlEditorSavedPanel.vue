@@ -256,24 +256,24 @@ const handleConfirmCreateFolder = async (name: string, parentPath: string | null
     return
   }
 
-  const created = sqlEditorStore.createFolder(folderPath)
-  if (!created) {
+  try {
+    await sqlEditorStore.createFolder(folderPath)
+
+    expandFolderPath(folderPath)
+
+    toast.add({
+      title: 'フォルダを作成しました',
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+  } catch (error) {
     toast.add({
       title: 'フォルダを作成できませんでした',
-      description: '時間をおいて再度お試しください',
+      description: savedQueryError.value || '時間をおいて再度お試しください',
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
-    return
   }
-
-  expandFolderPath(folderPath)
-
-  toast.add({
-    title: 'フォルダを作成しました',
-    color: 'success',
-    icon: 'i-heroicons-check-circle',
-  })
 }
 
 const handleRenameFolder = (path: string) => {
