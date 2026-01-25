@@ -10,6 +10,7 @@ pub struct SqlEditorQuery {
     pub description: String,
     pub sql: String,
     pub tags: Vec<String>,
+    pub folder_path: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -23,6 +24,7 @@ pub struct SqlEditorQueryMetadata {
     pub name: String,
     pub description: String,
     pub tags: Vec<String>,
+    pub folder_path: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -37,6 +39,7 @@ pub struct SaveSqlEditorQueryRequest {
     pub description: Option<String>,
     pub sql: String,
     pub tags: Vec<String>,
+    pub folder_path: Option<String>,
 }
 
 /// SQLエディタ用の検索リクエスト
@@ -46,4 +49,5 @@ pub struct SearchSqlEditorQueryRequest {
     pub keyword: Option<String>,
     pub tags: Option<Vec<String>>,
     pub connection_id: Option<String>,
+    pub folder_path: Option<String>,
 }

@@ -37,7 +37,7 @@ SQLエディタ画面でも、クエリビルダーと同様のフォルダ階�
 
 **対象外**:
 - クエリビルダーの保存クエリ機能（別途実装済み）
-- バックエンドAPI（既に実装済み、共通利用）
+- バックエンドAPI（SQLエディタ用のフォルダ操作は本実装で追加）
 - データモデル（既に実装済み）
 
 ---
@@ -61,10 +61,10 @@ SQLエディタ画面でも、クエリビルダーと同様のフォルダ階�
 ### 2.2 共通基盤
 
 #### バックエンドAPI（実装済み）
-- `queryStorageApi.listFolders()` - フォルダ一覧取得
-- `queryStorageApi.moveQuery(id, path)` - クエリ移動
-- `queryStorageApi.renameFolder(old, new)` - フォルダ名変更
-- `queryStorageApi.deleteFolder(path)` - フォルダ削除
+- `sqlEditorApi.listFolders()` - フォルダ一覧取得
+- `sqlEditorApi.moveQuery(id, path)` - クエリ移動
+- `sqlEditorApi.renameFolder(old, new)` - フォルダ名変更
+- `sqlEditorApi.deleteFolder(path)` - フォルダ削除
 
 #### データストレージ
 - JSON形式でファイル保存
@@ -412,7 +412,7 @@ const emit = defineEmits<{
 ## 11. クエリビルダーとの関係
 
 ### 11.1 共有されるもの
-- **バックエンドAPI**: `queryStorageApi.*`
+- **バックエンドAPI**: `sqlEditorApi.*`
 - **データストレージ**: JSON形式のクエリファイル
 - **フォルダ構造**: 同じフォルダパスを使用
 

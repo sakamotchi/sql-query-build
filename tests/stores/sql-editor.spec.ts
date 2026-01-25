@@ -18,6 +18,10 @@ vi.mock('~/api/sql-editor', () => ({
     listQueries: vi.fn(),
     searchQueries: vi.fn(),
     deleteQuery: vi.fn(),
+    listFolders: vi.fn(),
+    moveQuery: vi.fn(),
+    renameFolder: vi.fn(),
+    deleteFolder: vi.fn(),
     addHistory: vi.fn(),
     getHistories: vi.fn(),
     deleteHistory: vi.fn(),
@@ -29,6 +33,7 @@ describe('SqlEditorStore', () => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     vi.mocked(sqlEditorApi.listQueries).mockResolvedValue([])
+    vi.mocked(sqlEditorApi.listFolders).mockResolvedValue([])
     vi.mocked(sqlEditorApi.getHistories).mockResolvedValue([])
     vi.mocked(sqlEditorApi.addHistory).mockImplementation(async (request) => ({
       id: 'history-1',
@@ -56,6 +61,8 @@ describe('SqlEditorStore', () => {
     expect(store.currentQuery).toBeNull()
     expect(store.isSavedQueriesLoading).toBe(false)
     expect(store.savedQueryError).toBeNull()
+    expect(store.folders).toEqual([])
+    expect(store.expandedFolders.size).toBe(0)
     expect(store.isSaveDialogOpen).toBe(false)
     expect(store.editingQueryId).toBeNull()
     expect(store.histories).toEqual([])
@@ -282,5 +289,77 @@ describe('SqlEditorStore', () => {
     expect(store.currentQuery).toEqual(mockSaved)
     expect(store.isDirty).toBe(false)
     expect(sqlEditorApi.saveQuery).toHaveBeenCalled()
+  })
+
+  it('queryTreeがフォルダとクエリを正しく構築する', () => {
+    const store = useSqlEditorStore()
+    store.folders = ['/開発環境', '/開発環境/ユーザー管理']
+    store.savedQueries = [
+      {
+        id: 'q1',
+        connectionId: 'conn-1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: '/開発環境/ユーザー管理',
+        createdAt: '2026-01-25T00:00:00Z',
+        updatedAt: '2026-01-25T00:00:00Z',
+      },
+      {
+        id: 'q2',
+        connectionId: 'conn-1',
+        name: 'Query 2',
+        description: '',
+        tags: [],
+        folderPath: null,
+        createdAt: '2026-01-25T00:00:00Z',
+        updatedAt: '2026-01-25T00:00:00Z',
+      },
+    ]
+
+    const tree = store.queryTree
+    expect(tree.some((node) => node.type === 'folder' && node.path === '/開発環境')).toBe(true)
+    expect(tree.some((node) => node.type === 'query' && node.path === 'q2')).toBe(true)
+  })
+
+  it('toggleFolderExpansionで展開状態を切り替えられる', () => {
+    const store = useSqlEditorStore()
+    store.toggleFolderExpansion('/開発環境')
+    expect(store.expandedFolders.has('/開発環境')).toBe(true)
+    store.toggleFolderExpansion('/開発環境')
+    expect(store.expandedFolders.has('/開発環境')).toBe(false)
+  })
+
+  it('moveSavedQueryでAPIが呼ばれる', async () => {
+    const store = useSqlEditorStore()
+    store.connectionId = 'conn-1'
+    vi.mocked(sqlEditorApi.listQueries).mockResolvedValueOnce([])
+    vi.mocked(sqlEditorApi.listFolders).mockResolvedValueOnce(['/開発環境'])
+
+    await store.moveSavedQuery('q1', '/開発環境')
+
+    expect(sqlEditorApi.moveQuery).toHaveBeenCalledWith('q1', '/開発環境')
+    expect(sqlEditorApi.listQueries).toHaveBeenCalledWith('conn-1')
+    expect(sqlEditorApi.listFolders).toHaveBeenCalled()
+  })
+
+  it('deleteFolderはクエリが含まれる場合APIを呼ばない', async () => {
+    const store = useSqlEditorStore()
+    store.savedQueries = [
+      {
+        id: 'q1',
+        connectionId: 'conn-1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: '/開発環境',
+        createdAt: '2026-01-25T00:00:00Z',
+        updatedAt: '2026-01-25T00:00:00Z',
+      },
+    ]
+
+    await store.deleteFolder('/開発環境')
+
+    expect(sqlEditorApi.deleteFolder).not.toHaveBeenCalled()
   })
 })

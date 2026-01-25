@@ -11,6 +11,7 @@ import type {
   SqlEditorState,
   SqlEditorHistoryEntry,
   SqlEditorTab,
+  TreeNode,
 } from '~/types/sql-editor'
 import type { QueryExecuteError } from '~/types/query-result'
 
@@ -64,6 +65,8 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       isSavedQueriesLoading: false,
       savedQueryError: null,
       savedQuerySqlCache: {},
+      folders: [],
+      expandedFolders: new Set(),
       isSaveDialogOpen: false,
       editingQueryId: null,
       histories: [],
@@ -131,6 +134,99 @@ export const useSqlEditorStore = defineStore('sql-editor', {
     },
 
     /**
+     * フラットなクエリ一覧から階層ツリー構造を生成
+     */
+    queryTree(state): TreeNode[] {
+      const root: TreeNode[] = []
+      const folderMap = new Map<string, TreeNode>()
+
+      for (const folderPath of state.folders) {
+        const parts = folderPath.split('/').filter(Boolean)
+        let currentPath = ''
+        let parent = root
+
+        for (const part of parts) {
+          currentPath = currentPath ? `${currentPath}/${part}` : `/${part}`
+
+          if (!folderMap.has(currentPath)) {
+            const folderNode: TreeNode = {
+              type: 'folder',
+              path: currentPath,
+              name: part,
+              children: [],
+              expanded: state.expandedFolders.has(currentPath),
+              queryCount: 0,
+            }
+            folderMap.set(currentPath, folderNode)
+            parent.push(folderNode)
+            parent = folderNode.children!
+          } else {
+            parent = folderMap.get(currentPath)!.children!
+          }
+        }
+      }
+
+      for (const query of state.savedQueries) {
+        const queryNode: TreeNode = {
+          type: 'query',
+          path: query.id,
+          name: query.name,
+          query,
+        }
+
+        if (query.folderPath) {
+          const folder = folderMap.get(query.folderPath)
+          if (folder) {
+            folder.children!.push(queryNode)
+            folder.queryCount = (folder.queryCount || 0) + 1
+          } else {
+            root.push(queryNode)
+          }
+        } else {
+          root.push(queryNode)
+        }
+      }
+
+      const sortNodes = (nodes: TreeNode[]) => {
+        nodes.sort((a, b) => {
+          if (a.type !== b.type) {
+            return a.type === 'folder' ? -1 : 1
+          }
+          return a.name.localeCompare(b.name)
+        })
+        nodes.forEach((node) => {
+          if (node.children) {
+            sortNodes(node.children)
+          }
+        })
+      }
+      sortNodes(root)
+
+      return root
+    },
+
+    /**
+     * 指定パスのフォルダノードを取得
+     */
+    getFolderByPath(): (path: string) => TreeNode | null {
+      return (path: string) => {
+        const findFolder = (nodes: TreeNode[]): TreeNode | null => {
+          for (const node of nodes) {
+            if (node.type === 'folder' && node.path === path) {
+              return node
+            }
+            if (node.children) {
+              const found = findFolder(node.children)
+              if (found) return found
+            }
+          }
+          return null
+        }
+        return findFolder(this.queryTree)
+      }
+    },
+
+    /**
      * 検索・フィルタ適用済みの履歴一覧
      */
     filteredHistories(state): SqlEditorHistoryEntry[] {
@@ -162,6 +258,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       this.executingTabId = null
       this.savedQueries = []
       this.savedQuerySqlCache = {}
+      this.folders = []
       this.currentQuery = null
       this.savedQueryError = null
       this.isSaveDialogOpen = false
@@ -173,6 +270,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       this.historySuccessOnly = false
       this.initializeTabs()
       void this.loadSavedQueries()
+      void this.fetchFolders()
       void this.fetchHistories()
     },
 
@@ -385,6 +483,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         description: this.currentQuery.description,
         sql: this.sql,
         tags: this.currentQuery.tags,
+        folderPath: this.currentQuery.folderPath ?? null,
       }
 
       return await this.saveCurrentQuery(request)
@@ -468,6 +567,32 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       } finally {
         this.isSavedQueriesLoading = false
       }
+    },
+
+    /**
+     * フォルダ一覧を取得
+     */
+    async fetchFolders() {
+      this.savedQueryError = null
+
+      try {
+        this.folders = await sqlEditorApi.listFolders()
+      } catch (error) {
+        this.savedQueryError = normalizeSavedQueryError(error)
+        console.error('Failed to fetch folders:', error)
+      }
+    },
+
+    /**
+     * フォルダを作成（フロントエンド側の一覧更新のみ）
+     */
+    createFolder(folderPath: string): boolean {
+      if (this.folders.includes(folderPath)) {
+        return false
+      }
+
+      this.folders = [...this.folders, folderPath].sort()
+      return true
     },
 
     /**
@@ -616,6 +741,151 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         console.error('Failed to delete query:', error)
         throw error
       }
+    },
+
+    /**
+     * クエリを指定フォルダに移動
+     */
+    async moveSavedQuery(queryId: string, targetFolderPath: string | null) {
+      this.isSavedQueriesLoading = true
+      this.savedQueryError = null
+
+      try {
+        await sqlEditorApi.moveQuery(queryId, targetFolderPath)
+        await this.loadSavedQueries()
+        await this.fetchFolders()
+      } catch (error) {
+        this.savedQueryError = normalizeSavedQueryError(error)
+        console.error('Failed to move query:', error)
+        throw error
+      } finally {
+        this.isSavedQueriesLoading = false
+      }
+    },
+
+    /**
+     * フォルダ名を変更
+     */
+    async renameFolder(oldPath: string, newPath: string) {
+      if (this.folders.includes(newPath)) {
+        return
+      }
+
+      this.isSavedQueriesLoading = true
+      this.savedQueryError = null
+
+      try {
+        await sqlEditorApi.renameFolder(oldPath, newPath)
+        await Promise.all([this.fetchFolders(), this.loadSavedQueries()])
+
+        if (this.expandedFolders.has(oldPath)) {
+          this.expandedFolders.delete(oldPath)
+          this.expandedFolders.add(newPath)
+          this.saveExpandedFolders()
+        }
+      } catch (error) {
+        this.savedQueryError = normalizeSavedQueryError(error)
+        console.error('Failed to rename folder:', error)
+        throw error
+      } finally {
+        this.isSavedQueriesLoading = false
+      }
+    },
+
+    /**
+     * 空のフォルダを削除
+     */
+    async deleteFolder(folderPath: string) {
+      const queriesInFolder = this.savedQueries.filter(
+        (query) =>
+          query.folderPath === folderPath ||
+          query.folderPath?.startsWith(`${folderPath}/`)
+      )
+
+      if (queriesInFolder.length > 0) {
+        return
+      }
+
+      this.isSavedQueriesLoading = true
+      this.savedQueryError = null
+
+      try {
+        await sqlEditorApi.deleteFolder(folderPath)
+        await this.fetchFolders()
+        this.expandedFolders.delete(folderPath)
+        this.saveExpandedFolders()
+      } catch (error) {
+        this.savedQueryError = normalizeSavedQueryError(error)
+        console.error('Failed to delete folder:', error)
+        throw error
+      } finally {
+        this.isSavedQueriesLoading = false
+      }
+    },
+
+    /**
+     * フォルダの展開/折りたたみを切り替え
+     */
+    toggleFolderExpansion(folderPath: string) {
+      if (this.expandedFolders.has(folderPath)) {
+        this.expandedFolders.delete(folderPath)
+      } else {
+        this.expandedFolders.add(folderPath)
+      }
+
+      this.saveExpandedFolders()
+    },
+
+    /**
+     * 展開状態をLocalStorageに保存
+     */
+    saveExpandedFolders() {
+      if (typeof localStorage === 'undefined') return
+      try {
+        const expanded = Array.from(this.expandedFolders)
+        localStorage.setItem('sqlEditorExpandedFolders', JSON.stringify(expanded))
+      } catch (error) {
+        console.error('Failed to save expanded folders:', error)
+      }
+    },
+
+    /**
+     * 展開状態をLocalStorageから復元
+     */
+    loadExpandedFolders() {
+      if (typeof localStorage === 'undefined') return
+      try {
+        const saved = localStorage.getItem('sqlEditorExpandedFolders')
+        if (saved) {
+          const expanded = JSON.parse(saved) as string[]
+          this.expandedFolders = new Set(expanded)
+        }
+      } catch (error) {
+        console.error('Failed to load expanded folders:', error)
+        this.expandedFolders = new Set()
+      }
+    },
+
+    /**
+     * ドラッグ&ドロップによるクエリ移動
+     */
+    async handleQueryDrop(queryId: string, targetFolderPath: string | null) {
+      const query = this.savedQueries.find((item) => item.id === queryId)
+      if (!query) {
+        console.error('Query not found:', queryId)
+        return
+      }
+
+      if (query.folderPath === targetFolderPath) {
+        return
+      }
+
+      if (targetFolderPath && !this.folders.includes(targetFolderPath)) {
+        console.warn('Target folder not found:', targetFolderPath)
+        return
+      }
+
+      await this.moveSavedQuery(queryId, targetFolderPath)
     },
 
     /**

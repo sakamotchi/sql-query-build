@@ -18,6 +18,7 @@ const {
   sql,
   savedQueryError,
   pendingCloseTabId,
+  folders,
 } = storeToRefs(sqlEditorStore)
 const toast = useToast()
 
@@ -37,6 +38,7 @@ const state = ref({
   name: '',
   description: '',
   tags: '',
+  folderPath: null as string | null,
 })
 
 const isSaving = ref(false)
@@ -50,10 +52,12 @@ watch(
       state.value.name = editingQuery.value.name
       state.value.description = editingQuery.value.description || ''
       state.value.tags = editingQuery.value.tags.join(', ')
+      state.value.folderPath = editingQuery.value.folderPath ?? null
     } else {
       state.value.name = ''
       state.value.description = ''
       state.value.tags = ''
+      state.value.folderPath = null
     }
   }
 )
@@ -79,6 +83,11 @@ const parseTags = (value: string): string[] =>
     .split(',')
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0)
+
+const folderOptions = computed(() => [
+  { label: 'ルート（フォルダなし）', value: null },
+  ...folders.value.map((path) => ({ label: path, value: path })),
+])
 
 const handleSave = async () => {
   if (!connectionId.value) {
@@ -123,6 +132,7 @@ const handleSave = async () => {
         description: normalizedDescription,
         sql: fullQuery.sql,
         tags,
+        folderPath: state.value.folderPath,
       }
 
       await sqlEditorStore.updateSavedQuery(request)
@@ -138,6 +148,7 @@ const handleSave = async () => {
         description: normalizedDescription,
         sql: sql.value,
         tags,
+        folderPath: state.value.folderPath,
       }
 
       await sqlEditorStore.saveCurrentQuery(request)
@@ -195,6 +206,17 @@ const handleSave = async () => {
 
         <UFormField label="タグ" name="tags" hint="カンマ区切りで入力">
           <UInput v-model="state.tags" placeholder="例: admin, report" />
+        </UFormField>
+
+        <UFormField label="保存先フォルダ" name="folder" hint="任意">
+          <USelectMenu
+            v-model="state.folderPath"
+            :items="folderOptions"
+            value-key="value"
+            searchable
+            searchable-placeholder="フォルダを検索..."
+            placeholder="ルート（フォルダなし）"
+          />
         </UFormField>
       </UForm>
     </template>

@@ -82,6 +82,7 @@ impl SqlEditorQueryStorage {
             name: query.name.clone(),
             description: query.description.clone(),
             tags: query.tags.clone(),
+            folder_path: query.folder_path.clone(),
             created_at: query.created_at.clone(),
             updated_at: query.updated_at.clone(),
         };
@@ -121,6 +122,7 @@ impl SqlEditorQueryStorage {
             description: metadata.description,
             sql,
             tags: metadata.tags,
+            folder_path: metadata.folder_path,
             created_at: metadata.created_at,
             updated_at: metadata.updated_at,
         })
@@ -174,6 +176,89 @@ impl SqlEditorQueryStorage {
         Ok(queries)
     }
 
+    /// フォルダ一覧を取得する
+    pub fn list_folders(&self) -> Result<Vec<String>, String> {
+        let queries = self.list_queries()?;
+
+        let mut folders: Vec<String> = queries
+            .into_iter()
+            .filter_map(|q| q.folder_path)
+            .collect();
+
+        folders.sort();
+        folders.dedup();
+
+        Ok(folders)
+    }
+
+    /// クエリを指定フォルダに移動する
+    pub fn move_query(&self, query_id: &str, folder_path: Option<String>) -> Result<(), String> {
+        let mut query = self.load_query(query_id)?;
+
+        query.folder_path = folder_path;
+        query.updated_at = chrono::Utc::now().to_rfc3339();
+
+        self.save_query(query)?;
+
+        Ok(())
+    }
+
+    /// フォルダ名を変更し、配下の全クエリのfolder_pathも更新する
+    pub fn rename_folder(&self, old_path: &str, new_path: &str) -> Result<(), String> {
+        let all_queries = self.list_queries()?;
+
+        let target_queries: Vec<_> = all_queries
+            .into_iter()
+            .filter(|q| match &q.folder_path {
+                Some(folder_path) => {
+                    folder_path == old_path
+                        || folder_path.starts_with(&format!("{}/", old_path))
+                }
+                None => false,
+            })
+            .collect();
+
+        for metadata in target_queries {
+            let mut query = self.load_query(&metadata.id)?;
+
+            if let Some(current_path) = &query.folder_path {
+                let new_folder_path = if current_path == old_path {
+                    new_path.to_string()
+                } else if let Some(suffix) = current_path.strip_prefix(old_path) {
+                    format!("{}{}", new_path, suffix)
+                } else {
+                    continue;
+                };
+
+                query.folder_path = Some(new_folder_path);
+                query.updated_at = chrono::Utc::now().to_rfc3339();
+
+                self.save_query(query)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// フォルダを削除する（空のフォルダのみ）
+    pub fn delete_folder(&self, folder_path: &str) -> Result<(), String> {
+        let all_queries = self.list_queries()?;
+
+        let has_queries = all_queries.iter().any(|q| match &q.folder_path {
+            Some(path) => path == folder_path || path.starts_with(&format!("{}/", folder_path)),
+            None => false,
+        });
+
+        if has_queries {
+            return Err(format!(
+                "フォルダにクエリが含まれているため削除できません: {}",
+                folder_path
+            ));
+        }
+
+        Ok(())
+    }
+
     /// クエリを検索する
     pub fn search_queries(
         &self,
@@ -214,6 +299,12 @@ impl SqlEditorQueryStorage {
 
             if let Some(ref connection_id) = request.connection_id {
                 if &query.connection_id != connection_id {
+                    continue;
+                }
+            }
+
+            if let Some(ref folder_path) = request.folder_path {
+                if query.folder_path.as_deref() != Some(folder_path.as_str()) {
                     continue;
                 }
             }
@@ -259,6 +350,7 @@ mod tests {
             description: "desc".to_string(),
             sql: "SELECT * FROM users".to_string(),
             tags: vec!["test".to_string()],
+            folder_path: None,
             created_at: String::new(),
             updated_at: String::new(),
         };
@@ -285,6 +377,7 @@ mod tests {
             description: "desc".to_string(),
             sql: "SELECT * FROM orders".to_string(),
             tags: vec!["report".to_string()],
+            folder_path: None,
             created_at: String::new(),
             updated_at: String::new(),
         };
@@ -295,6 +388,7 @@ mod tests {
                 keyword: Some("orders".to_string()),
                 tags: None,
                 connection_id: None,
+                folder_path: None,
             })
             .unwrap();
 

@@ -38,12 +38,12 @@
 
 ### 2.3 フォルダ一覧取得
 - [ ] `fetchFolders` アクション を実装
-  - [ ] `queryStorageApi.listFolders()` を呼び出し
+  - [ ] `sqlEditorApi.listFolders()` を呼び出し
   - [ ] エラーハンドリング
 
 ### 2.4 クエリ移動
 - [ ] `moveSavedQuery` アクション を実装
-  - [ ] `queryStorageApi.moveQuery()` を呼び出し
+  - [ ] `sqlEditorApi.moveQuery()` を呼び出し
   - [ ] クエリ一覧の再取得
   - [ ] Toast通知
   - [ ] エラーハンドリング
@@ -51,7 +51,7 @@
 ### 2.5 フォルダ名変更
 - [ ] `renameFolder` アクション を実装
   - [ ] 重複チェック
-  - [ ] `queryStorageApi.renameFolder()` を呼び出し
+  - [ ] `sqlEditorApi.renameFolder()` を呼び出し
   - [ ] フォルダ・クエリ一覧の再取得
   - [ ] 展開状態の更新
   - [ ] Toast通知
@@ -60,7 +60,7 @@
 ### 2.6 フォルダ削除
 - [ ] `deleteFolder` アクション を実装
   - [ ] 空フォルダチェック
-  - [ ] `queryStorageApi.deleteFolder()` を呼び出し
+  - [ ] `sqlEditorApi.deleteFolder()` を呼び出し
   - [ ] フォルダ一覧の再取得
   - [ ] 展開状態から削除
   - [ ] Toast通知

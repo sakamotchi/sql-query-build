@@ -538,20 +538,16 @@ describe('展開状態管理', () => {
 
 ```typescript
 // scripts/generate-test-queries.ts
-import { queryStorageApi } from '@/api/query-storage'
+import { sqlEditorApi } from '~/api/sql-editor'
 
 async function generateTestQueries(count: number) {
   for (let i = 0; i < count; i++) {
-    await queryStorageApi.saveQuery({
+    await sqlEditorApi.saveQuery({
       name: `Test Query ${i}`,
       description: `This is test query ${i}`,
       tags: [`tag${i % 10}`],
       connectionId: 'test-connection-id',
-      query: {
-        selectedTables: [],
-        selectedColumns: [],
-        // ... 他のフィールド
-      },
+      sql: `SELECT ${i} AS test_value`,
     })
   }
 }

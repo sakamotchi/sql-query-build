@@ -31,6 +31,10 @@ export interface SqlEditorState {
   savedQueryError: string | null
   /** 保存クエリSQLキャッシュ */
   savedQuerySqlCache: Record<string, string>
+  /** フォルダ一覧 */
+  folders: string[]
+  /** 展開中のフォルダパス */
+  expandedFolders: Set<string>
   /** 保存ダイアログの表示状態 */
   isSaveDialogOpen: boolean
   /** 編集対象の保存クエリID */
@@ -103,6 +107,7 @@ export interface SavedQuery {
   description?: string
   sql: string
   tags: string[]
+  folderPath?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -116,8 +121,51 @@ export interface SavedQueryMetadata {
   name: string
   description?: string
   tags: string[]
+  folderPath?: string | null
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * 保存クエリのツリービュー用ノード
+ */
+export interface TreeNode {
+  /**
+   * ノードのタイプ
+   */
+  type: 'folder' | 'query'
+
+  /**
+   * ノードのパス
+   * - フォルダ: folderPath
+   * - クエリ: id
+   */
+  path: string
+
+  /**
+   * 表示名
+   */
+  name: string
+
+  /**
+   * 子ノード（フォルダのみ）
+   */
+  children?: TreeNode[]
+
+  /**
+   * クエリメタデータ（クエリのみ）
+   */
+  query?: SavedQueryMetadata
+
+  /**
+   * 展開状態（フォルダのみ）
+   */
+  expanded?: boolean
+
+  /**
+   * フォルダ直下のクエリ数
+   */
+  queryCount?: number
 }
 
 /**
@@ -130,6 +178,7 @@ export interface SaveQueryRequest {
   description?: string
   sql: string
   tags: string[]
+  folderPath?: string | null
 }
 
 /**
@@ -139,6 +188,7 @@ export interface SearchQueryRequest {
   keyword?: string
   tags?: string[]
   connectionId?: string
+  folderPath?: string
 }
 
 /**

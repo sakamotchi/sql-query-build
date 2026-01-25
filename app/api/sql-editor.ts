@@ -46,6 +46,34 @@ export const sqlEditorApi = {
   },
 
   /**
+   * フォルダ一覧を取得
+   */
+  async listFolders(): Promise<string[]> {
+    return await invoke<string[]>('list_sql_editor_folders')
+  },
+
+  /**
+   * クエリを指定フォルダに移動
+   */
+  async moveQuery(queryId: string, folderPath: string | null): Promise<void> {
+    await invoke('move_sql_editor_query', { queryId, folderPath })
+  },
+
+  /**
+   * フォルダ名を変更
+   */
+  async renameFolder(oldPath: string, newPath: string): Promise<void> {
+    await invoke('rename_sql_editor_folder', { oldPath, newPath })
+  },
+
+  /**
+   * フォルダを削除
+   */
+  async deleteFolder(folderPath: string): Promise<void> {
+    await invoke('delete_sql_editor_folder', { folderPath })
+  },
+
+  /**
    * 履歴を追加
    */
   async addHistory(request: AddSqlEditorHistoryRequest): Promise<SqlEditorHistoryEntry> {

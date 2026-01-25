@@ -36,13 +36,13 @@
 └─────────────────┬───────────────────┘
                   │
 ┌─────────────────▼───────────────────┐
-│   queryStorageApi                   │
-│   (app/api/query-storage.ts)        │ ◄──── 既存（共通）
+│   sqlEditorApi                      │
+│   (app/api/sql-editor.ts)           │ ◄──── 既存 + 拡張
 └─────────────────┬───────────────────┘
                   │
 ┌─────────────────▼───────────────────┐
 │   Tauri Commands                    │
-│   (Rust Backend)                    │ ◄──── 既存（共通）
+│   (Rust Backend)                    │ ◄──── SQLエディタ側を拡張
 └─────────────────┬───────────────────┘
                   │
 ┌─────────────────▼───────────────────┐
@@ -56,6 +56,10 @@
 - `app/stores/sql-editor.ts` - フォルダ管理機能の追加
 - `app/types/sql-editor.ts` - 型定義の拡張
 - `app/components/sql-editor/SqlEditorSavedPanel.vue` - ツリービューへの改修
+- `app/api/sql-editor.ts` - フォルダ操作APIの追加
+- `src-tauri/src/models/sql_editor_query.rs` - `folder_path`の追加
+- `src-tauri/src/services/sql_editor_query_storage.rs` - フォルダ操作の追加
+- `src-tauri/src/commands/sql_editor.rs` - フォルダ操作コマンドの追加
 
 **新規作成**:
 - `app/components/sql-editor/SavedQueryTreeView.vue` - ツリービュー本体
@@ -65,8 +69,6 @@
 - `app/components/sql-editor/dialogs/MoveQueryDialog.vue` - クエリ移動ダイアログ
 
 **影響なし**:
-- バックエンド（既に実装済み）
-- `queryStorageApi`（既に実装済み）
 - クエリビルダーの実装
 
 ---
@@ -301,12 +303,28 @@ getFolderByPath(state): (path: string) => TreeNode | null {
  */
 async fetchFolders() {
   try {
-    this.folders = await queryStorageApi.listFolders()
+    this.folders = await sqlEditorApi.listFolders()
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e)
     console.error('[SqlEditor] Failed to fetch folders:', e)
     this.savedQueryError = error
   }
+}
+```
+
+#### createFolder
+
+```typescript
+/**
+ * フォルダを作成（フロントエンド側の一覧更新のみ）
+ */
+createFolder(folderPath: string): boolean {
+  if (this.folders.includes(folderPath)) {
+    return false
+  }
+
+  this.folders = [...this.folders, folderPath].sort()
+  return true
 }
 ```
 
@@ -323,45 +341,14 @@ async moveSavedQuery(queryId: string, targetFolderPath: string | null) {
   this.savedQueryError = null
 
   try {
-    await queryStorageApi.moveQuery(queryId, targetFolderPath)
+    await sqlEditorApi.moveQuery(queryId, targetFolderPath)
 
-    // クエリ一覧を再取得して状態を更新
-    await this.loadSavedQueries()
-
-    // 成功通知（Toast）
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'クエリを移動しました',
-          color: 'success',
-          icon: 'i-heroicons-check-circle',
-        })
-      } catch {
-        console.log('[SqlEditor] Query moved successfully')
-      }
-    }
+    await Promise.all([this.loadSavedQueries(), this.fetchFolders()])
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e)
     this.savedQueryError = error
     console.error('[SqlEditor] Failed to move query:', e)
-
-    // エラー通知
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'クエリの移動に失敗しました',
-          description: error,
-          color: 'error',
-          icon: 'i-heroicons-exclamation-circle',
-        })
-      } catch {
-        console.error('[SqlEditor] Failed to move query:', error)
-      }
-    }
+    throw e
   } finally {
     this.isSavedQueriesLoading = false
   }
@@ -379,20 +366,6 @@ async moveSavedQuery(queryId: string, targetFolderPath: string | null) {
 async renameFolder(oldPath: string, newPath: string) {
   // バリデーション: フォルダ名の重複チェック
   if (this.folders.includes(newPath)) {
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'フォルダ名が重複しています',
-          description: `「${newPath}」は既に存在します`,
-          color: 'warning',
-          icon: 'i-heroicons-exclamation-triangle',
-        })
-      } catch {
-        console.warn('[SqlEditor] Duplicate folder path:', newPath)
-      }
-    }
     return
   }
 
@@ -400,7 +373,7 @@ async renameFolder(oldPath: string, newPath: string) {
   this.savedQueryError = null
 
   try {
-    await queryStorageApi.renameFolder(oldPath, newPath)
+    await sqlEditorApi.renameFolder(oldPath, newPath)
 
     // フォルダ一覧とクエリ一覧を再取得
     await Promise.all([this.fetchFolders(), this.loadSavedQueries()])
@@ -412,40 +385,11 @@ async renameFolder(oldPath: string, newPath: string) {
       this.saveExpandedFolders()
     }
 
-    // 成功通知
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'フォルダ名を変更しました',
-          color: 'success',
-          icon: 'i-heroicons-check-circle',
-        })
-      } catch {
-        console.log('[SqlEditor] Folder renamed successfully')
-      }
-    }
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e)
     this.savedQueryError = error
     console.error('[SqlEditor] Failed to rename folder:', e)
-
-    // エラー通知
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'フォルダ名の変更に失敗しました',
-          description: error,
-          color: 'error',
-          icon: 'i-heroicons-exclamation-circle',
-        })
-      } catch {
-        console.error('[SqlEditor] Failed to rename folder:', error)
-      }
-    }
+    throw e
   } finally {
     this.isSavedQueriesLoading = false
   }
@@ -466,20 +410,6 @@ async deleteFolder(folderPath: string) {
   )
 
   if (queriesInFolder.length > 0) {
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'フォルダを削除できません',
-          description: `フォルダ内に${queriesInFolder.length}件のクエリが含まれています`,
-          color: 'warning',
-          icon: 'i-heroicons-exclamation-triangle',
-        })
-      } catch {
-        console.warn('[SqlEditor] Cannot delete non-empty folder:', folderPath)
-      }
-    }
     return
   }
 
@@ -487,7 +417,7 @@ async deleteFolder(folderPath: string) {
   this.savedQueryError = null
 
   try {
-    await queryStorageApi.deleteFolder(folderPath)
+    await sqlEditorApi.deleteFolder(folderPath)
 
     // フォルダ一覧を再取得
     await this.fetchFolders()
@@ -496,40 +426,11 @@ async deleteFolder(folderPath: string) {
     this.expandedFolders.delete(folderPath)
     this.saveExpandedFolders()
 
-    // 成功通知
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'フォルダを削除しました',
-          color: 'success',
-          icon: 'i-heroicons-check-circle',
-        })
-      } catch {
-        console.log('[SqlEditor] Folder deleted successfully')
-      }
-    }
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e)
     this.savedQueryError = error
     console.error('[SqlEditor] Failed to delete folder:', e)
-
-    // エラー通知
-    if (typeof window !== 'undefined') {
-      try {
-        const { useToast } = await import('#imports')
-        const toast = useToast()
-        toast.add({
-          title: 'フォルダの削除に失敗しました',
-          description: error,
-          color: 'error',
-          icon: 'i-heroicons-exclamation-circle',
-        })
-      } catch {
-        console.error('[SqlEditor] Failed to delete folder:', error)
-      }
-    }
+    throw e
   } finally {
     this.isSavedQueriesLoading = false
   }
@@ -1066,7 +967,7 @@ import type { SavedQueryMetadata } from '~/types/sql-editor'
 
 // モック
 vi.mock('@/api/query-storage', () => ({
-  queryStorageApi: {
+  sqlEditorApi: {
     listFolders: vi.fn(),
     moveQuery: vi.fn(),
     renameFolder: vi.fn(),
@@ -1169,7 +1070,7 @@ describe('useSqlEditorStore - フォルダ管理機能', () => {
 | 型定義 | `@/types/saved-query` | `~/types/sql-editor` |
 | UIコンポーネント | `SavedQuerySlideover.vue` | `SqlEditorSavedPanel.vue` |
 | LocalStorageキー | `savedQueryExpandedFolders` | `sqlEditorExpandedFolders` |
-| バックエンドAPI | `queryStorageApi.*` | `queryStorageApi.*`（共通） |
+| バックエンドAPI | `queryStorageApi.*` | `sqlEditorApi.*` |
 
 ---
 

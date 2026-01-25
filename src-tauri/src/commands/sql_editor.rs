@@ -8,6 +8,7 @@ use crate::models::sql_editor_history::{
 use crate::services::sql_editor_history::SqlEditorHistoryService;
 use crate::services::sql_editor_query_storage::SqlEditorQueryStorage;
 use crate::storage::path_manager::PathManager;
+use crate::utils::folder_validation::validate_folder_path;
 use std::sync::Arc;
 use tauri::State;
 
@@ -53,6 +54,8 @@ fn validate_save_request(request: &SaveSqlEditorQueryRequest) -> Result<(), Stri
         validate_query_id(id)?;
     }
 
+    validate_folder_path(&request.folder_path)?;
+
     Ok(())
 }
 
@@ -70,6 +73,7 @@ pub async fn save_sql_query(
         description: request.description.unwrap_or_default(),
         sql: request.sql,
         tags: request.tags,
+        folder_path: request.folder_path,
         created_at: String::new(),
         updated_at: String::new(),
     };
@@ -115,6 +119,49 @@ pub async fn delete_sql_query(
 ) -> Result<(), String> {
     validate_query_id(&id)?;
     storage.delete_query(&id)
+}
+
+#[tauri::command]
+pub async fn list_sql_editor_folders(
+    storage: State<'_, Arc<SqlEditorQueryStorage>>,
+) -> Result<Vec<String>, String> {
+    storage.list_folders()
+}
+
+#[tauri::command]
+pub async fn move_sql_editor_query(
+    query_id: String,
+    folder_path: Option<String>,
+    storage: State<'_, Arc<SqlEditorQueryStorage>>,
+) -> Result<(), String> {
+    validate_query_id(&query_id)?;
+    validate_folder_path(&folder_path)?;
+    storage.move_query(&query_id, folder_path)
+}
+
+#[tauri::command]
+pub async fn rename_sql_editor_folder(
+    old_path: String,
+    new_path: String,
+    storage: State<'_, Arc<SqlEditorQueryStorage>>,
+) -> Result<(), String> {
+    validate_folder_path(&Some(old_path.clone()))?;
+    validate_folder_path(&Some(new_path.clone()))?;
+    let existing_folders = storage.list_folders()?;
+    if existing_folders.contains(&new_path) {
+        return Err(format!("フォルダ名が重複しています: {}", new_path));
+    }
+
+    storage.rename_folder(&old_path, &new_path)
+}
+
+#[tauri::command]
+pub async fn delete_sql_editor_folder(
+    folder_path: String,
+    storage: State<'_, Arc<SqlEditorQueryStorage>>,
+) -> Result<(), String> {
+    validate_folder_path(&Some(folder_path.clone()))?;
+    storage.delete_folder(&folder_path)
 }
 
 #[tauri::command]
