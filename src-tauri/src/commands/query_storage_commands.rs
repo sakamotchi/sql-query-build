@@ -119,6 +119,54 @@ pub async fn list_saved_queries(
     storage.list_queries()
 }
 
+/// フォルダ一覧を取得する
+#[tauri::command]
+pub async fn list_folders(
+    storage: State<'_, Arc<QueryStorage>>,
+) -> Result<Vec<String>, String> {
+    storage.list_folders()
+}
+
+/// クエリを指定フォルダに移動する
+#[tauri::command]
+pub async fn move_query(
+    query_id: String,
+    folder_path: Option<String>,
+    storage: State<'_, Arc<QueryStorage>>,
+) -> Result<(), String> {
+    validate_query_id(&query_id)?;
+    validate_folder_path(&folder_path)?;
+    storage.move_query(&query_id, folder_path)
+}
+
+/// フォルダ名を変更する（配下のクエリも更新）
+#[tauri::command]
+pub async fn rename_folder(
+    old_path: String,
+    new_path: String,
+    storage: State<'_, Arc<QueryStorage>>,
+) -> Result<(), String> {
+    validate_folder_path(&Some(old_path.clone()))?;
+    validate_folder_path(&Some(new_path.clone()))?;
+
+    let existing_folders = storage.list_folders()?;
+    if existing_folders.contains(&new_path) && old_path != new_path {
+        return Err(format!("フォルダが既に存在します: {}", new_path));
+    }
+
+    storage.rename_folder(&old_path, &new_path)
+}
+
+/// フォルダを削除する（空のフォルダのみ）
+#[tauri::command]
+pub async fn delete_folder(
+    folder_path: String,
+    storage: State<'_, Arc<QueryStorage>>,
+) -> Result<(), String> {
+    validate_folder_path(&Some(folder_path.clone()))?;
+    storage.delete_folder(&folder_path)
+}
+
 /// クエリを検索する
 #[tauri::command]
 pub async fn search_saved_queries(
