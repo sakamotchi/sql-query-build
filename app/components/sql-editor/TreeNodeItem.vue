@@ -129,7 +129,14 @@ const handleTagClick = (tag: string) => {
           :node="child"
           :level="props.level + 1"
           :current-query-id="props.currentQueryId"
-          v-bind="$attrs"
+          @load-query="emit('load-query', $event)"
+          @execute-query="emit('execute-query', $event)"
+          @edit-query="emit('edit-query', $event)"
+          @delete-query="emit('delete-query', $event)"
+          @move-query="emit('move-query', $event)"
+          @toggle-folder="emit('toggle-folder', $event)"
+          @open-context-menu="emit('open-context-menu', $event)"
+          @toggle-tag="emit('toggle-tag', $event)"
         />
       </div>
     </div>
