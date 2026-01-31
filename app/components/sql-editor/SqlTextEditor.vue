@@ -3,14 +3,17 @@ import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import * as monaco from 'monaco-editor'
 import { useSqlEditorStore } from '~/stores/sql-editor'
+import { useSqlCompletion } from '~/composables/useSqlCompletion'
 
 const sqlEditorStore = useSqlEditorStore()
 const { sql: currentSql, error, formatRequestId, activeTabId } = storeToRefs(sqlEditorStore)
 const colorMode = useColorMode()
+const { provideCompletionItems } = useSqlCompletion()
 
 const editorElement = ref<HTMLElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
 let decorations: string[] = []
+let completionDisposable: monaco.IDisposable | null = null
 
 const resolveTheme = () => (colorMode.value === 'dark' ? 'vs-dark' : 'vs')
 
@@ -35,6 +38,8 @@ onMounted(() => {
       seedSearchStringFromSelection: 'always',
       autoFindInSelection: 'never',
     },
+    quickSuggestions: { other: true, comments: false, strings: false },
+    suggestOnTriggerCharacters: true,
   })
 
   editor.addAction({
@@ -80,6 +85,20 @@ onMounted(() => {
     run: () => {
       sqlEditorStore.addTab()
     },
+  })
+
+  editor.addAction({
+    id: 'trigger-suggest',
+    label: 'Trigger Suggest',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space],
+    run: () => {
+      editor?.trigger('keyboard', 'editor.action.triggerSuggest', {})
+    },
+  })
+
+  completionDisposable = monaco.languages.registerCompletionItemProvider('sql', {
+    provideCompletionItems: (model, position) => provideCompletionItems(model, position),
+    triggerCharacters: ['.', ' '],
   })
 
   editor.onDidChangeModelContent(() => {
@@ -190,6 +209,10 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (completionDisposable) {
+    completionDisposable.dispose()
+    completionDisposable = null
+  }
   if (editor) {
     editor.dispose()
     editor = null

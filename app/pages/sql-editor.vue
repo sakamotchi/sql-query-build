@@ -3,11 +3,13 @@ import { storeToRefs } from 'pinia'
 import { useConnectionStore } from '~/stores/connection'
 import { useWindowStore } from '~/stores/window'
 import { useSqlEditorStore } from '~/stores/sql-editor'
+import { useDatabaseStructureStore } from '~/stores/database-structure'
 import type { Connection } from '~/types'
 
 const connectionStore = useConnectionStore()
 const windowStore = useWindowStore()
 const sqlEditorStore = useSqlEditorStore()
+const databaseStructureStore = useDatabaseStructureStore()
 const { currentConnectionId } = storeToRefs(windowStore)
 
 const connection = computed<Connection | null>(() => {
@@ -17,10 +19,18 @@ const connection = computed<Connection | null>(() => {
   return connectionStore.getConnectionById(currentConnectionId.value) || null
 })
 
-watch(connection, (value) => {
+watch(connection, async (value) => {
   if (value) {
     windowStore.setConnectionContext(value.id, value.environment)
     sqlEditorStore.setConnection(value.id)
+
+    // スキーマ情報を自動取得（補完機能のため）
+    try {
+      await databaseStructureStore.fetchDatabaseStructure(value.id)
+      console.log('[SqlEditor] Database structure loaded for connection:', value.id)
+    } catch (error) {
+      console.warn('[SqlEditor] Failed to load database structure:', error)
+    }
   }
 }, { immediate: true })
 
