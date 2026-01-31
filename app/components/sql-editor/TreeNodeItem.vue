@@ -25,45 +25,89 @@ const emit = defineEmits<{
 
 const isDropTarget = ref(false)
 
+const isDragging = ref(false)
+let ghostElement: HTMLElement | null = null
+let draggedQueryId: string | null = null
+
 const isActiveQuery = computed(
   () => props.node.type === 'query' && props.currentQueryId === props.node.path
 )
 
-const handleDragStart = (event: DragEvent) => {
+const handleQueryMouseDown = (event: MouseEvent) => {
   if (props.node.type !== 'query') return
-  if (!event.dataTransfer) return
-  event.dataTransfer.effectAllowed = 'move'
-  event.dataTransfer.setData(
-    'application/json',
-    JSON.stringify({ queryId: props.node.path })
-  )
+  if (event.button !== 0) return // 左クリックのみ
+
+  isDragging.value = true
+  draggedQueryId = props.node.path
+
+  // ゴースト要素を作成
+  const ghost = document.createElement('div')
+  ghost.textContent = props.node.name
+  ghost.style.position = 'fixed'
+  ghost.style.top = `${event.clientY}px`
+  ghost.style.left = `${event.clientX}px`
+  ghost.style.padding = '8px 12px'
+  ghost.style.background = 'white'
+  ghost.style.border = '1px solid #ccc'
+  ghost.style.borderRadius = '4px'
+  ghost.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+  ghost.style.zIndex = '9999'
+  ghost.style.pointerEvents = 'none' // マウスイベントを透過
+  ghost.style.opacity = '0.9'
+  ghost.style.transform = 'translate(-50%, -50%)'
+  ghost.style.fontSize = '14px'
+
+  if (document.documentElement.classList.contains('dark')) {
+    ghost.style.background = '#1f2937'
+    ghost.style.borderColor = '#374151'
+    ghost.style.color = '#fff'
+  }
+
+  document.body.appendChild(ghost)
+  ghostElement = ghost
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
+  event.preventDefault()
 }
 
-const handleDragOver = (event: DragEvent) => {
-  if (props.node.type !== 'folder') return
-  event.preventDefault()
-  event.stopPropagation()
+const handleMouseMove = (event: MouseEvent) => {
+  if (ghostElement) {
+    ghostElement.style.top = `${event.clientY}px`
+    ghostElement.style.left = `${event.clientX}px`
+  }
+}
+
+const handleMouseUp = (event: MouseEvent) => {
+  if (ghostElement) {
+    document.body.removeChild(ghostElement)
+    ghostElement = null
+  }
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', handleMouseUp)
+  isDragging.value = false
+
+  // ドロップ先のフォルダを探す
+  const element = document.elementFromPoint(event.clientX, event.clientY)
+  if (element && draggedQueryId) {
+    const folderElement = element.closest('[data-folder-path]') as HTMLElement
+    if (folderElement) {
+      const targetPath = folderElement.dataset.folderPath
+      emit('move-query', { queryId: draggedQueryId, targetPath: targetPath === '' ? null : targetPath })
+    }
+  }
+
+  draggedQueryId = null
+}
+
+const handleFolderMouseEnter = () => {
+  if (props.node.type !== 'folder' || !isDragging.value) return
   isDropTarget.value = true
 }
 
-const handleDragLeave = () => {
-  isDropTarget.value = false
-}
-
-const handleDrop = (event: DragEvent) => {
+const handleFolderMouseLeave = () => {
   if (props.node.type !== 'folder') return
-  event.preventDefault()
-  event.stopPropagation()
   isDropTarget.value = false
-
-  try {
-    const data = JSON.parse(event.dataTransfer?.getData('application/json') || '{}')
-    if (data.queryId) {
-      emit('move-query', { queryId: data.queryId, targetPath: props.node.path })
-    }
-  } catch (error) {
-    console.error('Failed to parse drop data:', error)
-  }
 }
 
 const openFolderMenu = (event: MouseEvent) => {
@@ -95,9 +139,9 @@ const handleTagClick = (tag: string) => {
       v-if="props.node.type === 'folder'"
       class="flex flex-col"
       :style="{ paddingLeft: `${props.level * 12}px` }"
-      @drop="handleDrop"
-      @dragover="handleDragOver"
-      @dragleave="handleDragLeave"
+      :data-folder-path="props.node.path"
+      @mouseenter="handleFolderMouseEnter"
+      @mouseleave="handleFolderMouseLeave"
     >
       <div
         class="flex items-center gap-2 py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -107,9 +151,9 @@ const handleTagClick = (tag: string) => {
       >
         <UIcon
           :name="props.node.expanded ? 'i-heroicons-folder-open' : 'i-heroicons-folder'"
-          class="w-4 h-4 text-gray-500"
+          class="w-4 h-4 text-gray-500 pointer-events-none"
         />
-        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
+        <span class="text-sm font-medium text-gray-900 dark:text-gray-100 pointer-events-none">
           {{ props.node.name }}
         </span>
         <UBadge
@@ -117,6 +161,7 @@ const handleTagClick = (tag: string) => {
           size="xs"
           color="neutral"
           variant="soft"
+          class="pointer-events-none"
         >
           {{ props.node.queryCount }}
         </UBadge>
@@ -144,16 +189,16 @@ const handleTagClick = (tag: string) => {
     <div
       v-else
       class="query-node"
+      :class="{ 'opacity-50': isDragging }"
       :style="{ paddingLeft: `${props.level * 12}px` }"
-      draggable="true"
-      @dragstart="handleDragStart"
       @contextmenu.prevent="openQueryMenu"
     >
       <div
-        class="group rounded-lg border border-gray-200 dark:border-gray-800 p-2 hover:border-primary-300 transition"
+        class="group rounded-lg border border-gray-200 dark:border-gray-800 p-2 hover:border-primary-300 transition cursor-grab active:cursor-grabbing"
         :class="{
           'border-primary-400 bg-primary-50/40 dark:bg-primary-500/10': isActiveQuery,
         }"
+        @mousedown="handleQueryMouseDown"
         @dblclick="emit('execute-query', props.node.path)"
       >
         <button

@@ -607,6 +607,14 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
               移動
             </button>
             <button
+              v-if="contextMenu.node.query?.folderPath"
+              class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="handleMoveQuery(contextMenu.node.path, null); closeContextMenu()"
+            >
+              ルートに移動
+            </button>
+            <div class="my-1 border-t border-gray-200 dark:border-gray-700" />
+            <button
               class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleDelete(contextMenu.node.path); closeContextMenu()"
             >

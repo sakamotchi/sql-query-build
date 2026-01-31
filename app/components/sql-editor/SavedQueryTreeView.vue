@@ -19,21 +19,7 @@ const emit = defineEmits<{
   (e: 'toggle-tag', tag: string): void
 }>()
 
-const handleRootDrop = (event: DragEvent) => {
-  event.preventDefault()
-
-  const data = event.dataTransfer?.getData('application/json')
-  if (!data) return
-
-  try {
-    const payload = JSON.parse(data) as { queryId?: string }
-    if (payload.queryId) {
-      emit('move-query', payload.queryId, null)
-    }
-  } catch (error) {
-    console.error('Failed to parse drop data:', error)
-  }
-}
+// カスタムマウスイベントベースのドラッグ&ドロップに変更したため削除
 </script>
 
 <template>
@@ -49,8 +35,7 @@ const handleRootDrop = (event: DragEvent) => {
     <div
       v-else
       class="p-2"
-      @dragover.prevent
-      @drop="handleRootDrop"
+      data-folder-path=""
     >
       <TreeNodeItem
         v-for="node in props.tree"
