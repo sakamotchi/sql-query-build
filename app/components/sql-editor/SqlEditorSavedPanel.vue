@@ -17,6 +17,7 @@ const {
   isDirty,
   currentQuery,
 } = storeToRefs(sqlEditorStore)
+const { t } = useI18n()
 const toast = useToast()
 
 const searchKeyword = ref('')
@@ -121,14 +122,14 @@ const executeLoad = async (query: SavedQueryMetadata) => {
   try {
     await sqlEditorStore.loadSavedQuery(query.id)
     toast.add({
-      title: `「${query.name}」を読み込みました`,
+      title: t('sqlEditor.savedPanel.toasts.loadSuccess', { name: query.name }),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: 'クエリの読み込みに失敗しました',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.loadFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.loadFailedDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -149,8 +150,8 @@ const handleExecute = async (id: string) => {
     await sqlEditorStore.executeSavedQuery(query.id)
   } catch (error) {
     toast.add({
-      title: 'クエリの実行に失敗しました',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.executeFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.executeFailedDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -175,14 +176,14 @@ const executeDelete = async () => {
   try {
     await sqlEditorStore.deleteSavedQuery(queryToDelete.value.id)
     toast.add({
-      title: 'クエリを削除しました',
+      title: t('sqlEditor.savedPanel.toasts.deleteSuccess'),
       color: 'success',
       icon: 'i-heroicons-trash',
     })
   } catch (error) {
     toast.add({
-      title: 'クエリの削除に失敗しました',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.deleteFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.retryLater'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -208,14 +209,14 @@ const handleMoveQuery = async (queryId: string, targetPath: string | null) => {
   try {
     await sqlEditorStore.moveSavedQuery(queryId, targetPath)
     toast.add({
-      title: 'クエリを移動しました',
+      title: t('sqlEditor.savedPanel.toasts.moveSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: 'クエリの移動に失敗しました',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.moveFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.retryLater'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -248,8 +249,8 @@ const handleConfirmCreateFolder = async (name: string, parentPath: string | null
   const folderPath = parentPath ? `${parentPath}/${trimmed}` : `/${trimmed}`
   if (folders.value.includes(folderPath)) {
     toast.add({
-      title: 'フォルダ名が重複しています',
-      description: `「${folderPath}」は既に存在します`,
+      title: t('sqlEditor.savedPanel.toasts.folderDuplicate'),
+      description: t('sqlEditor.savedPanel.toasts.folderDuplicateDesc', { path: folderPath }),
       color: 'warning',
       icon: 'i-heroicons-exclamation-triangle',
     })
@@ -262,14 +263,14 @@ const handleConfirmCreateFolder = async (name: string, parentPath: string | null
     expandFolderPath(folderPath)
 
     toast.add({
-      title: 'フォルダを作成しました',
+      title: t('sqlEditor.savedPanel.toasts.createFolderSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: 'フォルダを作成できませんでした',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.createFolderFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.retryLater'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -291,8 +292,8 @@ const handleConfirmRenameFolder = async (newName: string) => {
 
   if (folders.value.includes(newPath)) {
     toast.add({
-      title: 'フォルダ名が重複しています',
-      description: `「${newPath}」は既に存在します`,
+      title: t('sqlEditor.savedPanel.toasts.folderDuplicate'),
+      description: t('sqlEditor.savedPanel.toasts.folderDuplicateDesc', { path: newPath }),
       color: 'warning',
       icon: 'i-heroicons-exclamation-triangle',
     })
@@ -302,14 +303,14 @@ const handleConfirmRenameFolder = async (newName: string) => {
   try {
     await sqlEditorStore.renameFolder(folderToRename.value, newPath)
     toast.add({
-      title: 'フォルダ名を変更しました',
+      title: t('sqlEditor.savedPanel.toasts.renameFolderSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: 'フォルダ名の変更に失敗しました',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.renameFolderFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.retryLater'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -334,8 +335,8 @@ const handleConfirmDeleteFolder = async () => {
 
   if (queriesInFolder.length > 0) {
     toast.add({
-      title: 'フォルダを削除できません',
-      description: `フォルダ内に${queriesInFolder.length}件のクエリが含まれています`,
+      title: t('sqlEditor.savedPanel.toasts.folderNotEmpty'),
+      description: t('sqlEditor.savedPanel.toasts.folderNotEmptyDesc', { count: queriesInFolder.length }),
       color: 'warning',
       icon: 'i-heroicons-exclamation-triangle',
     })
@@ -346,14 +347,14 @@ const handleConfirmDeleteFolder = async () => {
   try {
     await sqlEditorStore.deleteFolder(folderToDelete.value)
     toast.add({
-      title: 'フォルダを削除しました',
+      title: t('sqlEditor.savedPanel.toasts.deleteFolderSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: 'フォルダの削除に失敗しました',
-      description: savedQueryError.value || '時間をおいて再度お試しください',
+      title: t('sqlEditor.savedPanel.toasts.deleteFolderFailed'),
+      description: savedQueryError.value || t('sqlEditor.savedPanel.toasts.retryLater'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -421,7 +422,7 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
         <UInput
           v-model="searchKeyword"
           icon="i-heroicons-magnifying-glass"
-          placeholder="クエリを検索..."
+          :placeholder="$t('sqlEditor.savedPanel.search')"
           clearable
           class="flex-1"
         />
@@ -430,12 +431,12 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
           size="sm"
           variant="ghost"
           color="neutral"
-          title="新規フォルダ"
+          :title="$t('sqlEditor.savedPanel.newFolder')"
           @click="handleCreateFolder(null)"
         />
       </div>
       <div v-if="activeTag" class="flex items-center gap-2 text-xs text-gray-500">
-        <span>タグフィルタ:</span>
+        <span>{{ $t('sqlEditor.savedPanel.tagFilter') }}</span>
         <UBadge color="primary" variant="soft" class="cursor-pointer" @click="toggleTagFilter(activeTag)">
           #{{ activeTag }}
         </UBadge>
@@ -450,7 +451,7 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
     </div>
 
     <div class="p-3 border-b border-gray-200 dark:border-gray-800" v-if="currentQuery">
-      <p class="text-xs text-gray-500">読み込み中のクエリ</p>
+      <p class="text-xs text-gray-500">{{ $t('sqlEditor.savedPanel.currentQuery') }}</p>
       <p class="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
         {{ currentQuery.name }}
       </p>
@@ -489,9 +490,9 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
     <Teleport to="body">
       <ConfirmDialog
         v-model:open="confirmLoadOpen"
-        title="未保存の変更があります"
-        description="現在の編集内容は失われます。続行しますか？"
-        confirm-label="読み込み"
+        :title="$t('sqlEditor.savedPanel.dialogs.confirmLoad.title')"
+        :description="$t('sqlEditor.savedPanel.dialogs.confirmLoad.description')"
+        :confirm-label="$t('sqlEditor.savedPanel.dialogs.confirmLoad.confirmLabel')"
         confirm-color="warning"
         @confirm="handleConfirmLoad"
         @cancel="pendingQuery = null"
@@ -499,18 +500,18 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
 
       <ConfirmDialog
         v-model:open="deleteDialogOpen"
-        :title="'保存クエリを削除しますか？'"
-        :description="queryToDelete ? `「${queryToDelete.name}」は元に戻せません。` : undefined"
-        confirm-label="削除"
+        :title="$t('sqlEditor.savedPanel.dialogs.deleteQuery.title')"
+        :description="queryToDelete ? $t('sqlEditor.savedPanel.dialogs.deleteQuery.description', { name: queryToDelete.name }) : undefined"
+        :confirm-label="$t('sqlEditor.savedPanel.dialogs.deleteQuery.confirmLabel')"
         @confirm="executeDelete"
         @cancel="queryToDelete = null"
       />
 
       <ConfirmDialog
         v-model:open="deleteFolderDialogOpen"
-        title="フォルダを削除しますか？"
-        :description="folderToDelete ? `「${folderToDelete}」を削除します。` : undefined"
-        confirm-label="削除"
+        :title="$t('sqlEditor.savedPanel.dialogs.deleteFolder.title')"
+        :description="folderToDelete ? $t('sqlEditor.savedPanel.dialogs.deleteFolder.description', { path: folderToDelete }) : undefined"
+        :confirm-label="$t('sqlEditor.savedPanel.dialogs.deleteFolder.confirmLabel')"
         @confirm="handleConfirmDeleteFolder"
         @cancel="folderToDelete = null"
       />
@@ -553,32 +554,32 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleCreateFolder(contextMenu.node.path); closeContextMenu()"
             >
-              新規フォルダ
+              {{ $t('sqlEditor.savedPanel.contextMenu.folder.newFolder') }}
             </button>
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleRenameFolder(contextMenu.node.path); closeContextMenu()"
             >
-              名前変更
+              {{ $t('sqlEditor.savedPanel.contextMenu.folder.rename') }}
             </button>
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleDeleteFolder(contextMenu.node.path); closeContextMenu()"
             >
-              削除
+              {{ $t('sqlEditor.savedPanel.contextMenu.folder.delete') }}
             </button>
             <div class="my-1 border-t border-gray-200 dark:border-gray-700" />
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="expandAllFolders(contextMenu.node); closeContextMenu()"
             >
-              すべて展開
+              {{ $t('sqlEditor.savedPanel.contextMenu.folder.expandAll') }}
             </button>
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="collapseAllFolders(contextMenu.node); closeContextMenu()"
             >
-              すべて折りたたみ
+              {{ $t('sqlEditor.savedPanel.contextMenu.folder.collapseAll') }}
             </button>
           </template>
           <template v-else>
@@ -586,39 +587,39 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleLoad(contextMenu.node.path); closeContextMenu()"
             >
-              読み込み
+              {{ $t('sqlEditor.savedPanel.contextMenu.query.load') }}
             </button>
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleExecute(contextMenu.node.path); closeContextMenu()"
             >
-              実行
+              {{ $t('sqlEditor.savedPanel.contextMenu.query.execute') }}
             </button>
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleEdit(contextMenu.node.path); closeContextMenu()"
             >
-              編集
+              {{ $t('sqlEditor.savedPanel.contextMenu.query.edit') }}
             </button>
             <button
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleOpenMoveDialog(contextMenu.node.path); closeContextMenu()"
             >
-              移動
+              {{ $t('sqlEditor.savedPanel.contextMenu.query.move') }}
             </button>
             <button
               v-if="contextMenu.node.query?.folderPath"
               class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleMoveQuery(contextMenu.node.path, null); closeContextMenu()"
             >
-              ルートに移動
+              {{ $t('sqlEditor.savedPanel.contextMenu.query.moveToRoot') }}
             </button>
             <div class="my-1 border-t border-gray-200 dark:border-gray-700" />
             <button
               class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
               @click="handleDelete(contextMenu.node.path); closeContextMenu()"
             >
-              削除
+              {{ $t('sqlEditor.savedPanel.contextMenu.query.delete') }}
             </button>
           </template>
         </div>

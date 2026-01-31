@@ -7,6 +7,7 @@ import type { SqlEditorHistoryEntry } from '~/types/sql-editor'
 const store = useSqlEditorStore()
 const { filteredHistories, isLoadingHistories, historySearchKeyword, historySuccessOnly, isDirty, isExecuting } =
   storeToRefs(store)
+const { t, locale } = useI18n()
 const toast = useToast()
 
 const pendingHistory = ref<SqlEditorHistoryEntry | null>(null)
@@ -36,13 +37,13 @@ const executeLoad = async (history: SqlEditorHistoryEntry) => {
   try {
     await store.loadHistory(history.id)
     toast.add({
-      title: '履歴を読み込みました',
+      title: t('sqlEditor.historyPanel.toasts.loadSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: '履歴の読み込みに失敗しました',
+      title: t('sqlEditor.historyPanel.toasts.loadFailed'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -60,7 +61,7 @@ const handleReExecute = async (history: SqlEditorHistoryEntry) => {
   reExecuteTargetId.value = history.id
 
   toast.add({
-    title: '履歴を再実行しています',
+    title: t('sqlEditor.historyPanel.toasts.reExecuteStart'),
     color: 'primary',
     icon: 'i-heroicons-play',
   })
@@ -69,14 +70,14 @@ const handleReExecute = async (history: SqlEditorHistoryEntry) => {
 
   if (store.error) {
     toast.add({
-      title: '履歴の再実行に失敗しました',
+      title: t('sqlEditor.historyPanel.toasts.reExecuteFailed'),
       description: store.error.message,
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
   } else {
     toast.add({
-      title: '履歴を再実行しました',
+      title: t('sqlEditor.historyPanel.toasts.reExecuteSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
@@ -96,13 +97,13 @@ const executeDelete = async () => {
   try {
     await store.deleteHistory(historyToDelete.value.id)
     toast.add({
-      title: '履歴を削除しました',
+      title: t('sqlEditor.historyPanel.toasts.deleteSuccess'),
       color: 'success',
       icon: 'i-heroicons-trash',
     })
   } catch (error) {
     toast.add({
-      title: '履歴の削除に失敗しました',
+      title: t('sqlEditor.historyPanel.toasts.deleteFailed'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -118,20 +119,32 @@ const formatRelativeTime = (dateStr: string) => {
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
 
-  if (diffMs < 60_000) return '数秒前'
-  if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)}分前`
+  if (diffMs < 60_000) return t('sqlEditor.historyPanel.relativeTime.fewSecondsAgo')
+  if (diffMs < 3_600_000) {
+    const minutes = Math.floor(diffMs / 60_000)
+    return t('sqlEditor.historyPanel.relativeTime.minutesAgo', { minutes })
+  }
 
   const sameDay = date.toDateString() === now.toDateString()
   if (sameDay) {
-    return `今日 ${date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`
+    const time = date.toLocaleTimeString(locale.value === 'ja' ? 'ja-JP' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    return t('sqlEditor.historyPanel.relativeTime.today', { time })
   }
 
-  return date.toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleString(locale.value === 'ja' ? 'ja-JP' : 'en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 const formatExecutionTime = (ms: number) => {
-  if (ms < 1000) return `${ms}ms`
-  return `${(ms / 1000).toFixed(2)}秒`
+  if (ms < 1000) return t('sqlEditor.historyPanel.executionTime', { ms })
+  return t('sqlEditor.historyPanel.executionTimeSeconds', { seconds: (ms / 1000).toFixed(2) })
 }
 
 const formatSqlSnippet = (sql: string) => {
@@ -149,13 +162,13 @@ const formatSqlSnippet = (sql: string) => {
         :model-value="historySearchKeyword"
         @update:model-value="store.setHistorySearchKeyword"
         icon="i-heroicons-magnifying-glass"
-        placeholder="履歴を検索..."
+        :placeholder="$t('sqlEditor.historyPanel.search')"
         clearable
       />
       <UCheckbox
         :model-value="historySuccessOnly"
         @update:model-value="(value) => store.setHistorySuccessOnly(value === true)"
-        label="成功のみ表示"
+        :label="$t('sqlEditor.historyPanel.filterSuccessOnly')"
       />
     </div>
 
@@ -165,7 +178,7 @@ const formatSqlSnippet = (sql: string) => {
       </div>
 
       <div v-else-if="filteredHistories.length === 0" class="text-center py-8 text-gray-500">
-        履歴がありません
+        {{ $t('sqlEditor.historyPanel.empty') }}
       </div>
 
       <div v-else class="space-y-2">
@@ -183,7 +196,7 @@ const formatSqlSnippet = (sql: string) => {
                   variant="subtle"
                   size="xs"
                 >
-                  {{ history.status === 'success' ? '成功' : '失敗' }}
+                  {{ history.status === 'success' ? $t('sqlEditor.historyPanel.status.success') : $t('sqlEditor.historyPanel.status.failure') }}
                 </UBadge>
                 <span class="text-xs text-gray-500">
                   {{ formatRelativeTime(history.executedAt) }}
@@ -199,7 +212,7 @@ const formatSqlSnippet = (sql: string) => {
 
               <div class="text-xs text-gray-500 space-y-1">
                 <span v-if="history.status === 'success' && history.rowCount !== undefined">
-                  {{ history.rowCount }}行
+                  {{ $t('sqlEditor.historyPanel.rowCount', { count: history.rowCount }) }}
                 </span>
                 <span v-if="history.status === 'error' && history.errorMessage" class="text-red-500 line-clamp-2">
                   {{ history.errorMessage }}
@@ -213,7 +226,7 @@ const formatSqlSnippet = (sql: string) => {
                 color="neutral"
                 variant="ghost"
                 size="xs"
-                title="再実行"
+                :title="$t('sqlEditor.historyPanel.actions.reExecute')"
                 :loading="reExecuteTargetId === history.id"
                 :disabled="isExecuting"
                 @click.stop="handleReExecute(history)"
@@ -223,7 +236,7 @@ const formatSqlSnippet = (sql: string) => {
                 color="error"
                 variant="ghost"
                 size="xs"
-                title="削除"
+                :title="$t('sqlEditor.historyPanel.actions.delete')"
                 @click.stop="handleDelete(history)"
               />
             </div>
@@ -235,9 +248,9 @@ const formatSqlSnippet = (sql: string) => {
     <Teleport to="body">
       <ConfirmDialog
         v-model:open="confirmLoadOpen"
-        title="未保存の変更があります"
-        description="現在の編集内容は失われます。続行しますか？"
-        confirm-label="読み込み"
+        :title="$t('sqlEditor.historyPanel.dialogs.confirmLoad.title')"
+        :description="$t('sqlEditor.historyPanel.dialogs.confirmLoad.description')"
+        :confirm-label="$t('sqlEditor.historyPanel.dialogs.confirmLoad.confirmLabel')"
         confirm-color="warning"
         @confirm="handleConfirmLoad"
         @cancel="pendingHistory = null"
@@ -245,9 +258,9 @@ const formatSqlSnippet = (sql: string) => {
 
       <ConfirmDialog
         v-model:open="deleteDialogOpen"
-        title="履歴を削除しますか？"
-        :description="historyToDelete ? 'この履歴は元に戻せません。' : undefined"
-        confirm-label="削除"
+        :title="$t('sqlEditor.historyPanel.dialogs.deleteHistory.title')"
+        :description="historyToDelete ? $t('sqlEditor.historyPanel.dialogs.deleteHistory.description') : undefined"
+        :confirm-label="$t('sqlEditor.historyPanel.dialogs.deleteHistory.confirmLabel')"
         @confirm="executeDelete"
         @cancel="historyToDelete = null"
       />

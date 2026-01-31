@@ -28,6 +28,8 @@ const isOpen = computed({
   },
 })
 
+const { t } = useI18n()
+
 const state = ref({
   name: '',
 })
@@ -44,7 +46,7 @@ const validate = (formState: typeof state.value): FormError[] => {
   const errors: FormError[] = []
   const result = validateFolderName(formState.name.trim())
   if (!result.valid) {
-    errors.push({ path: 'name', message: result.error || 'フォルダ名が無効です' })
+    errors.push({ path: 'name', message: result.error || t('sqlEditor.savedPanel.validation.invalidFolderName') })
   }
   return errors
 }
@@ -57,14 +59,24 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" title="フォルダを作成" description="フォルダ名を入力してください">
+  <UModal
+    v-model:open="isOpen"
+    :title="$t('sqlEditor.savedPanel.dialogs.createFolder.title')"
+    :description="$t('sqlEditor.savedPanel.dialogs.createFolder.description')"
+  >
     <template #body>
       <UForm :state="state" :validate="validate" @submit="handleSubmit" class="space-y-4">
         <div class="text-xs text-gray-500">
-          作成先: {{ props.parentPath || 'ルート' }}
+          {{ $t('sqlEditor.savedPanel.dialogs.createFolder.targetLabel') }}
+          {{ props.parentPath || $t('sqlEditor.savedPanel.dialogs.createFolder.targetRoot') }}
         </div>
-        <UFormField label="フォルダ名" name="name" required>
-          <UInput v-model="state.name" placeholder="例: 開発環境" maxlength="100" autofocus />
+        <UFormField :label="$t('sqlEditor.savedPanel.dialogs.createFolder.nameLabel')" name="name" required>
+          <UInput
+            v-model="state.name"
+            :placeholder="$t('sqlEditor.savedPanel.dialogs.createFolder.namePlaceholder')"
+            maxlength="100"
+            autofocus
+          />
         </UFormField>
       </UForm>
     </template>
@@ -72,10 +84,10 @@ const handleSubmit = () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="isOpen = false">
-          キャンセル
+          {{ $t('sqlEditor.savedPanel.dialogs.createFolder.actions.cancel') }}
         </UButton>
         <UButton color="primary" @click="handleSubmit">
-          作成
+          {{ $t('sqlEditor.savedPanel.dialogs.createFolder.actions.create') }}
         </UButton>
       </div>
     </template>

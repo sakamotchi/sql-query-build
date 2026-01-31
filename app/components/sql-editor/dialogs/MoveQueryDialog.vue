@@ -29,8 +29,10 @@ const isOpen = computed({
   },
 })
 
+const { t } = useI18n()
+
 const options = computed<FolderOption[]>(() => [
-  { label: 'ルート', value: '' },
+  { label: t('sqlEditor.savedPanel.dialogs.moveQuery.rootOption'), value: '' },
   ...props.folders.map((path) => ({ label: path, value: path })),
 ])
 
@@ -53,18 +55,20 @@ const handleSubmit = () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="クエリの移動"
-    :description="queryName ? `「${queryName}」の移動先を選択してください` : '移動先を選択してください'"
+    :title="$t('sqlEditor.savedPanel.dialogs.moveQuery.title')"
+    :description="queryName
+      ? $t('sqlEditor.savedPanel.dialogs.moveQuery.description', { name: queryName })
+      : $t('sqlEditor.savedPanel.dialogs.moveQuery.descriptionNoName')"
   >
     <template #body>
       <UForm @submit="handleSubmit" class="space-y-4">
-        <UFormField label="移動先フォルダ" name="folder">
+        <UFormField :label="$t('sqlEditor.savedPanel.dialogs.moveQuery.folderLabel')" name="folder">
           <USelectMenu
             v-model="selectedPath"
             :items="options"
             value-key="value"
             searchable
-            placeholder="移動先を選択"
+            :placeholder="$t('sqlEditor.savedPanel.dialogs.moveQuery.placeholder')"
           />
         </UFormField>
       </UForm>
@@ -73,10 +77,10 @@ const handleSubmit = () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="isOpen = false">
-          キャンセル
+          {{ $t('sqlEditor.savedPanel.dialogs.moveQuery.actions.cancel') }}
         </UButton>
         <UButton color="primary" @click="handleSubmit">
-          移動
+          {{ $t('sqlEditor.savedPanel.dialogs.moveQuery.actions.move') }}
         </UButton>
       </div>
     </template>

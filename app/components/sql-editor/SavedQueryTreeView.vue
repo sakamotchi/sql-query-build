@@ -29,7 +29,7 @@ const emit = defineEmits<{
     </div>
 
     <div v-else-if="props.tree.length === 0" class="text-center py-8 text-gray-500">
-      保存されたクエリがありません
+      {{ $t('sqlEditor.savedPanel.empty') }}
     </div>
 
     <div

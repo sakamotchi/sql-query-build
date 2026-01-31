@@ -727,6 +727,267 @@
             }
         }
     },
+    "sqlEditor": {
+        "toolbar": {
+            "execute": "実行",
+            "stop": "停止",
+            "format": "整形",
+            "save": "保存",
+            "togglePanel": {
+                "show": "パネルを表示",
+                "hide": "パネルを非表示"
+            },
+            "updateDialog": {
+                "title": "クエリを更新しますか?",
+                "description": "保存済みのクエリを更新するか、新しいクエリとして保存するか選択してください",
+                "currentQuery": "現在のクエリ: {name}",
+                "currentQueryDesc": "このクエリの内容を上書き更新します",
+                "actions": {
+                    "cancel": "キャンセル",
+                    "saveAsNew": "新規保存",
+                    "update": "更新"
+                },
+                "toasts": {
+                    "updateSuccess": "クエリを更新しました",
+                    "updateFailed": "クエリの更新に失敗しました"
+                }
+            }
+        },
+        "layout": {
+            "savedPanelTitle": "保存クエリ",
+            "historyPanelTitle": "実行履歴"
+        },
+        "savedPanel": {
+            "search": "クエリを検索...",
+            "newFolder": "新規フォルダ",
+            "tagFilter": "タグフィルタ:",
+            "currentQuery": "読み込み中のクエリ",
+            "empty": "保存されたクエリがありません",
+            "contextMenu": {
+                "folder": {
+                    "newFolder": "新規フォルダ",
+                    "rename": "名前変更",
+                    "delete": "削除",
+                    "expandAll": "すべて展開",
+                    "collapseAll": "すべて折りたたみ"
+                },
+                "query": {
+                    "load": "読み込み",
+                    "execute": "実行",
+                    "edit": "編集",
+                    "move": "移動",
+                    "moveToRoot": "ルートに移動",
+                    "delete": "削除"
+                }
+            },
+            "validation": {
+                "invalidFolderName": "フォルダ名が無効です"
+            },
+            "toasts": {
+                "loadSuccess": "「{name}」を読み込みました",
+                "loadFailed": "クエリの読み込みに失敗しました",
+                "loadFailedDesc": "時間をおいて再度お試しください",
+                "executeFailed": "クエリの実行に失敗しました",
+                "executeFailedDesc": "時間をおいて再度お試しください",
+                "deleteSuccess": "クエリを削除しました",
+                "deleteFailed": "クエリの削除に失敗しました",
+                "moveSuccess": "クエリを移動しました",
+                "moveFailed": "クエリの移動に失敗しました",
+                "createFolderSuccess": "フォルダを作成しました",
+                "createFolderFailed": "フォルダを作成できませんでした",
+                "renameFolderSuccess": "フォルダ名を変更しました",
+                "renameFolderFailed": "フォルダ名の変更に失敗しました",
+                "deleteFolderSuccess": "フォルダを削除しました",
+                "deleteFolderFailed": "フォルダの削除に失敗しました",
+                "folderNotEmpty": "フォルダを削除できません",
+                "folderNotEmptyDesc": "フォルダ内に{count}件のクエリが含まれています",
+                "folderDuplicate": "フォルダ名が重複しています",
+                "folderDuplicateDesc": "「{path}」は既に存在します",
+                "retryLater": "時間をおいて再度お試しください"
+            },
+            "dialogs": {
+                "confirmLoad": {
+                    "title": "未保存の変更があります",
+                    "description": "現在の編集内容は失われます。続行しますか?",
+                    "confirmLabel": "読み込み"
+                },
+                "deleteQuery": {
+                    "title": "保存クエリを削除しますか?",
+                    "description": "「{name}」は元に戻せません。",
+                    "confirmLabel": "削除"
+                },
+                "deleteFolder": {
+                    "title": "フォルダを削除しますか?",
+                    "description": "「{path}」を削除します。",
+                    "confirmLabel": "削除"
+                },
+                "createFolder": {
+                    "title": "フォルダを作成",
+                    "description": "フォルダ名を入力してください",
+                    "targetLabel": "作成先:",
+                    "targetRoot": "ルート",
+                    "nameLabel": "フォルダ名",
+                    "namePlaceholder": "例: 開発環境",
+                    "actions": {
+                        "cancel": "キャンセル",
+                        "create": "作成"
+                    }
+                },
+                "renameFolder": {
+                    "title": "フォルダ名を変更",
+                    "description": "新しいフォルダ名を入力してください",
+                    "targetLabel": "変更対象:",
+                    "targetRoot": "ルート",
+                    "parentLabel": "親フォルダ:",
+                    "nameLabel": "新しいフォルダ名",
+                    "namePlaceholder": "例: 本番環境",
+                    "actions": {
+                        "cancel": "キャンセル",
+                        "rename": "変更"
+                    }
+                },
+                "moveQuery": {
+                    "title": "クエリの移動",
+                    "description": "「{name}」の移動先を選択してください",
+                    "descriptionNoName": "移動先を選択してください",
+                    "folderLabel": "移動先フォルダ",
+                    "placeholder": "移動先を選択",
+                    "rootOption": "ルート",
+                    "actions": {
+                        "cancel": "キャンセル",
+                        "move": "移動"
+                    }
+                }
+            }
+        },
+        "historyPanel": {
+            "search": "履歴を検索...",
+            "filterSuccessOnly": "成功のみ表示",
+            "empty": "履歴がありません",
+            "status": {
+                "success": "成功",
+                "failure": "失敗"
+            },
+            "relativeTime": {
+                "fewSecondsAgo": "数秒前",
+                "minutesAgo": "{minutes}分前",
+                "today": "今日 {time}"
+            },
+            "executionTime": "{ms}ms",
+            "executionTimeSeconds": "{seconds}秒",
+            "rowCount": "{count}行",
+            "actions": {
+                "reExecute": "再実行",
+                "delete": "削除"
+            },
+            "toasts": {
+                "loadSuccess": "履歴を読み込みました",
+                "loadFailed": "履歴の読み込みに失敗しました",
+                "reExecuteStart": "履歴を再実行しています",
+                "reExecuteSuccess": "履歴を再実行しました",
+                "reExecuteFailed": "履歴の再実行に失敗しました",
+                "deleteSuccess": "履歴を削除しました",
+                "deleteFailed": "履歴の削除に失敗しました"
+            },
+            "dialogs": {
+                "confirmLoad": {
+                    "title": "未保存の変更があります",
+                    "description": "現在の編集内容は失われます。続行しますか?",
+                    "confirmLabel": "読み込み"
+                },
+                "deleteHistory": {
+                    "title": "履歴を削除しますか?",
+                    "description": "この履歴は元に戻せません。",
+                    "confirmLabel": "削除"
+                }
+            }
+        },
+        "resultPanel": {
+            "title": "結果",
+            "executionTime": "実行時間: {seconds}秒",
+            "rowCount": {
+                "select": "取得件数: {count}件",
+                "mutation": "影響行数: {count}行"
+            },
+            "export": "エクスポート",
+            "executing": "実行中...",
+            "executePrompt": "クエリを実行してください",
+            "errorPosition": "エラー位置: {line}行 {column}列",
+            "errorPositionLine": "エラー位置: {line}行"
+        },
+        "saveDialog": {
+            "title": {
+                "create": "クエリを保存",
+                "edit": "保存クエリを編集"
+            },
+            "description": {
+                "create": "名前・説明・タグを入力してください",
+                "edit": "SQL本文は変更できません"
+            },
+            "fields": {
+                "queryName": {
+                    "label": "クエリ名",
+                    "placeholder": "例: 全ユーザー一覧"
+                },
+                "description": {
+                    "label": "説明",
+                    "placeholder": "このクエリの用途を説明...",
+                    "hint": "任意"
+                },
+                "tags": {
+                    "label": "タグ",
+                    "placeholder": "例: admin, report",
+                    "hint": "カンマ区切りで入力"
+                },
+                "folder": {
+                    "label": "保存先フォルダ",
+                    "hint": "任意",
+                    "rootOption": "ルート(フォルダなし)",
+                    "searchPlaceholder": "フォルダを検索..."
+                }
+            },
+            "validation": {
+                "nameRequired": "クエリ名は必須です",
+                "nameLength": "クエリ名は100文字以内で入力してください",
+                "descriptionLength": "説明は500文字以内で入力してください"
+            },
+            "actions": {
+                "cancel": "キャンセル",
+                "save": "保存"
+            },
+            "toasts": {
+                "noConnection": "接続情報が見つかりません",
+                "noConnectionDesc": "接続を選択してから保存してください",
+                "sqlEmpty": "SQLが空です",
+                "sqlEmptyDesc": "保存するSQLを入力してください",
+                "saveSuccess": "クエリを保存しました",
+                "saveFailed": "クエリの保存に失敗しました",
+                "saveFailedDesc": "入力内容を確認してください",
+                "updateSuccess": "クエリ情報を更新しました",
+                "updateFailed": "クエリ情報の更新に失敗しました"
+            },
+            "errors": {
+                "editTargetNotFound": "編集対象のクエリが見つかりません"
+            }
+        },
+        "tabs": {
+            "newTab": "新規",
+            "closeTabAria": "タブを閉じる",
+            "confirm": {
+                "title": "未保存の変更があります",
+                "description": "このタブには保存されていない変更があります。どうしますか？",
+                "actions": {
+                    "cancel": "キャンセル",
+                    "discard": "破棄",
+                    "save": "保存"
+                }
+            },
+            "toasts": {
+                "saveFailed": "クエリの保存に失敗しました",
+                "saveFailedDesc": "時間をおいて再度お試しください"
+            }
+        }
+    },
     "mutationBuilder": {
         "pageTitle": "データ変更",
         "toolbar": {

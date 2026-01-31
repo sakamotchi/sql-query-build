@@ -28,6 +28,8 @@ const isOpen = computed({
   },
 })
 
+const { t } = useI18n()
+
 const segments = computed(() => parseFolderPath(props.folderPath))
 const currentName = computed(() => segments.value[segments.value.length - 1] || '')
 const parentPath = computed(() => {
@@ -51,7 +53,7 @@ const validate = (formState: typeof state.value): FormError[] => {
   const errors: FormError[] = []
   const result = validateFolderName(formState.name.trim())
   if (!result.valid) {
-    errors.push({ path: 'name', message: result.error || 'フォルダ名が無効です' })
+    errors.push({ path: 'name', message: result.error || t('sqlEditor.savedPanel.validation.invalidFolderName') })
   }
   return errors
 }
@@ -64,17 +66,27 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" title="フォルダ名を変更" description="新しいフォルダ名を入力してください">
+  <UModal
+    v-model:open="isOpen"
+    :title="$t('sqlEditor.savedPanel.dialogs.renameFolder.title')"
+    :description="$t('sqlEditor.savedPanel.dialogs.renameFolder.description')"
+  >
     <template #body>
       <UForm :state="state" :validate="validate" @submit="handleSubmit" class="space-y-4">
         <div class="text-xs text-gray-500">
-          変更対象: {{ props.folderPath || 'ルート' }}
+          {{ $t('sqlEditor.savedPanel.dialogs.renameFolder.targetLabel') }}
+          {{ props.folderPath || $t('sqlEditor.savedPanel.dialogs.renameFolder.targetRoot') }}
         </div>
         <div v-if="parentPath" class="text-xs text-gray-500">
-          親フォルダ: {{ parentPath }}
+          {{ $t('sqlEditor.savedPanel.dialogs.renameFolder.parentLabel') }} {{ parentPath }}
         </div>
-        <UFormField label="新しいフォルダ名" name="name" required>
-          <UInput v-model="state.name" placeholder="例: 本番環境" maxlength="100" autofocus />
+        <UFormField :label="$t('sqlEditor.savedPanel.dialogs.renameFolder.nameLabel')" name="name" required>
+          <UInput
+            v-model="state.name"
+            :placeholder="$t('sqlEditor.savedPanel.dialogs.renameFolder.namePlaceholder')"
+            maxlength="100"
+            autofocus
+          />
         </UFormField>
       </UForm>
     </template>
@@ -82,10 +94,10 @@ const handleSubmit = () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="isOpen = false">
-          キャンセル
+          {{ $t('sqlEditor.savedPanel.dialogs.renameFolder.actions.cancel') }}
         </UButton>
         <UButton color="primary" @click="handleSubmit">
-          変更
+          {{ $t('sqlEditor.savedPanel.dialogs.renameFolder.actions.rename') }}
         </UButton>
       </div>
     </template>

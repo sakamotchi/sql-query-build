@@ -20,6 +20,7 @@ const {
   pendingCloseTabId,
   folders,
 } = storeToRefs(sqlEditorStore)
+const { t } = useI18n()
 const toast = useToast()
 
 const isOpen = computed({
@@ -66,13 +67,13 @@ const validate = (formState: typeof state.value): FormError[] => {
   const errors: FormError[] = []
 
   if (!formState.name || formState.name.trim().length === 0) {
-    errors.push({ path: 'name', message: 'クエリ名は必須です' })
+    errors.push({ path: 'name', message: t('sqlEditor.saveDialog.validation.nameRequired') })
   } else if (formState.name.length > 100) {
-    errors.push({ path: 'name', message: 'クエリ名は100文字以内で入力してください' })
+    errors.push({ path: 'name', message: t('sqlEditor.saveDialog.validation.nameLength') })
   }
 
   if (formState.description && formState.description.length > 500) {
-    errors.push({ path: 'description', message: '説明は500文字以内で入力してください' })
+    errors.push({ path: 'description', message: t('sqlEditor.saveDialog.validation.descriptionLength') })
   }
 
   return errors
@@ -85,15 +86,15 @@ const parseTags = (value: string): string[] =>
     .filter((tag) => tag.length > 0)
 
 const folderOptions = computed(() => [
-  { label: 'ルート（フォルダなし）', value: null },
+  { label: t('sqlEditor.saveDialog.fields.folder.rootOption'), value: null },
   ...folders.value.map((path) => ({ label: path, value: path })),
 ])
 
 const handleSave = async () => {
   if (!connectionId.value) {
     toast.add({
-      title: '接続情報が見つかりません',
-      description: '接続を選択してから保存してください',
+      title: t('sqlEditor.saveDialog.toasts.noConnection'),
+      description: t('sqlEditor.saveDialog.toasts.noConnectionDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -102,8 +103,8 @@ const handleSave = async () => {
 
   if (!isEditMode.value && sql.value.trim().length === 0) {
     toast.add({
-      title: 'SQLが空です',
-      description: '保存するSQLを入力してください',
+      title: t('sqlEditor.saveDialog.toasts.sqlEmpty'),
+      description: t('sqlEditor.saveDialog.toasts.sqlEmptyDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -121,7 +122,7 @@ const handleSave = async () => {
 
     if (isEditMode.value) {
       if (!editingQuery.value) {
-        throw new Error('編集対象のクエリが見つかりません')
+        throw new Error(t('sqlEditor.saveDialog.errors.editTargetNotFound'))
       }
 
       const fullQuery = await sqlEditorStore.fetchSavedQuery(editingQuery.value.id)
@@ -137,7 +138,7 @@ const handleSave = async () => {
 
       await sqlEditorStore.updateSavedQuery(request)
       toast.add({
-        title: 'クエリ情報を更新しました',
+        title: t('sqlEditor.saveDialog.toasts.updateSuccess'),
         color: 'success',
         icon: 'i-heroicons-check-circle',
       })
@@ -153,7 +154,7 @@ const handleSave = async () => {
 
       await sqlEditorStore.saveCurrentQuery(request)
       toast.add({
-        title: 'クエリを保存しました',
+        title: t('sqlEditor.saveDialog.toasts.saveSuccess'),
         color: 'success',
         icon: 'i-heroicons-check-circle',
       })
@@ -166,9 +167,12 @@ const handleSave = async () => {
       sqlEditorStore.clearPendingCloseTab()
     }
   } catch (error) {
+    const errorTitle = isEditMode.value
+      ? t('sqlEditor.saveDialog.toasts.updateFailed')
+      : t('sqlEditor.saveDialog.toasts.saveFailed')
     toast.add({
-      title: 'クエリの保存に失敗しました',
-      description: savedQueryError.value || '入力内容を確認してください',
+      title: errorTitle,
+      description: savedQueryError.value || t('sqlEditor.saveDialog.toasts.saveFailedDesc'),
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -181,41 +185,53 @@ const handleSave = async () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    :title="isEditMode ? '保存クエリを編集' : 'クエリを保存'"
-    :description="isEditMode ? 'SQL本文は変更できません' : '名前・説明・タグを入力してください'"
+    :title="isEditMode ? $t('sqlEditor.saveDialog.title.edit') : $t('sqlEditor.saveDialog.title.create')"
+    :description="isEditMode ? $t('sqlEditor.saveDialog.description.edit') : $t('sqlEditor.saveDialog.description.create')"
   >
     <template #body>
       <UForm :state="state" :validate="validate" @submit="handleSave" class="space-y-4">
-        <UFormField label="クエリ名" name="name" required>
+        <UFormField :label="$t('sqlEditor.saveDialog.fields.queryName.label')" name="name" required>
           <UInput
             v-model="state.name"
-            placeholder="例: 全ユーザー一覧"
+            :placeholder="$t('sqlEditor.saveDialog.fields.queryName.placeholder')"
             :maxlength="100"
             autofocus
           />
         </UFormField>
 
-        <UFormField label="説明" name="description" hint="任意">
+        <UFormField
+          :label="$t('sqlEditor.saveDialog.fields.description.label')"
+          name="description"
+          :hint="$t('sqlEditor.saveDialog.fields.description.hint')"
+        >
           <UTextarea
             v-model="state.description"
-            placeholder="このクエリの用途を説明..."
+            :placeholder="$t('sqlEditor.saveDialog.fields.description.placeholder')"
             :maxlength="500"
             :rows="3"
           />
         </UFormField>
 
-        <UFormField label="タグ" name="tags" hint="カンマ区切りで入力">
-          <UInput v-model="state.tags" placeholder="例: admin, report" />
+        <UFormField
+          :label="$t('sqlEditor.saveDialog.fields.tags.label')"
+          name="tags"
+          :hint="$t('sqlEditor.saveDialog.fields.tags.hint')"
+        >
+          <UInput v-model="state.tags" :placeholder="$t('sqlEditor.saveDialog.fields.tags.placeholder')" />
         </UFormField>
 
-        <UFormField label="保存先フォルダ" name="folder" hint="任意">
+        <UFormField
+          :label="$t('sqlEditor.saveDialog.fields.folder.label')"
+          name="folder"
+          :hint="$t('sqlEditor.saveDialog.fields.folder.hint')"
+        >
           <USelectMenu
             v-model="state.folderPath"
             :items="folderOptions"
             value-key="value"
             searchable
-            searchable-placeholder="フォルダを検索..."
-            placeholder="ルート（フォルダなし）"
+            :searchable-placeholder="$t('sqlEditor.saveDialog.fields.folder.searchPlaceholder')"
+            :placeholder="$t('sqlEditor.saveDialog.fields.folder.rootOption')"
             class="w-full"
           />
         </UFormField>
@@ -225,10 +241,10 @@ const handleSave = async () => {
     <template #footer>
       <div class="flex justify-end gap-2">
         <UButton color="neutral" variant="ghost" @click="isOpen = false">
-          キャンセル
+          {{ $t('sqlEditor.saveDialog.actions.cancel') }}
         </UButton>
         <UButton color="primary" :loading="isSaving" @click="handleSave">
-          保存
+          {{ $t('sqlEditor.saveDialog.actions.save') }}
         </UButton>
       </div>
     </template>

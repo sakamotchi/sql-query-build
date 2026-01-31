@@ -56,13 +56,13 @@ async function handleUpdateConfirm() {
   try {
     await sqlEditorStore.saveActiveTabWithoutDialog()
     toast.add({
-      title: 'クエリを更新しました',
+      title: t('sqlEditor.toolbar.updateDialog.toasts.updateSuccess'),
       color: 'success',
       icon: 'i-heroicons-check-circle',
     })
   } catch (error) {
     toast.add({
-      title: 'クエリの更新に失敗しました',
+      title: t('sqlEditor.toolbar.updateDialog.toasts.updateFailed'),
       description: error instanceof Error ? error.message : undefined,
       color: 'error',
       icon: 'i-heroicons-exclamation-circle',
@@ -92,7 +92,7 @@ function handleToggleLeftPanel() {
     <div class="flex items-center gap-2">
       <UButton
         icon="i-heroicons-play"
-        label="実行"
+        :label="$t('sqlEditor.toolbar.execute')"
         :disabled="!canExecute"
         color="primary"
         @click="handleExecute"
@@ -100,7 +100,7 @@ function handleToggleLeftPanel() {
 
       <UButton
         icon="i-heroicons-stop"
-        label="停止"
+        :label="$t('sqlEditor.toolbar.stop')"
         :disabled="!isExecuting"
         color="neutral"
         variant="soft"
@@ -109,7 +109,7 @@ function handleToggleLeftPanel() {
 
       <UButton
         icon="i-heroicons-sparkles"
-        label="整形"
+        :label="$t('sqlEditor.toolbar.format')"
         :disabled="sql.trim().length === 0"
         color="neutral"
         variant="outline"
@@ -123,7 +123,7 @@ function handleToggleLeftPanel() {
         size="sm"
         color="neutral"
         variant="ghost"
-        :title="isLeftPanelVisible ? 'パネルを非表示' : 'パネルを表示'"
+        :title="isLeftPanelVisible ? $t('sqlEditor.toolbar.togglePanel.hide') : $t('sqlEditor.toolbar.togglePanel.show')"
         @click="handleToggleLeftPanel"
       />
 
@@ -131,7 +131,7 @@ function handleToggleLeftPanel() {
 
       <UButton
         icon="i-heroicons-bookmark"
-        label="保存"
+        :label="$t('sqlEditor.toolbar.save')"
         color="neutral"
         variant="soft"
         @click="handleSave"
@@ -153,16 +153,18 @@ function handleToggleLeftPanel() {
     <!-- 更新確認ダイアログ -->
     <UModal
       v-model:open="showUpdateConfirmDialog"
-      title="クエリを更新しますか？"
-      description="保存済みのクエリを更新するか、新しいクエリとして保存するか選択してください"
+      :title="$t('sqlEditor.toolbar.updateDialog.title')"
+      :description="$t('sqlEditor.toolbar.updateDialog.description')"
     >
       <template #body>
         <div class="space-y-3">
           <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div class="text-sm text-gray-700 dark:text-gray-300">
-              <p class="font-medium mb-1">現在のクエリ: {{ sqlEditorStore.currentQuery?.name }}</p>
-              <p class="text-gray-600 dark:text-gray-400">このクエリの内容を上書き更新します</p>
+              <p class="font-medium mb-1">
+                {{ $t('sqlEditor.toolbar.updateDialog.currentQuery', { name: sqlEditorStore.currentQuery?.name || '' }) }}
+              </p>
+              <p class="text-gray-600 dark:text-gray-400">{{ $t('sqlEditor.toolbar.updateDialog.currentQueryDesc') }}</p>
             </div>
           </div>
         </div>
@@ -171,13 +173,13 @@ function handleToggleLeftPanel() {
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton color="neutral" variant="ghost" @click="showUpdateConfirmDialog = false">
-            キャンセル
+            {{ $t('sqlEditor.toolbar.updateDialog.actions.cancel') }}
           </UButton>
           <UButton color="neutral" variant="outline" @click="handleSaveAsNew">
-            新規保存
+            {{ $t('sqlEditor.toolbar.updateDialog.actions.saveAsNew') }}
           </UButton>
           <UButton color="primary" @click="handleUpdateConfirm">
-            更新
+            {{ $t('sqlEditor.toolbar.updateDialog.actions.update') }}
           </UButton>
         </div>
       </template>

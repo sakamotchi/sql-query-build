@@ -5,6 +5,7 @@ import { useSqlEditorStore } from '~/stores/sql-editor'
 
 const sqlEditorStore = useSqlEditorStore()
 const { tabs, activeTabId } = storeToRefs(sqlEditorStore)
+const { t } = useI18n()
 const toast = useToast()
 
 const closingTabId = ref<string | null>(null)
@@ -63,8 +64,8 @@ const handleSaveClose = async () => {
       sqlEditorStore.closeTab(targetTabId)
     } catch (error) {
       toast.add({
-        title: 'クエリの保存に失敗しました',
-        description: '時間をおいて再度お試しください',
+        title: t('sqlEditor.tabs.toasts.saveFailed'),
+        description: t('sqlEditor.tabs.toasts.saveFailedDesc'),
         color: 'error',
         icon: 'i-heroicons-exclamation-circle',
       })
@@ -96,7 +97,7 @@ const handleSaveClose = async () => {
         <button
           type="button"
           class="text-gray-400 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-200"
-          aria-label="タブを閉じる"
+          :aria-label="$t('sqlEditor.tabs.closeTabAria')"
           @click.stop="requestCloseTab(tab.id)"
         >
           <UIcon name="i-heroicons-x-mark" class="text-xs" />
@@ -105,7 +106,7 @@ const handleSaveClose = async () => {
 
       <UButton
         icon="i-heroicons-plus"
-        label="新規"
+        :label="$t('sqlEditor.tabs.newTab')"
         size="xs"
         variant="ghost"
         color="neutral"
@@ -115,19 +116,19 @@ const handleSaveClose = async () => {
 
     <UModal
       v-model:open="isConfirmOpen"
-      title="未保存の変更があります"
-      description="このタブには保存されていない変更があります。どうしますか？"
+      :title="$t('sqlEditor.tabs.confirm.title')"
+      :description="$t('sqlEditor.tabs.confirm.description')"
     >
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton variant="ghost" color="neutral" @click="handleCancelClose">
-            キャンセル
+            {{ $t('sqlEditor.tabs.confirm.actions.cancel') }}
           </UButton>
           <UButton variant="soft" color="warning" @click="handleDiscardClose">
-            破棄
+            {{ $t('sqlEditor.tabs.confirm.actions.discard') }}
           </UButton>
           <UButton color="primary" @click="handleSaveClose">
-            保存
+            {{ $t('sqlEditor.tabs.confirm.actions.save') }}
           </UButton>
         </div>
       </template>

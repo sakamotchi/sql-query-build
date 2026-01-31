@@ -8,6 +8,7 @@ import { getErrorHint, getErrorIcon, getErrorMessage } from '~/utils/error-messa
 
 const sqlEditorStore = useSqlEditorStore()
 const { result, error, isExecuting, activeTabId, executingTabId } = storeToRefs(sqlEditorStore)
+const { t } = useI18n()
 
 const hasResult = computed(() => result.value !== null)
 const isSelectResult = computed(() => (result.value?.columns.length ?? 0) > 0)
@@ -30,7 +31,7 @@ const errorTitle = computed(() => {
   if (error.value.code === 'unknown' && error.value.message) {
     return error.value.message
   }
-  return errorMessage.value?.title ?? 'エラー'
+  return errorMessage.value?.title ?? t('common.error')
 })
 
 const errorDescription = computed(() => {
@@ -44,6 +45,23 @@ const errorLineInfo = computed(() => {
     line: error.value.details?.line,
     column: error.value.details?.column,
   }
+})
+
+const errorPositionText = computed(() => {
+  if (!errorLineInfo.value) return ''
+  if (errorLineInfo.value.line && errorLineInfo.value.column) {
+    return t('sqlEditor.resultPanel.errorPosition', {
+      line: errorLineInfo.value.line,
+      column: errorLineInfo.value.column,
+    })
+  }
+  if (errorLineInfo.value.line) {
+    return t('sqlEditor.resultPanel.errorPositionLine', { line: errorLineInfo.value.line })
+  }
+  return t('sqlEditor.resultPanel.errorPosition', {
+    line: '-',
+    column: errorLineInfo.value.column,
+  })
 })
 
 const openExportDialog = () => {
@@ -61,17 +79,17 @@ const openExportDialog = () => {
           class="text-lg"
           :class="{ 'animate-spin text-gray-400': isActiveExecuting }"
         />
-        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">結果</span>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ $t('sqlEditor.resultPanel.title') }}</span>
         <template v-if="executionInfo && !error">
           <span class="text-xs text-gray-500">
-            実行時間: {{ executionInfo.seconds }}秒
+            {{ $t('sqlEditor.resultPanel.executionTime', { seconds: executionInfo.seconds }) }}
           </span>
           <span class="text-xs text-gray-400">
             <template v-if="isSelectResult">
-              取得件数: {{ executionInfo.rowCount }}件
+              {{ $t('sqlEditor.resultPanel.rowCount.select', { count: executionInfo.rowCount }) }}
             </template>
             <template v-else>
-              影響行数: {{ executionInfo.rowCount }}行
+              {{ $t('sqlEditor.resultPanel.rowCount.mutation', { count: executionInfo.rowCount }) }}
             </template>
           </span>
         </template>
@@ -79,7 +97,7 @@ const openExportDialog = () => {
 
       <UButton
         icon="i-heroicons-arrow-down-tray"
-        label="エクスポート"
+        :label="$t('sqlEditor.resultPanel.export')"
         size="sm"
         variant="outline"
         :disabled="!hasResult"
@@ -91,7 +109,7 @@ const openExportDialog = () => {
     <div class="flex-1 overflow-hidden flex flex-col">
       <div v-if="isActiveExecuting" class="flex-1 flex items-center justify-center">
         <UIcon name="i-heroicons-arrow-path" class="animate-spin text-2xl text-gray-400" />
-        <span class="ml-2 text-gray-500">実行中...</span>
+        <span class="ml-2 text-gray-500">{{ $t('sqlEditor.resultPanel.executing') }}</span>
       </div>
 
       <div v-else-if="error" class="flex-1 overflow-auto p-4">
@@ -103,11 +121,7 @@ const openExportDialog = () => {
         >
           <div class="space-y-1 text-sm text-red-700 dark:text-red-300">
             <p v-if="errorDescription">{{ errorDescription }}</p>
-            <p v-if="errorLineInfo">
-              エラー位置:
-              <template v-if="errorLineInfo.line">{{ errorLineInfo.line }}行</template>
-              <template v-if="errorLineInfo.column"> {{ errorLineInfo.column }}列</template>
-            </p>
+            <p v-if="errorLineInfo">{{ errorPositionText }}</p>
             <div v-if="errorHint" class="pt-2">
               <p class="font-medium">{{ errorHint.title }}</p>
               <p>{{ errorHint.suggestion }}</p>
@@ -121,7 +135,7 @@ const openExportDialog = () => {
 
       <div v-else-if="!hasResult" class="flex-1 flex flex-col items-center justify-center">
         <UIcon name="i-heroicons-table-cells" class="text-4xl text-gray-400" />
-        <p class="text-gray-500 dark:text-gray-400 mt-2">クエリを実行してください</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-2">{{ $t('sqlEditor.resultPanel.executePrompt') }}</p>
       </div>
 
       <template v-else>
@@ -139,7 +153,7 @@ const openExportDialog = () => {
           v-else
           class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400"
         >
-          影響行数: {{ executionInfo?.rowCount ?? 0 }}行
+          {{ $t('sqlEditor.resultPanel.rowCount.mutation', { count: executionInfo?.rowCount ?? 0 }) }}
         </div>
       </template>
     </div>

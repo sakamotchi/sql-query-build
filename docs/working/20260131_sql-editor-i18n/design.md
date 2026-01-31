@@ -194,6 +194,8 @@ interface SqlEditorI18n {
     updateDialog: {
       title: string
       description: string
+      currentQuery: string
+      currentQueryDesc: string
       actions: {
         cancel: string
         saveAsNew: string
@@ -214,6 +216,7 @@ interface SqlEditorI18n {
     newFolder: string
     tagFilter: string
     currentQuery: string
+    empty: string
     contextMenu: {
       folder: {
         newFolder: string
@@ -231,10 +234,15 @@ interface SqlEditorI18n {
         delete: string
       }
     }
+    validation: {
+      invalidFolderName: string
+    }
     toasts: {
       loadSuccess: string
       loadFailed: string
+      loadFailedDesc: string
       executeFailed: string
+      executeFailedDesc: string
       deleteSuccess: string
       deleteFailed: string
       moveSuccess: string
@@ -246,7 +254,10 @@ interface SqlEditorI18n {
       deleteFolderSuccess: string
       deleteFolderFailed: string
       folderNotEmpty: string
+      folderNotEmptyDesc: string
       folderDuplicate: string
+      folderDuplicateDesc: string
+      retryLater: string
     }
     dialogs: {
       confirmLoad: {
@@ -264,6 +275,43 @@ interface SqlEditorI18n {
         description: string
         confirmLabel: string
       }
+      createFolder: {
+        title: string
+        description: string
+        targetLabel: string
+        targetRoot: string
+        nameLabel: string
+        namePlaceholder: string
+        actions: {
+          cancel: string
+          create: string
+        }
+      }
+      renameFolder: {
+        title: string
+        description: string
+        targetLabel: string
+        targetRoot: string
+        parentLabel: string
+        nameLabel: string
+        namePlaceholder: string
+        actions: {
+          cancel: string
+          rename: string
+        }
+      }
+      moveQuery: {
+        title: string
+        description: string
+        descriptionNoName: string
+        folderLabel: string
+        placeholder: string
+        rootOption: string
+        actions: {
+          cancel: string
+          move: string
+        }
+      }
     }
   }
   historyPanel: {
@@ -278,6 +326,13 @@ interface SqlEditorI18n {
       fewSecondsAgo: string
       minutesAgo: string
       today: string
+    }
+    executionTime: string
+    executionTimeSeconds: string
+    rowCount: string
+    actions: {
+      reExecute: string
+      delete: string
     }
     toasts: {
       loadSuccess: string
@@ -312,6 +367,7 @@ interface SqlEditorI18n {
     executing: string
     executePrompt: string
     errorPosition: string
+    errorPositionLine: string
   }
   saveDialog: {
     title: {
@@ -360,12 +416,30 @@ interface SqlEditorI18n {
       sqlEmptyDesc: string
       saveSuccess: string
       saveFailed: string
+      saveFailedDesc: string
       updateSuccess: string
       updateFailed: string
     }
+    errors: {
+      editTargetNotFound: string
+    }
   }
   tabs: {
-    // EditorTabs.vue の翻訳キー（必要に応じて追加）
+    newTab: string
+    closeTabAria: string
+    confirm: {
+      title: string
+      description: string
+      actions: {
+        cancel: string
+        discard: string
+        save: string
+      }
+    }
+    toasts: {
+      saveFailed: string
+      saveFailedDesc: string
+    }
   }
 }
 ```
@@ -411,6 +485,7 @@ interface SqlEditorI18n {
       "newFolder": "新規フォルダ",
       "tagFilter": "タグフィルタ:",
       "currentQuery": "読み込み中のクエリ",
+      "empty": "保存されたクエリがありません",
       "contextMenu": {
         "folder": {
           "newFolder": "新規フォルダ",
@@ -427,6 +502,9 @@ interface SqlEditorI18n {
           "moveToRoot": "ルートに移動",
           "delete": "削除"
         }
+      },
+      "validation": {
+        "invalidFolderName": "フォルダ名が無効です"
       },
       "toasts": {
         "loadSuccess": "「{name}」を読み込みました",
@@ -447,7 +525,8 @@ interface SqlEditorI18n {
         "folderNotEmpty": "フォルダを削除できません",
         "folderNotEmptyDesc": "フォルダ内に{count}件のクエリが含まれています",
         "folderDuplicate": "フォルダ名が重複しています",
-        "folderDuplicateDesc": "「{path}」は既に存在します"
+        "folderDuplicateDesc": "「{path}」は既に存在します",
+        "retryLater": "時間をおいて再度お試しください"
       },
       "dialogs": {
         "confirmLoad": {
@@ -464,6 +543,43 @@ interface SqlEditorI18n {
           "title": "フォルダを削除しますか?",
           "description": "「{path}」を削除します。",
           "confirmLabel": "削除"
+        },
+        "createFolder": {
+          "title": "フォルダを作成",
+          "description": "フォルダ名を入力してください",
+          "targetLabel": "作成先:",
+          "targetRoot": "ルート",
+          "nameLabel": "フォルダ名",
+          "namePlaceholder": "例: 開発環境",
+          "actions": {
+            "cancel": "キャンセル",
+            "create": "作成"
+          }
+        },
+        "renameFolder": {
+          "title": "フォルダ名を変更",
+          "description": "新しいフォルダ名を入力してください",
+          "targetLabel": "変更対象:",
+          "targetRoot": "ルート",
+          "parentLabel": "親フォルダ:",
+          "nameLabel": "新しいフォルダ名",
+          "namePlaceholder": "例: 本番環境",
+          "actions": {
+            "cancel": "キャンセル",
+            "rename": "変更"
+          }
+        },
+        "moveQuery": {
+          "title": "クエリの移動",
+          "description": "「{name}」の移動先を選択してください",
+          "descriptionNoName": "移動先を選択してください",
+          "folderLabel": "移動先フォルダ",
+          "placeholder": "移動先を選択",
+          "rootOption": "ルート",
+          "actions": {
+            "cancel": "キャンセル",
+            "move": "移動"
+          }
         }
       }
     },
@@ -482,6 +598,11 @@ interface SqlEditorI18n {
       },
       "executionTime": "{ms}ms",
       "executionTimeSeconds": "{seconds}秒",
+      "rowCount": "{count}行",
+      "actions": {
+        "reExecute": "再実行",
+        "delete": "削除"
+      },
       "toasts": {
         "loadSuccess": "履歴を読み込みました",
         "loadFailed": "履歴の読み込みに失敗しました",
@@ -567,6 +688,26 @@ interface SqlEditorI18n {
         "saveFailedDesc": "入力内容を確認してください",
         "updateSuccess": "クエリ情報を更新しました",
         "updateFailed": "クエリ情報の更新に失敗しました"
+      },
+      "errors": {
+        "editTargetNotFound": "編集対象のクエリが見つかりません"
+      }
+    },
+    "tabs": {
+      "newTab": "新規",
+      "closeTabAria": "タブを閉じる",
+      "confirm": {
+        "title": "未保存の変更があります",
+        "description": "このタブには保存されていない変更があります。どうしますか？",
+        "actions": {
+          "cancel": "キャンセル",
+          "discard": "破棄",
+          "save": "保存"
+        }
+      },
+      "toasts": {
+        "saveFailed": "クエリの保存に失敗しました",
+        "saveFailedDesc": "時間をおいて再度お試しください"
       }
     }
   }
@@ -612,6 +753,7 @@ interface SqlEditorI18n {
       "newFolder": "New Folder",
       "tagFilter": "Tag Filter:",
       "currentQuery": "Current Query",
+      "empty": "No saved queries",
       "contextMenu": {
         "folder": {
           "newFolder": "New Folder",
@@ -628,6 +770,9 @@ interface SqlEditorI18n {
           "moveToRoot": "Move to Root",
           "delete": "Delete"
         }
+      },
+      "validation": {
+        "invalidFolderName": "Invalid folder name"
       },
       "toasts": {
         "loadSuccess": "Loaded \"{name}\"",
@@ -648,7 +793,8 @@ interface SqlEditorI18n {
         "folderNotEmpty": "Cannot delete folder",
         "folderNotEmptyDesc": "Folder contains {count} queries",
         "folderDuplicate": "Folder name already exists",
-        "folderDuplicateDesc": "\"{path}\" already exists"
+        "folderDuplicateDesc": "\"{path}\" already exists",
+        "retryLater": "Please try again later"
       },
       "dialogs": {
         "confirmLoad": {
@@ -665,6 +811,43 @@ interface SqlEditorI18n {
           "title": "Delete Folder?",
           "description": "Delete \"{path}\".",
           "confirmLabel": "Delete"
+        },
+        "createFolder": {
+          "title": "Create Folder",
+          "description": "Enter a folder name",
+          "targetLabel": "Location:",
+          "targetRoot": "Root",
+          "nameLabel": "Folder Name",
+          "namePlaceholder": "Ex: Development",
+          "actions": {
+            "cancel": "Cancel",
+            "create": "Create"
+          }
+        },
+        "renameFolder": {
+          "title": "Rename Folder",
+          "description": "Enter a new folder name",
+          "targetLabel": "Target:",
+          "targetRoot": "Root",
+          "parentLabel": "Parent Folder:",
+          "nameLabel": "New Folder Name",
+          "namePlaceholder": "Ex: Production",
+          "actions": {
+            "cancel": "Cancel",
+            "rename": "Rename"
+          }
+        },
+        "moveQuery": {
+          "title": "Move Query",
+          "description": "Select destination for \"{name}\"",
+          "descriptionNoName": "Select a destination",
+          "folderLabel": "Destination Folder",
+          "placeholder": "Select destination",
+          "rootOption": "Root",
+          "actions": {
+            "cancel": "Cancel",
+            "move": "Move"
+          }
         }
       }
     },
@@ -683,6 +866,11 @@ interface SqlEditorI18n {
       },
       "executionTime": "{ms}ms",
       "executionTimeSeconds": "{seconds}s",
+      "rowCount": "{count} rows",
+      "actions": {
+        "reExecute": "Re-execute",
+        "delete": "Delete"
+      },
       "toasts": {
         "loadSuccess": "History loaded successfully",
         "loadFailed": "Failed to load history",
@@ -768,6 +956,26 @@ interface SqlEditorI18n {
         "saveFailedDesc": "Please check your input",
         "updateSuccess": "Query information updated successfully",
         "updateFailed": "Failed to update query information"
+      },
+      "errors": {
+        "editTargetNotFound": "Query to edit was not found"
+      }
+    },
+    "tabs": {
+      "newTab": "New",
+      "closeTabAria": "Close tab",
+      "confirm": {
+        "title": "Unsaved Changes",
+        "description": "This tab has unsaved changes. What would you like to do?",
+        "actions": {
+          "cancel": "Cancel",
+          "discard": "Discard",
+          "save": "Save"
+        }
+      },
+      "toasts": {
+        "saveFailed": "Failed to save query",
+        "saveFailedDesc": "Please try again later"
       }
     }
   }
@@ -1037,8 +1245,6 @@ describe('formatRelativeTime', () => {
 
 ## 未解決事項
 
-- [ ] EditorTabs.vue の詳細な調査（ハードコード文字列の有無を確認）
-- [ ] その他のダイアログコンポーネント（CreateFolderDialog.vue, RenameFolderDialog.vue等）の多言語対応
 - [ ] Monaco Editor 自体の UI は外部ライブラリのため対応不可（確認済み）
 - [ ] バックエンドから返されるエラーメッセージの多言語対応（Phase 2で検討）
 

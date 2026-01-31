@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { ref } from 'vue'
 import { vi } from 'vitest'
+import { config } from '@vue/test-utils'
 
 type LocaleMessages = Record<string, unknown>
 type LocaleCode = 'ja' | 'en'
@@ -53,6 +54,11 @@ const t = (key: string, params?: Record<string, string | number>): string => {
   const fallback = messages.en
   const message = resolveMessage(key, primary) ?? resolveMessage(key, fallback) ?? key
   return typeof message === 'string' ? interpolate(message, params) : String(message)
+}
+
+config.global.mocks = {
+  ...(config.global.mocks ?? {}),
+  $t: t,
 }
 
 const setLocale = async (nextLocale: string) => {
