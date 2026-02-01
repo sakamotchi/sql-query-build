@@ -737,6 +737,10 @@
                 "show": "パネルを表示",
                 "hide": "パネルを非表示"
             },
+            "database": {
+                "placeholder": "スキーマを選択",
+                "mysqlReadonlyTooltip": "MySQLではデフォルトデータベースのみ使用可能です。他のデータベースにアクセスする場合は、完全修飾名（database.table）を使用してください。"
+            },
             "updateDialog": {
                 "title": "クエリを更新しますか?",
                 "description": "保存済みのクエリを更新するか、新しいクエリとして保存するか選択してください",

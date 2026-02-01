@@ -41,6 +41,7 @@ const createEditorTab = (name: string): SqlEditorTab => ({
   error: null,
   selectionSql: null,
   currentQuery: null,
+  selectedDatabase: undefined,
   createdAt: new Date().toISOString(),
 })
 
@@ -53,6 +54,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
 
     return {
       connectionId: null,
+      selectedDatabase: null,
       sql: initialTab.sql,
       isDirty: initialTab.isDirty,
       isExecuting: false,
@@ -253,6 +255,24 @@ export const useSqlEditorStore = defineStore('sql-editor', {
      */
     setConnection(connectionId: string) {
       this.connectionId = connectionId
+
+      // データベースタイプに応じてselectedDatabaseを初期化
+      const connection = this.currentConnection
+      if (connection) {
+        if (connection.type === 'mysql') {
+          // MySQLの場合、接続のデフォルトデータベースを設定
+          this.selectedDatabase = connection.database || null
+        }
+        else if (connection.type === 'postgresql') {
+          // PostgreSQLの場合、デフォルトスキーマを設定（通常はpublic）
+          this.selectedDatabase = 'public'
+        }
+        else {
+          // SQLiteの場合、nullを設定
+          this.selectedDatabase = null
+        }
+      }
+
       this.isExecuting = false
       this.executingQueryId = null
       this.executingTabId = null
@@ -272,6 +292,52 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       void this.loadSavedQueries()
       void this.fetchFolders()
       void this.fetchHistories()
+    },
+
+    /**
+     * 選択中のデータベース/スキーマを設定
+     */
+    setSelectedDatabase(database: string | null) {
+      this.selectedDatabase = database
+
+      // アクティブタブにも反映
+      const tab = this.activeTab
+      if (tab) {
+        tab.selectedDatabase = database ?? undefined
+      }
+    },
+
+    /**
+     * 接続IDを設定し、データベースタイプに応じて初期値を設定
+     */
+    setConnectionId(connectionId: string | null) {
+      this.connectionId = connectionId
+
+      // 接続情報を取得
+      if (connectionId) {
+        const connection = this.currentConnection
+        if (connection) {
+          // データベースタイプに応じて初期値を設定
+          if (connection.type === 'mysql') {
+            // MySQLの場合、接続のデフォルトデータベースを設定
+            this.selectedDatabase = connection.database || null
+          }
+          else if (connection.type === 'postgresql') {
+            // PostgreSQLの場合、デフォルトスキーマを設定（通常はpublic）
+            this.selectedDatabase = 'public'
+          }
+          else {
+            // SQLiteの場合、nullを設定
+            this.selectedDatabase = null
+          }
+
+          // アクティブタブにも反映
+          const tab = this.activeTab
+          if (tab) {
+            tab.selectedDatabase = this.selectedDatabase ?? undefined
+          }
+        }
+      }
     },
 
     initializeTabs() {
@@ -915,6 +981,34 @@ export const useSqlEditorStore = defineStore('sql-editor', {
     },
 
     /**
+     * データベースコンテキストを設定するSQL文を生成
+     */
+    generateContextSql(database: string): string | null {
+      const connection = this.currentConnection
+      if (!connection) {
+        return null
+      }
+
+      switch (connection.type) {
+        case 'mysql':
+          // MySQLではUSE文が使えないため、nullを返す
+          // デフォルトデータベースがそのまま使われる
+          return null
+
+        case 'postgresql':
+          // PostgreSQLはSET search_pathが使用可能
+          return `SET search_path TO "${database.replace(/"/g, '""')}";`
+
+        case 'sqlite':
+          // SQLiteはデータベース切り替えの概念がない
+          return null
+
+        default:
+          return null
+      }
+    },
+
+    /**
      * SQL文字列を実行
      */
     async executeSqlText(sqlToExecute: string, emptyMessage = '実行するSQLが空です') {
@@ -940,6 +1034,21 @@ export const useSqlEditorStore = defineStore('sql-editor', {
         return
       }
 
+      // PostgreSQLの場合のみ、コンテキストSQLを追加
+      let finalSql = trimmedSql
+      if (this.selectedDatabase) {
+        const contextSql = this.generateContextSql(this.selectedDatabase)
+        if (contextSql) {
+          // PostgreSQLの場合のみ、SET search_path文を追加
+          const upperSql = trimmedSql.toUpperCase()
+          const hasSetSearchPath = upperSql.includes('SET SEARCH_PATH')
+
+          if (!hasSetSearchPath) {
+            finalSql = `${contextSql}\n${trimmedSql}`
+          }
+        }
+      }
+
       const executionId = ++latestExecutionId
       const targetTabId = this.activeTabId
       this.isExecuting = true
@@ -951,7 +1060,7 @@ export const useSqlEditorStore = defineStore('sql-editor', {
       try {
         const response = await queryApi.executeQuery({
           connectionId: this.connectionId,
-          sql: trimmedSql,
+          sql: finalSql,
           timeoutSeconds: 30,
         })
 

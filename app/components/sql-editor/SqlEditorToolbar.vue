@@ -3,11 +3,13 @@ import { storeToRefs } from 'pinia'
 import { useSqlEditorStore } from '~/stores/sql-editor'
 import { useConnectionStore } from '~/stores/connection'
 import { useWindowStore } from '~/stores/window'
+import { useDatabaseStructureStore } from '~/stores/database-structure'
 import type { Environment } from '~/types'
 
 const sqlEditorStore = useSqlEditorStore()
 const windowStore = useWindowStore()
 const connectionStore = useConnectionStore()
+const databaseStructureStore = useDatabaseStructureStore()
 const { canExecute, isExecuting, sql, isLeftPanelVisible } = storeToRefs(sqlEditorStore)
 const { getEnvironmentColors } = useEnvironment()
 const { toggleColorMode, isDark } = useTheme()
@@ -31,6 +33,43 @@ const toolbarStyle = computed(() => {
     backgroundColor: colors.bg,
     borderColor: colors.border,
   }
+})
+
+// 接続タイプを取得
+const connectionType = computed(() => {
+  return activeConnection.value?.type || null
+})
+
+// MySQLのデフォルトデータベース名を取得
+const defaultDatabase = computed(() => {
+  if (connectionType.value === 'mysql') {
+    return activeConnection.value?.database || null
+  }
+  return null
+})
+
+// 利用可能なデータベース/スキーマ一覧を取得
+const availableDatabases = computed(() => {
+  const connectionId = sqlEditorStore.connectionId
+  if (!connectionId) return []
+
+  const structure = databaseStructureStore.structures[connectionId]
+  if (!structure) return []
+
+  return structure.schemas
+    .filter(schema => !schema.isSystem)
+    .map(schema => ({
+      label: schema.name,
+      value: schema.name,
+    }))
+})
+
+// 選択中のデータベース（v-model用）
+const currentDatabase = computed({
+  get: () => sqlEditorStore.selectedDatabase ?? undefined,
+  set: (value) => {
+    sqlEditorStore.setSelectedDatabase(value ?? null)
+  },
 })
 
 async function handleExecute() {
@@ -126,6 +165,32 @@ function handleToggleLeftPanel() {
         :title="isLeftPanelVisible ? $t('sqlEditor.toolbar.togglePanel.hide') : $t('sqlEditor.toolbar.togglePanel.show')"
         @click="handleToggleLeftPanel"
       />
+
+      <!-- MySQL: 読み取り専用表示 -->
+      <div
+        v-if="connectionType === 'mysql' && defaultDatabase"
+        class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-md text-sm"
+        :title="$t('sqlEditor.toolbar.database.mysqlReadonlyTooltip')"
+      >
+        <UIcon name="i-heroicons-circle-stack" class="w-4 h-4 text-gray-500" />
+        <span class="text-gray-700 dark:text-gray-300">{{ defaultDatabase }}</span>
+        <UIcon name="i-heroicons-lock-closed" class="w-3 h-3 text-gray-400" />
+      </div>
+
+      <!-- PostgreSQL: スキーマ選択可能 -->
+      <USelectMenu
+        v-else-if="connectionType === 'postgresql' && availableDatabases.length > 0"
+        v-model="currentDatabase"
+        :items="availableDatabases"
+        value-key="value"
+        :placeholder="$t('sqlEditor.toolbar.database.placeholder')"
+        class="w-40"
+        size="sm"
+        searchable
+        clearable
+      />
+
+      <!-- SQLite: 非表示（何も表示しない） -->
 
       <div class="flex-1" />
 

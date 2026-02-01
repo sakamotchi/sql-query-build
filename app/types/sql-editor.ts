@@ -7,6 +7,8 @@ import type { QueryExecuteError, QueryExecuteResult } from './query-result'
 export interface SqlEditorState {
   /** 接続ID */
   connectionId: string | null
+  /** 選択中のデータベース（コンテキスト） */
+  selectedDatabase: string | null
   /** 現在のSQL文字列 */
   sql: string
   /** エディタが変更されたか（保存判定用） */
@@ -91,6 +93,8 @@ export interface SqlEditorTab {
   currentQuery: SavedQuery | null
   /** 保存済みクエリID */
   savedQueryId?: string
+  /** 選択中のデータベース/スキーマ */
+  selectedDatabase?: string
   /** カーソル位置 */
   cursorPosition?: { lineNumber: number; column: number }
   /** 作成日時 */

@@ -737,6 +737,10 @@
                 "show": "Show Panel",
                 "hide": "Hide Panel"
             },
+            "database": {
+                "placeholder": "Select schema",
+                "mysqlReadonlyTooltip": "MySQL uses the default database specified in the connection. To access other databases, use fully qualified names (database.table)."
+            },
             "updateDialog": {
                 "title": "Update Query?",
                 "description": "Choose whether to update the saved query or save as a new query",

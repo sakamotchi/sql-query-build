@@ -122,6 +122,7 @@ export function useSqlCompletion() {
     const databaseType = rawDatabaseType === 'postgresql' || rawDatabaseType === 'mysql' || rawDatabaseType === 'sqlite'
       ? rawDatabaseType
       : null
+    const selectedDatabase = sqlEditorStore.selectedDatabase
 
     // エイリアスを抽出
     const aliases = extractAliasesFromSql(fullSql)
@@ -133,9 +134,18 @@ export function useSqlCompletion() {
       endColumn: position.column,
     }
 
+    console.log('[useSqlCompletion] createCompletionContext', {
+      connectionId,
+      databaseType,
+      selectedDatabase,
+      currentWord,
+      previousWord,
+    })
+
     return {
       connectionId,
       databaseType,
+      selectedDatabase,
       currentWord,
       previousWord: previousWord?.toUpperCase() || null,
       lineText,
@@ -223,14 +233,71 @@ export function useSqlCompletion() {
     const items: monaco.languages.CompletionItem[] = []
     let count = 0
 
+    // ユーザーが完全修飾名を入力している場合（例: "demo_ecommerce.cart"）、
+    // そのデータベースを優先的に使用
+    const dotIndex = context.currentWord.indexOf('.')
+    let targetSchema: string | null = null
+    if (dotIndex > 0) {
+      targetSchema = context.currentWord.substring(0, dotIndex)
+    }
+
+    console.log('[useSqlCompletion] getTableCompletions - Filtering logic', {
+      currentWord: context.currentWord,
+      dotIndex,
+      targetSchema,
+      selectedDatabase: context.selectedDatabase,
+      totalSchemas: structure.schemas.length,
+    })
+
     for (const schema of structure.schemas) {
+      // 選択中のデータベースでフィルタリング
+      // 1. 完全修飾名が入力されている場合は、そのスキーマのみ
+      // 2. 選択中のデータベースがある場合は、そのスキーマのみ
+      // 3. どちらもない場合は、すべてのスキーマ
+      let skipSchema = false
+      if (targetSchema) {
+        // 完全修飾名が入力されている場合
+        if (schema.name.toLowerCase() !== targetSchema.toLowerCase()) {
+          skipSchema = true
+        }
+      }
+      else if (context.selectedDatabase) {
+        // 選択中のデータベースがある場合
+        if (schema.name !== context.selectedDatabase) {
+          skipSchema = true
+        }
+      }
+
+      console.log('[useSqlCompletion] getTableCompletions - Schema filtering', {
+        schemaName: schema.name,
+        targetSchema,
+        selectedDatabase: context.selectedDatabase,
+        skipSchema,
+      })
+
+      if (skipSchema) {
+        continue
+      }
+
       for (const table of schema.tables) {
         const currentWordLower = context.currentWord.toLowerCase()
 
         // テーブル名だけでもマッチ、または完全修飾名でもマッチ
-        const matchesTableName = table.name.toLowerCase().startsWith(currentWordLower)
+        let matchesTableName = false
+        let matchesFullName = false
+
+        if (dotIndex > 0) {
+          // 完全修飾名が入力されている場合（例: "demo.cart"）
+          const tablePartial = context.currentWord.substring(dotIndex + 1).toLowerCase()
+          matchesTableName = table.name.toLowerCase().startsWith(tablePartial)
+        }
+        else {
+          // テーブル名のみが入力されている場合
+          matchesTableName = table.name.toLowerCase().startsWith(currentWordLower)
+        }
+
         const fullName = `${schema.name}.${table.name}`
-        const matchesFullName = fullName.toLowerCase().startsWith(currentWordLower)
+        matchesFullName = fullName.toLowerCase().startsWith(currentWordLower)
 
         if (!matchesTableName && !matchesFullName) {
           continue
@@ -241,6 +308,14 @@ export function useSqlCompletion() {
         const alias = generateTableAlias(table.name)
         const label = `${table.name} (${schema.name})`
         const insertText = `${table.name} AS ${alias}`
+
+        console.log('[useSqlCompletion] getTableCompletions - Adding table', {
+          tableName: table.name,
+          schemaName: schema.name,
+          label,
+          currentWord: context.currentWord,
+          selectedDatabase: context.selectedDatabase,
+        })
 
         items.push({
           label,
@@ -257,7 +332,11 @@ export function useSqlCompletion() {
       }
     }
 
-    console.log('[useSqlCompletion] Returning table items:', items.length)
+    console.log('[useSqlCompletion] Returning table items:', {
+      count: items.length,
+      selectedDatabase: context.selectedDatabase,
+      items: items.map(item => ({ label: item.label, insertText: item.insertText })),
+    })
     return items
   }
 
@@ -309,6 +388,13 @@ export function useSqlCompletion() {
     let count = 0
 
     for (const schema of structure.schemas) {
+      // エイリアス/テーブル名指定がない場合は、選択中のデータベースでフィルタリング
+      if (!targetTableName && context.selectedDatabase) {
+        if (schema.name !== context.selectedDatabase) {
+          continue
+        }
+      }
+
       for (const table of schema.tables) {
         // エイリアス指定がある場合は、そのテーブルのカラムのみ表示
         if (targetTableName && table.name !== targetTableName) {

@@ -39,6 +39,7 @@ export interface SqlKeyword {
 export interface CompletionContext {
   connectionId: string | null
   databaseType: 'postgresql' | 'mysql' | 'sqlite' | null
+  selectedDatabase: string | null          // 選択中のデータベース/スキーマ
   currentWord: string
   previousWord: string | null
   lineText: string
