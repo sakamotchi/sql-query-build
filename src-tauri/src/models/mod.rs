@@ -11,6 +11,8 @@ pub mod query_history;
 pub mod query_result;
 pub mod safety_settings;
 pub mod saved_query;
+pub mod sql_editor_history;
+pub mod sql_editor_query;
 
 pub use database_structure::*;
 pub use window::*;

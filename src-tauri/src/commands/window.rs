@@ -62,6 +62,23 @@ pub async fn open_mutation_builder_window(
     window_manager.create_window(&app_handle, options)
 }
 
+/// SQLエディタウィンドウを開く
+#[command]
+pub async fn open_sql_editor_window(
+    app_handle: AppHandle,
+    window_manager: State<'_, WindowManager>,
+    connection_id: String,
+    connection_name: String,
+    environment: String,
+) -> Result<WindowInfo, String> {
+    window_manager.open_sql_editor_window(
+        &app_handle,
+        connection_id,
+        connection_name,
+        environment,
+    )
+}
+
 /// 設定ウィンドウを開く
 #[command]
 pub async fn open_settings_window(

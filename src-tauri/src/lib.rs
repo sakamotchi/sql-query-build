@@ -10,6 +10,7 @@ pub mod sql;
 pub mod sql_generator;
 pub mod validators;
 pub mod storage;
+pub mod utils;
 
 use commands::query_history_commands::QueryHistoryState;
 use connection::{ConnectionService, ConnectionStorage};
@@ -19,6 +20,7 @@ use crypto::{
 };
 use services::query_executor::{ConnectionPoolManager, QueryCancellationManager};
 use services::query_storage::QueryStorage;
+use services::sql_editor_query_storage::SqlEditorQueryStorage;
 use services::WindowManager;
 use std::sync::Arc;
 use storage::{FileStorage, PathManager};
@@ -163,6 +165,12 @@ pub fn run() {
     // QueryStorageを初期化
     let query_storage = Arc::new(QueryStorage::new(Arc::clone(&saved_queries_storage)));
 
+    // SqlEditorQueryStorageを初期化
+    let sql_editor_query_storage = Arc::new(
+        SqlEditorQueryStorage::new(path_manager.saved_editor_dir())
+            .expect("Failed to initialize SqlEditorQueryStorage"),
+    );
+
     // QueryHistoryStateを初期化
     let query_history_state = QueryHistoryState::default();
     // PathManagerをStateとして管理するために再作成（ProjectDirsがCloneできないため）
@@ -187,6 +195,7 @@ pub fn run() {
         .manage(connection_pool_manager)
         .manage(query_cancellation_manager)
         .manage(query_storage)
+        .manage(sql_editor_query_storage)
         .manage(query_history_state)
         .manage(path_manager_managed)
         .manage(Arc::clone(&security_config_storage))
@@ -244,6 +253,7 @@ pub fn run() {
             commands::window::get_window_environment,
             commands::window::open_query_builder_window,
             commands::window::open_mutation_builder_window,
+            commands::window::open_sql_editor_window,
             commands::window::open_settings_window,
             commands::window::close_window,
             commands::window::focus_window,
@@ -264,7 +274,24 @@ pub fn run() {
             commands::query_storage_commands::load_query,
             commands::query_storage_commands::delete_query,
             commands::query_storage_commands::list_saved_queries,
+            commands::query_storage_commands::list_folders,
+            commands::query_storage_commands::move_query,
+            commands::query_storage_commands::rename_folder,
+            commands::query_storage_commands::delete_folder,
             commands::query_storage_commands::search_saved_queries,
+            commands::sql_editor::save_sql_query,
+            commands::sql_editor::load_sql_query,
+            commands::sql_editor::list_sql_queries,
+            commands::sql_editor::search_sql_queries,
+            commands::sql_editor::delete_sql_query,
+            commands::sql_editor::list_sql_editor_folders,
+            commands::sql_editor::create_sql_editor_folder,
+            commands::sql_editor::move_sql_editor_query,
+            commands::sql_editor::rename_sql_editor_folder,
+            commands::sql_editor::delete_sql_editor_folder,
+            commands::sql_editor::add_sql_editor_history,
+            commands::sql_editor::get_sql_editor_histories,
+            commands::sql_editor::delete_sql_editor_history,
             commands::query_history_commands::add_query_history,
             commands::query_history_commands::load_query_history,
             commands::query_history_commands::delete_query_history,

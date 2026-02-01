@@ -11,6 +11,8 @@ pub enum WindowType {
     QueryBuilder,
     /// データ変更ビルダーウィンドウ
     MutationBuilder,
+    /// SQLエディタウィンドウ
+    SqlEditor,
     /// 設定ウィンドウ
     Settings,
 }
@@ -22,7 +24,7 @@ pub struct WindowState {
     pub id: String,
     /// ウィンドウの種類
     pub window_type: WindowType,
-    /// 関連する接続ID（クエリビルダーの場合）
+    /// 関連する接続ID（クエリビルダー/ミューテーション/SQLエディタの場合）
     pub connection_id: Option<String>,
     /// ウィンドウ位置X
     pub x: Option<i32>,

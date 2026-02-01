@@ -8,7 +8,8 @@ export interface SavedQuery {
   name: string
   description: string
   tags: string[]
-  connectionId: string
+  folderPath: string | null
+  connectionId: string | null
   query: SerializableBuilderState
   createdAt: string
   updatedAt: string
@@ -19,7 +20,8 @@ export interface SavedQueryMetadata {
   name: string
   description: string
   tags: string[]
-  connectionId: string
+  folderPath: string | null
+  connectionId: string | null
   createdAt: string
   updatedAt: string
 }
@@ -29,7 +31,8 @@ export interface SaveQueryRequest {
   name: string
   description: string
   tags: string[]
-  connectionId: string
+  folderPath?: string | null
+  connectionId: string | null
   query: SerializableBuilderState
 }
 
@@ -37,4 +40,5 @@ export interface SearchQueryRequest {
   keyword?: string
   tags?: string[]
   connectionId?: string
+  folderPath?: string
 }

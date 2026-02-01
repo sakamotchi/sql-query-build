@@ -4,6 +4,13 @@ import { useSavedQueryStore } from '~/stores/saved-query'
 import type { SavedQueryMetadata } from '@/types/saved-query'
 import { queryStorageApi } from '@/api/query-storage'
 
+// useToast のモックを早期に設定
+const { mockToastAdd } = vi.hoisted(() => {
+  return {
+    mockToastAdd: vi.fn()
+  }
+})
+
 const queryBuilderStoreMock = {
   selectedColumns: [] as Array<unknown>,
   getSerializableState: vi.fn(),
@@ -24,6 +31,10 @@ const mutationBuilderStoreMock = {
 
 vi.mock('@/api/query-storage', () => ({
   queryStorageApi: {
+    listFolders: vi.fn(),
+    moveQuery: vi.fn(),
+    renameFolder: vi.fn(),
+    deleteFolder: vi.fn(),
     searchSavedQueries: vi.fn(),
     saveQuery: vi.fn(),
     loadQuery: vi.fn(),
@@ -47,16 +58,25 @@ vi.mock('@/stores/mutation-builder', () => ({
   useMutationBuilderStore: () => mutationBuilderStoreMock,
 }))
 
+// useToast のモック
+vi.mock('#imports', () => ({
+  useToast: () => ({
+    add: mockToastAdd,
+  }),
+}))
+
 describe('useSavedQueryStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    localStorage.clear()
     queryBuilderStoreMock.selectedColumns = []
     queryBuilderStoreMock.getSerializableState.mockReset()
     queryBuilderStoreMock.loadState.mockReset()
     connectionStoreMock.activeConnection = null
     windowStoreMock.currentConnectionId = undefined
     mutationBuilderStoreMock.loadState.mockReset()
+    mockToastAdd.mockReset()
   })
 
   it('初期状態がデフォルト値になる', () => {
@@ -66,6 +86,8 @@ describe('useSavedQueryStore', () => {
     expect(store.error).toBe(null)
     expect(store.searchKeyword).toBe('')
     expect(store.selectedTags).toEqual([])
+    expect(store.folders).toEqual([])
+    expect(store.expandedFolders.size).toBe(0)
   })
 
   it('filteredQueries は queries をそのまま返す', () => {
@@ -76,6 +98,7 @@ describe('useSavedQueryStore', () => {
         name: 'Query 1',
         description: 'desc',
         tags: ['tag-a'],
+        folderPath: null,
         connectionId: 'conn-1',
         createdAt: '2025-01-01T00:00:00Z',
         updatedAt: '2025-01-01T00:00:00Z',
@@ -95,6 +118,7 @@ describe('useSavedQueryStore', () => {
         name: 'Query 1',
         description: 'desc',
         tags: ['tag-b', 'tag-a'],
+        folderPath: null,
         connectionId: 'conn-1',
         createdAt: '2025-01-01T00:00:00Z',
         updatedAt: '2025-01-01T00:00:00Z',
@@ -104,6 +128,7 @@ describe('useSavedQueryStore', () => {
         name: 'Query 2',
         description: 'desc',
         tags: ['tag-a', 'tag-c'],
+        folderPath: null,
         connectionId: 'conn-2',
         createdAt: '2025-01-02T00:00:00Z',
         updatedAt: '2025-01-02T00:00:00Z',
@@ -122,6 +147,244 @@ describe('useSavedQueryStore', () => {
     expect(store.uniqueTags).toEqual([])
   })
 
+  it('queryTree はフォルダとクエリを正しくツリー構造に変換する', () => {
+    const store = useSavedQueryStore()
+    store.folders = ['/Dev', '/Dev/Users', '/Prod']
+    store.queries = [
+      {
+        id: 'q1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: '/Dev/Users',
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+      {
+        id: 'q2',
+        name: 'Root Query',
+        description: '',
+        tags: [],
+        folderPath: null,
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+    ]
+
+    const tree = store.queryTree
+
+    expect(tree.length).toBe(3)
+    expect(tree[0].type).toBe('folder')
+    expect(tree[0].name).toBe('Dev')
+    expect(tree[1].type).toBe('folder')
+    expect(tree[1].name).toBe('Prod')
+    expect(tree[2].type).toBe('query')
+    expect(tree[2].name).toBe('Root Query')
+
+    const devFolder = tree[0]
+    expect(devFolder.children?.length).toBe(1)
+    expect(devFolder.children![0].name).toBe('Users')
+
+    const usersFolder = devFolder.children![0]
+    expect(usersFolder.children?.length).toBe(1)
+    expect(usersFolder.children![0].name).toBe('Query 1')
+  })
+
+  it('queryTree は展開状態を反映する', () => {
+    const store = useSavedQueryStore()
+    store.folders = ['/Dev']
+    store.expandedFolders = new Set(['/Dev'])
+
+    const tree = store.queryTree
+
+    expect(tree[0].expanded).toBe(true)
+  })
+
+  it('queryTree はフォルダ直下のクエリ数をカウントする', () => {
+    const store = useSavedQueryStore()
+    store.folders = ['/Dev']
+    store.queries = [
+      {
+        id: 'q1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: '/Dev',
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+      {
+        id: 'q2',
+        name: 'Query 2',
+        description: '',
+        tags: [],
+        folderPath: '/Dev',
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+    ]
+
+    const tree = store.queryTree
+
+    expect(tree[0].queryCount).toBe(2)
+  })
+
+  it('toggleFolderExpansion は展開状態を切り替える', () => {
+    const store = useSavedQueryStore()
+
+    store.toggleFolderExpansion('/Dev')
+    expect(store.expandedFolders.has('/Dev')).toBe(true)
+
+    store.toggleFolderExpansion('/Dev')
+    expect(store.expandedFolders.has('/Dev')).toBe(false)
+  })
+
+  it('saveExpandedFolders / loadExpandedFolders は展開状態を保存・復元できる', () => {
+    const store = useSavedQueryStore()
+    store.expandedFolders = new Set(['/Dev', '/Prod'])
+    store.saveExpandedFolders()
+
+    setActivePinia(createPinia())
+    const newStore = useSavedQueryStore()
+    newStore.loadExpandedFolders()
+
+    expect(newStore.expandedFolders.has('/Dev')).toBe(true)
+    expect(newStore.expandedFolders.has('/Prod')).toBe(true)
+  })
+
+  it('fetchFolders はフォルダ一覧を取得できる', async () => {
+    const store = useSavedQueryStore()
+    vi.mocked(queryStorageApi.listFolders).mockResolvedValue(['/Dev'])
+
+    await store.fetchFolders()
+
+    expect(queryStorageApi.listFolders).toHaveBeenCalled()
+    expect(store.folders).toEqual(['/Dev'])
+  })
+
+  it('moveQuery はクエリを移動できる', async () => {
+    const store = useSavedQueryStore()
+    store.searchKeyword = 'keyword'
+    store.selectedTags = ['tag-a']
+    vi.mocked(queryStorageApi.moveQuery).mockResolvedValue()
+    vi.mocked(queryStorageApi.searchSavedQueries).mockResolvedValue([])
+
+    await store.moveQuery('q1', '/Dev')
+
+    expect(queryStorageApi.moveQuery).toHaveBeenCalledWith('q1', '/Dev')
+    expect(queryStorageApi.searchSavedQueries).toHaveBeenCalledWith({
+      keyword: 'keyword',
+      tags: ['tag-a'],
+    })
+  })
+
+  it('renameFolder は重複時にAPIを呼び出さない', async () => {
+    const store = useSavedQueryStore()
+    store.folders = ['/Dev']
+
+    await store.renameFolder('/Old', '/Dev')
+
+    expect(queryStorageApi.renameFolder).not.toHaveBeenCalled()
+  })
+
+  it('renameFolder はフォルダ名を変更できる', async () => {
+    const store = useSavedQueryStore()
+    store.folders = ['/Old']
+    store.expandedFolders = new Set(['/Old'])
+    vi.mocked(queryStorageApi.renameFolder).mockResolvedValue()
+    const fetchFoldersSpy = vi.spyOn(store, 'fetchFolders').mockResolvedValue()
+    const fetchQueriesSpy = vi.spyOn(store, 'fetchQueries').mockResolvedValue()
+    const saveExpandedSpy = vi.spyOn(store, 'saveExpandedFolders').mockImplementation(() => {})
+
+    await store.renameFolder('/Old', '/New')
+
+    expect(queryStorageApi.renameFolder).toHaveBeenCalledWith('/Old', '/New')
+    expect(fetchFoldersSpy).toHaveBeenCalled()
+    expect(fetchQueriesSpy).toHaveBeenCalled()
+    expect(store.expandedFolders.has('/New')).toBe(true)
+    expect(saveExpandedSpy).toHaveBeenCalled()
+  })
+
+  it('deleteFolder はクエリが含まれる場合にAPIを呼び出さない', async () => {
+    const store = useSavedQueryStore()
+    store.queries = [
+      {
+        id: 'q1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: '/Dev',
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+    ]
+
+    await store.deleteFolder('/Dev')
+
+    expect(queryStorageApi.deleteFolder).not.toHaveBeenCalled()
+  })
+
+  it('deleteFolder は空のフォルダを削除できる', async () => {
+    const store = useSavedQueryStore()
+    store.queries = []
+    vi.mocked(queryStorageApi.deleteFolder).mockResolvedValue()
+    const fetchFoldersSpy = vi.spyOn(store, 'fetchFolders').mockResolvedValue()
+
+    await store.deleteFolder('/Dev')
+
+    expect(queryStorageApi.deleteFolder).toHaveBeenCalledWith('/Dev')
+    expect(fetchFoldersSpy).toHaveBeenCalled()
+  })
+
+  it('handleQueryDrop は異なるフォルダに移動する', async () => {
+    const store = useSavedQueryStore()
+    store.queries = [
+      {
+        id: 'q1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: null,
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+    ]
+    store.folders = ['/Dev']
+    const moveSpy = vi.spyOn(store, 'moveQuery').mockResolvedValue()
+
+    await store.handleQueryDrop('q1', '/Dev')
+
+    expect(moveSpy).toHaveBeenCalledWith('q1', '/Dev')
+  })
+
+  it('handleQueryDrop は同じフォルダの場合に何もしない', async () => {
+    const store = useSavedQueryStore()
+    store.queries = [
+      {
+        id: 'q1',
+        name: 'Query 1',
+        description: '',
+        tags: [],
+        folderPath: '/Dev',
+        connectionId: null,
+        createdAt: '2025-01-01T00:00:00Z',
+        updatedAt: '2025-01-01T00:00:00Z',
+      },
+    ]
+    store.folders = ['/Dev']
+    const moveSpy = vi.spyOn(store, 'moveQuery').mockResolvedValue()
+
+    await store.handleQueryDrop('q1', '/Dev')
+
+    expect(moveSpy).not.toHaveBeenCalled()
+  })
+
   it('fetchQueries はクエリ一覧を取得できる', async () => {
     const store = useSavedQueryStore()
     const mockQueries: SavedQueryMetadata[] = [
@@ -130,6 +393,7 @@ describe('useSavedQueryStore', () => {
         name: 'Query 1',
         description: 'desc',
         tags: ['tag-a'],
+        folderPath: null,
         connectionId: 'conn-1',
         createdAt: '2025-01-01T00:00:00Z',
         updatedAt: '2025-01-01T00:00:00Z',
@@ -327,6 +591,7 @@ describe('useSavedQueryStore', () => {
       name: 'Query 1',
       description: 'desc',
       tags: ['tag-a'],
+      folderPath: null,
       connectionId: 'conn-1',
       query: {
         selectedTables: [],
@@ -368,6 +633,7 @@ describe('useSavedQueryStore', () => {
       name: 'Query 1',
       description: 'desc',
       tags: ['tag-a'],
+      folderPath: null,
       connectionId: 'conn-1',
       query: {
         selectedTables: [],
@@ -400,6 +666,7 @@ describe('useSavedQueryStore', () => {
       name: 'Mutation',
       description: 'desc',
       tags: [],
+      folderPath: null,
       connectionId: 'conn-1',
       query: {
         mutationType: 'INSERT',
@@ -436,6 +703,7 @@ describe('useSavedQueryStore', () => {
       name: 'Mutation',
       description: 'desc',
       tags: [],
+      folderPath: null,
       connectionId: 'conn-1',
       query: mutationQuery,
       createdAt: '2025-01-01T00:00:00Z',

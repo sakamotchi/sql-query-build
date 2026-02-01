@@ -1,8 +1,8 @@
 # 開発ガイドライン
 
-**バージョン**: 1.0
+**バージョン**: 1.1
 **作成日**: 2025年12月29日
-**最終更新**: 2025年12月29日
+**最終更新**: 2026年1月31日
 
 ---
 
@@ -253,6 +253,314 @@ pub async fn get_connections(
 }
 </style>
 ```
+
+### 2.4 多言語対応（i18n）
+
+#### 2.4.1 基本方針
+
+**重要**: 全てのUI表示文字列は多言語対応が必須です。
+
+- **ハードコード禁止**: 日本語・英語を問わず、文字列のハードコードは禁止
+- **翻訳キーで管理**: `i18n/locales/` のロケールファイルで全ての文字列を管理
+- **リアクティブ**: 言語切り替え時に即座に表示が更新される実装を行う
+- **現在対応言語**: 日本語（ja）、English（en）
+
+#### 2.4.2 必須チェックリスト
+
+新規コンポーネント作成時、および既存コンポーネント修正時は以下を確認：
+
+**開発時**:
+- [ ] コンポーネント内にハードコードされた文字列がない（日本語・英語問わず）
+- [ ] `useI18n()` を使用して翻訳関数を取得している
+- [ ] テンプレート内では `$t('翻訳キー')` を使用
+- [ ] スクリプト内（トースト、ダイアログ等）では `t('翻訳キー')` を使用
+- [ ] 動的な値はプレースホルダーで対応（例: `{name}`, `{count}`）
+- [ ] ロケールファイル（ja.json, en.json）に対応するキーが存在する
+
+**テスト時**:
+- [ ] 日本語環境で動作確認を実施
+- [ ] 英語環境で動作確認を実施
+- [ ] 言語切り替え時にリアクティブに更新されることを確認
+
+#### 2.4.3 実装パターン
+
+##### パターン1: 静的な文字列
+
+```vue
+<script setup lang="ts">
+// ❌ Bad: ハードコードされた文字列
+const title = '接続一覧'
+
+// ✅ Good: 翻訳キーを使用
+const { t } = useI18n()
+const title = computed(() => t('launcher.title'))
+</script>
+
+<template>
+  <!-- ❌ Bad: ハードコードされた文字列 -->
+  <h1>接続一覧</h1>
+
+  <!-- ✅ Good: 翻訳キーを使用 -->
+  <h1>{{ $t('launcher.title') }}</h1>
+</template>
+```
+
+##### パターン2: 動的な値を含む文字列
+
+```vue
+<script setup lang="ts">
+const { t } = useI18n()
+
+// ✅ Good: プレースホルダーを使用
+const message = computed(() =>
+  t('launcher.stats', { count: connections.value.length })
+)
+</script>
+
+<template>
+  <!-- ✅ Good: プレースホルダーを使用 -->
+  <p>{{ $t('launcher.stats', { count: connections.length }) }}</p>
+</template>
+```
+
+ロケールファイル:
+```json
+{
+  "launcher": {
+    "stats": "{count}件の接続"
+  }
+}
+```
+
+##### パターン3: ボタンやフォーム要素
+
+```vue
+<template>
+  <!-- ❌ Bad: ハードコード -->
+  <UButton label="保存" />
+
+  <!-- ✅ Good: 翻訳キー -->
+  <UButton :label="$t('common.save')" />
+
+  <!-- ❌ Bad: プレースホルダーもハードコード -->
+  <UInput placeholder="接続名を入力..." />
+
+  <!-- ✅ Good: プレースホルダーも翻訳キー -->
+  <UInput :placeholder="$t('connection.form.fields.namePlaceholder')" />
+</template>
+```
+
+##### パターン4: トースト通知
+
+```typescript
+// ❌ Bad: ハードコード
+toast.add({
+  title: '保存しました',
+  description: '接続情報を保存しました',
+  color: 'success',
+})
+
+// ✅ Good: 翻訳キーを使用
+const { t } = useI18n()
+
+toast.add({
+  title: t('connection.form.messages.saveSuccess'),
+  description: t('connection.form.messages.saveSuccessDesc'),
+  color: 'success',
+})
+```
+
+##### パターン5: 条件分岐を含む文字列
+
+```vue
+<script setup lang="ts">
+const { t } = useI18n()
+
+// ✅ Good: 条件ごとに異なる翻訳キーを使用
+const buttonLabel = computed(() =>
+  isEditMode.value
+    ? t('connection.form.title.edit')
+    : t('connection.form.title.new')
+)
+</script>
+
+<template>
+  <!-- ✅ Good: テンプレートでも条件分岐 -->
+  <h2>{{ isEditMode ? $t('connection.form.title.edit') : $t('connection.form.title.new') }}</h2>
+</template>
+```
+
+##### パターン6: 相対時刻・日付表示
+
+```typescript
+const { t, locale } = useI18n()
+
+// ✅ Good: 相対時刻は翻訳キーで管理
+function formatRelativeTime(dateStr: string) {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+
+  if (diffMs < 60_000) return t('common.relativeTime.fewSecondsAgo')
+  if (diffMs < 3_600_000) {
+    const minutes = Math.floor(diffMs / 60_000)
+    return t('common.relativeTime.minutesAgo', { minutes })
+  }
+
+  // ✅ Good: ロケールに応じた日付フォーマット
+  return date.toLocaleString(locale.value === 'ja' ? 'ja-JP' : 'en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+```
+
+#### 2.4.4 翻訳キーの命名規則
+
+##### 階層構造
+
+```
+{画面名}/
+├── {機能名}/
+│   ├── {要素名}
+│   └── {サブ機能}/
+│       └── {要素名}
+└── common/          # 画面内の共通要素
+```
+
+##### 命名パターン
+
+| 要素 | キー名 | 例 |
+|------|--------|-----|
+| ページタイトル | `title` | `launcher.title` |
+| ボタンラベル | 動詞 | `toolbar.execute`, `toolbar.save` |
+| フォームラベル | `fields.{項目名}.label` | `connection.form.fields.name.label` |
+| プレースホルダー | `fields.{項目名}.placeholder` | `connection.form.fields.namePlaceholder` |
+| エラーメッセージ | `validation.{項目名}{エラー種別}` | `connection.form.validation.nameRequired` |
+| トースト通知 | `toasts.{アクション}{結果}` | `connection.form.toasts.saveSuccess` |
+| ダイアログ | `dialogs.{ダイアログ名}.{要素}` | `launcher.dialogs.delete.title` |
+
+##### 良い例・悪い例
+
+```json
+{
+  // ✅ Good: 階層構造が明確
+  "connection": {
+    "form": {
+      "fields": {
+        "name": {
+          "label": "接続名",
+          "placeholder": "例: 開発用MySQL"
+        }
+      },
+      "validation": {
+        "nameRequired": "接続名は必須です",
+        "nameLength": "接続名は200文字以内で入力してください"
+      },
+      "toasts": {
+        "saveSuccess": "接続を保存しました",
+        "saveFailed": "接続の保存に失敗しました"
+      }
+    }
+  },
+
+  // ❌ Bad: フラットで分かりにくい
+  "connectionNameLabel": "接続名",
+  "connectionNamePlaceholder": "例: 開発用MySQL",
+  "connectionNameRequired": "接続名は必須です"
+}
+```
+
+#### 2.4.5 ロケールファイルの管理
+
+##### ファイル構造
+
+```
+i18n/locales/
+├── ja.json          # 日本語翻訳
+└── en.json          # 英語翻訳
+```
+
+##### 追加・更新手順
+
+1. **両方のファイルに同時に追加**: `ja.json` と `en.json` の両方に同じキーを追加
+2. **キー構造を統一**: 既存のセクションと同じ階層構造を使用
+3. **プレースホルダーを統一**: `{name}`, `{count}` などのプレースホルダー名を両言語で統一
+4. **動作確認**: 両言語で表示を確認
+
+##### 翻訳品質の基準
+
+| 基準 | 説明 |
+|------|------|
+| 正確性 | 日本語の意味を正確に英訳 |
+| 自然さ | 直訳ではなく自然な英語表現 |
+| 一貫性 | 用語の使用を統一（例: "Query" の統一使用） |
+| 簡潔性 | UI表示に適した簡潔な表現 |
+
+#### 2.4.6 よくある間違いと対策
+
+##### 間違い1: バリデーションメッセージのハードコード
+
+```typescript
+// ❌ Bad
+const validate = (state: FormState): FormError[] => {
+  const errors: FormError[] = []
+  if (!state.name) {
+    errors.push({ path: 'name', message: '接続名は必須です' })
+  }
+  return errors
+}
+
+// ✅ Good
+const { t } = useI18n()
+
+const validate = (state: FormState): FormError[] => {
+  const errors: FormError[] = []
+  if (!state.name) {
+    errors.push({
+      path: 'name',
+      message: t('connection.form.validation.nameRequired')
+    })
+  }
+  return errors
+}
+```
+
+##### 間違い2: 文字列連結での動的メッセージ
+
+```typescript
+// ❌ Bad: 文字列連結
+const message = `${count}件の接続`
+
+// ✅ Good: プレースホルダーを使用
+const message = t('launcher.stats', { count })
+```
+
+##### 間違い3: 日付フォーマットのハードコード
+
+```typescript
+// ❌ Bad: 固定フォーマット
+const formattedDate = `${month}月${day}日`
+
+// ✅ Good: ロケールに応じたフォーマット
+const { locale } = useI18n()
+const formattedDate = date.toLocaleDateString(
+  locale.value === 'ja' ? 'ja-JP' : 'en-US'
+)
+```
+
+#### 2.4.7 レビュー時のチェックポイント
+
+コードレビュー時は以下を確認：
+
+- [ ] ハードコードされた文字列がないか（日本語・英語問わず）
+- [ ] 翻訳キーが `ja.json` と `en.json` の両方に存在するか
+- [ ] プレースホルダーが正しく使用されているか
+- [ ] 条件分岐が適切に翻訳キーで管理されているか
+- [ ] 日付・時刻表示がロケールに対応しているか
+- [ ] エラーメッセージも多言語対応されているか
 
 ---
 
@@ -523,4 +831,5 @@ let query = format!("SELECT * FROM users WHERE id = '{}'", user_id);
 
 | 日付 | バージョン | 変更内容 | 作成者 |
 |------|----------|---------|--------|
+| 2026-01-31 | 1.1 | 多言語対応（i18n）のルールセクション追加（2.4） | - |
 | 2025-12-29 | 1.0 | 初版作成 | - |

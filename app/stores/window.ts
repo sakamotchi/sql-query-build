@@ -58,6 +58,13 @@ export const useWindowStore = defineStore('window', {
     },
 
     /**
+     * SQLエディタウィンドウかどうか
+     */
+    isSqlEditor(state): boolean {
+      return state.currentContext?.windowType === 'sql_editor'
+    },
+
+    /**
      * 設定ウィンドウかどうか
      */
     isSettings(state): boolean {
@@ -255,6 +262,16 @@ export const useWindowStore = defineStore('window', {
         return {
           windowLabel: label,
           windowType: 'mutation_builder',
+          connectionId,
+        }
+      }
+
+      // SQLエディタ
+      if (label.startsWith('sql_editor_')) {
+        const connectionId = label.replace('sql_editor_', '')
+        return {
+          windowLabel: label,
+          windowType: 'sql_editor',
           connectionId,
         }
       }

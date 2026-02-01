@@ -41,6 +41,15 @@ impl PostgresExecutor {
         Ok(Self { pool })
     }
 
+    /// SQL文をセミコロンで分割（簡易的な実装）
+    /// TODO: 文字列リテラル内のセミコロンを考慮した高度な分割が必要な場合は改善
+    fn split_sql_statements(sql: &str) -> Vec<String> {
+        sql.split(';')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    }
+
     fn map_error(err: sqlx::Error) -> QueryError {
         match &err {
             sqlx::Error::Database(db_err) => {
@@ -255,44 +264,73 @@ impl QueryExecutor for PostgresExecutor {
     async fn execute(&self, sql: &str) -> Result<QueryResult, QueryError> {
         let start = std::time::Instant::now();
 
-        let rows = sqlx::query(sql)
-            .fetch_all(&self.pool)
-            .await
-            .map_err(Self::map_error)?;
+        // セミコロンで分割して複数のSQL文を順次実行
+        // 最後の文の結果を返す（SET文などは結果を返さないため）
+        let statements = Self::split_sql_statements(sql);
 
-        let execution_time_ms = start.elapsed().as_millis() as u64;
-
-        // カラム情報を取得
-        let columns = if let Some(first_row) = rows.first() {
-            first_row
-                .columns()
-                .iter()
-                .map(|col| QueryResultColumn {
-                    name: col.name().to_string(),
-                    data_type: col.type_info().name().to_string(),
-                    nullable: true, // PgRowからは正確なnullable取得が難しいためtrue
-                })
-                .collect()
-        } else {
-            // 行がない場合、Describeを実行してカラム情報を取得するのが理想だが、
-            // ここでは簡易的に空にする（またはsqlx::query(sql).describe()を使う必要がある）
-            // 必要であれば後で実装追加
-            vec![]
+        let mut last_result = QueryResult {
+            columns: vec![],
+            rows: vec![],
+            row_count: 0,
+            execution_time_ms: 0,
+            warnings: vec![],
         };
 
-        // 行データを変換
-        let result_rows: Vec<QueryResultRow> = rows
-            .iter()
-            .map(|row| Self::convert_row(row, &columns))
-            .collect();
+        for statement in statements.iter() {
+            let trimmed = statement.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
 
-        Ok(QueryResult {
-            columns,
-            rows: result_rows,
-            row_count: rows.len(),
-            execution_time_ms,
-            warnings: vec![],
-        })
+            // SET文かどうかを判定
+            let is_set_statement = trimmed.to_uppercase().starts_with("SET ");
+
+            if is_set_statement {
+                // SET文は結果を返さないため、executeで実行
+                sqlx::query(trimmed)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(Self::map_error)?;
+            } else {
+                // SELECT文など、結果を返すクエリ
+                let rows = sqlx::query(trimmed)
+                    .fetch_all(&self.pool)
+                    .await
+                    .map_err(Self::map_error)?;
+
+                // カラム情報を取得
+                let columns = if let Some(first_row) = rows.first() {
+                    first_row
+                        .columns()
+                        .iter()
+                        .map(|col| QueryResultColumn {
+                            name: col.name().to_string(),
+                            data_type: col.type_info().name().to_string(),
+                            nullable: true, // PgRowからは正確なnullable取得が難しいためtrue
+                        })
+                        .collect()
+                } else {
+                    vec![]
+                };
+
+                // 行データを変換
+                let result_rows: Vec<QueryResultRow> = rows
+                    .iter()
+                    .map(|row| Self::convert_row(row, &columns))
+                    .collect();
+
+                last_result = QueryResult {
+                    columns,
+                    rows: result_rows,
+                    row_count: rows.len(),
+                    execution_time_ms: 0, // 後で設定
+                    warnings: vec![],
+                };
+            }
+        }
+
+        last_result.execution_time_ms = start.elapsed().as_millis() as u64;
+        Ok(last_result)
     }
 
     async fn execute_mutation(&self, sql: &str) -> Result<MutationResult, QueryError> {

@@ -9,4 +9,5 @@ pub mod query_storage_commands;
 pub mod safety;
 pub mod security;
 pub mod settings;
+pub mod sql_editor;
 pub mod window;

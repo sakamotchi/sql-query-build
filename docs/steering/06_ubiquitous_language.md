@@ -2,7 +2,7 @@
 
 **バージョン**: 1.0
 **作成日**: 2025年12月29日
-**最終更新**: 2025年12月29日
+**最終更新**: 2026年01月25日
 
 ---
 
@@ -94,6 +94,15 @@
 | 完全外部結合 | Full Join | 両テーブルの全データを保持して結合 | `'FULL'` |
 | クロス結合 | Cross Join | 全組み合わせを生成（直積） | `'CROSS'` |
 | 結合条件 | Join Condition | テーブルを結合する条件（ON句） | `JoinCondition` |
+
+### 2.7 保存クエリ管理（Saved Query Management）
+
+| 用語 | 英語表記 | 定義 | コード上の表現 |
+|------|---------|------|---------------|
+| フォルダパス | Folder Path | 保存クエリのフォルダ階層を表すパス | `folderPath: string \| null` |
+| ツリーノード | Tree Node | フォルダ/クエリを表すツリー構造のノード | `TreeNode` |
+| 展開状態 | Expansion State | フォルダの展開/折りたたみ状態 | `expandedFolders: Set<string>` |
+| クエリツリー | Query Tree | フォルダとクエリの階層ツリー | `queryTree` |
 
 ---
 

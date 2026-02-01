@@ -15,12 +15,14 @@ const emit = defineEmits<{
   delete: [connection: Connection]
   connect: [connection: Connection]
   mutation: [connection: Connection]
+  'open-sql-editor': [connection: Connection]
 }>()
 
 const handleEdit = (connection: Connection) => emit('edit', connection)
 const handleDelete = (connection: Connection) => emit('delete', connection)
 const handleConnect = (connection: Connection) => emit('connect', connection)
 const handleMutation = (connection: Connection) => emit('mutation', connection)
+const handleOpenSqlEditor = (connection: Connection) => emit('open-sql-editor', connection)
 </script>
 
 <template>
@@ -53,19 +55,32 @@ const handleMutation = (connection: Connection) => emit('mutation', connection)
               </p>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <UButton color="primary" size="sm" @click="handleConnect(connection)">
-              {{ t('connection.actions.browseData') }}
-            </UButton>
-            <UButton color="primary" variant="outline" size="sm" @click="handleMutation(connection)">
-              {{ t('connection.actions.mutation') }}
-            </UButton>
-            <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit(connection)">
-              {{ t('common.edit') }}
-            </UButton>
-            <UButton color="error" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete(connection)">
-              {{ t('common.delete') }}
-            </UButton>
+          <div class="space-y-2">
+            <div class="grid grid-cols-3 gap-2">
+              <UButton color="primary" size="sm" @click="handleConnect(connection)">
+                {{ t('connection.actions.browseData') }}
+              </UButton>
+              <UButton color="primary" variant="outline" size="sm" @click="handleMutation(connection)">
+                {{ t('connection.actions.mutation') }}
+              </UButton>
+              <UButton
+                color="primary"
+                variant="outline"
+                size="sm"
+                icon="i-heroicons-code-bracket"
+                @click="handleOpenSqlEditor(connection)"
+              >
+                {{ t('connection.actions.editor') }}
+              </UButton>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <UButton color="neutral" variant="outline" size="sm" icon="i-heroicons-pencil" @click="handleEdit(connection)">
+                {{ t('common.edit') }}
+              </UButton>
+              <UButton color="error" variant="outline" size="sm" icon="i-heroicons-trash" @click="handleDelete(connection)">
+                {{ t('common.delete') }}
+              </UButton>
+            </div>
           </div>
         </div>
       </UCard>

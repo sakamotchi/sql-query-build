@@ -16,6 +16,7 @@
             "open": "Query Builder launched",
             "openDesc": "Connecting to {name}",
             "openMutation": "Mutation Builder launched",
+            "openSqlEditor": "SQL Editor launched",
             "error": "Failed to launch window",
             "unknownError": "An unknown error occurred"
         }
@@ -108,6 +109,7 @@
             "browseData": "Data Reference",
             "mutation": "Data Mutation",
             "queryBuilder": "Query Builder",
+            "editor": "SQL Editor",
             "connect": "Connect"
         },
         "fields": {
@@ -722,6 +724,271 @@
                 "body": "Reset all environment safety settings to default?",
                 "cancel": "Cancel",
                 "confirm": "Reset"
+            }
+        }
+    },
+    "sqlEditor": {
+        "toolbar": {
+            "execute": "Execute",
+            "stop": "Stop",
+            "format": "Format",
+            "save": "Save",
+            "togglePanel": {
+                "show": "Show Panel",
+                "hide": "Hide Panel"
+            },
+            "database": {
+                "placeholder": "Select schema",
+                "mysqlReadonlyTooltip": "MySQL uses the default database specified in the connection. To access other databases, use fully qualified names (database.table)."
+            },
+            "updateDialog": {
+                "title": "Update Query?",
+                "description": "Choose whether to update the saved query or save as a new query",
+                "currentQuery": "Current Query: {name}",
+                "currentQueryDesc": "This will overwrite the query",
+                "actions": {
+                    "cancel": "Cancel",
+                    "saveAsNew": "Save as New",
+                    "update": "Update"
+                },
+                "toasts": {
+                    "updateSuccess": "Query updated successfully",
+                    "updateFailed": "Failed to update query"
+                }
+            }
+        },
+        "layout": {
+            "savedPanelTitle": "Saved Queries",
+            "historyPanelTitle": "Execution History"
+        },
+        "savedPanel": {
+            "search": "Search queries...",
+            "newFolder": "New Folder",
+            "tagFilter": "Tag Filter:",
+            "currentQuery": "Current Query",
+            "empty": "No saved queries",
+            "contextMenu": {
+                "folder": {
+                    "newFolder": "New Folder",
+                    "rename": "Rename",
+                    "delete": "Delete",
+                    "expandAll": "Expand All",
+                    "collapseAll": "Collapse All"
+                },
+                "query": {
+                    "load": "Load",
+                    "execute": "Execute",
+                    "edit": "Edit",
+                    "move": "Move",
+                    "moveToRoot": "Move to Root",
+                    "delete": "Delete"
+                }
+            },
+            "validation": {
+                "invalidFolderName": "Invalid folder name"
+            },
+            "toasts": {
+                "loadSuccess": "Loaded \"{name}\"",
+                "loadFailed": "Failed to load query",
+                "loadFailedDesc": "Please try again later",
+                "executeFailed": "Failed to execute query",
+                "executeFailedDesc": "Please try again later",
+                "deleteSuccess": "Query deleted successfully",
+                "deleteFailed": "Failed to delete query",
+                "moveSuccess": "Query moved successfully",
+                "moveFailed": "Failed to move query",
+                "createFolderSuccess": "Folder created successfully",
+                "createFolderFailed": "Failed to create folder",
+                "renameFolderSuccess": "Folder renamed successfully",
+                "renameFolderFailed": "Failed to rename folder",
+                "deleteFolderSuccess": "Folder deleted successfully",
+                "deleteFolderFailed": "Failed to delete folder",
+                "folderNotEmpty": "Cannot delete folder",
+                "folderNotEmptyDesc": "Folder contains {count} queries",
+                "folderDuplicate": "Folder name already exists",
+                "folderDuplicateDesc": "\"{path}\" already exists",
+                "retryLater": "Please try again later"
+            },
+            "dialogs": {
+                "confirmLoad": {
+                    "title": "Unsaved Changes",
+                    "description": "Your current changes will be lost. Continue?",
+                    "confirmLabel": "Load"
+                },
+                "deleteQuery": {
+                    "title": "Delete Query?",
+                    "description": "\"{name}\" cannot be recovered.",
+                    "confirmLabel": "Delete"
+                },
+                "deleteFolder": {
+                    "title": "Delete Folder?",
+                    "description": "Delete \"{path}\".",
+                    "confirmLabel": "Delete"
+                },
+                "createFolder": {
+                    "title": "Create Folder",
+                    "description": "Enter a folder name",
+                    "targetLabel": "Location:",
+                    "targetRoot": "Root",
+                    "nameLabel": "Folder Name",
+                    "namePlaceholder": "Ex: Development",
+                    "actions": {
+                        "cancel": "Cancel",
+                        "create": "Create"
+                    }
+                },
+                "renameFolder": {
+                    "title": "Rename Folder",
+                    "description": "Enter a new folder name",
+                    "targetLabel": "Target:",
+                    "targetRoot": "Root",
+                    "parentLabel": "Parent Folder:",
+                    "nameLabel": "New Folder Name",
+                    "namePlaceholder": "Ex: Production",
+                    "actions": {
+                        "cancel": "Cancel",
+                        "rename": "Rename"
+                    }
+                },
+                "moveQuery": {
+                    "title": "Move Query",
+                    "description": "Select destination for \"{name}\"",
+                    "descriptionNoName": "Select a destination",
+                    "folderLabel": "Destination Folder",
+                    "placeholder": "Select destination",
+                    "rootOption": "Root",
+                    "actions": {
+                        "cancel": "Cancel",
+                        "move": "Move"
+                    }
+                }
+            }
+        },
+        "historyPanel": {
+            "search": "Search history...",
+            "filterSuccessOnly": "Success only",
+            "empty": "No history",
+            "status": {
+                "success": "Success",
+                "failure": "Failure"
+            },
+            "relativeTime": {
+                "fewSecondsAgo": "A few seconds ago",
+                "minutesAgo": "{minutes} min ago",
+                "today": "Today {time}"
+            },
+            "executionTime": "{ms}ms",
+            "executionTimeSeconds": "{seconds}s",
+            "rowCount": "{count} rows",
+            "actions": {
+                "reExecute": "Re-execute",
+                "delete": "Delete"
+            },
+            "toasts": {
+                "loadSuccess": "History loaded successfully",
+                "loadFailed": "Failed to load history",
+                "reExecuteStart": "Re-executing history",
+                "reExecuteSuccess": "History re-executed successfully",
+                "reExecuteFailed": "Failed to re-execute history",
+                "deleteSuccess": "History deleted successfully",
+                "deleteFailed": "Failed to delete history"
+            },
+            "dialogs": {
+                "confirmLoad": {
+                    "title": "Unsaved Changes",
+                    "description": "Your current changes will be lost. Continue?",
+                    "confirmLabel": "Load"
+                },
+                "deleteHistory": {
+                    "title": "Delete History?",
+                    "description": "This history cannot be recovered.",
+                    "confirmLabel": "Delete"
+                }
+            }
+        },
+        "resultPanel": {
+            "title": "Result",
+            "executionTime": "Execution Time: {seconds}s",
+            "rowCount": {
+                "select": "Rows: {count}",
+                "mutation": "Affected Rows: {count}"
+            },
+            "export": "Export",
+            "executing": "Executing...",
+            "executePrompt": "Please execute a query",
+            "errorPosition": "Error at line {line}, column {column}",
+            "errorPositionLine": "Error at line {line}"
+        },
+        "saveDialog": {
+            "title": {
+                "create": "Save Query",
+                "edit": "Edit Saved Query"
+            },
+            "description": {
+                "create": "Enter name, description, and tags",
+                "edit": "SQL content cannot be changed"
+            },
+            "fields": {
+                "queryName": {
+                    "label": "Query Name",
+                    "placeholder": "Ex: Get All Users"
+                },
+                "description": {
+                    "label": "Description",
+                    "placeholder": "Describe the purpose of this query...",
+                    "hint": "Optional"
+                },
+                "tags": {
+                    "label": "Tags",
+                    "placeholder": "Ex: admin, report",
+                    "hint": "Comma-separated"
+                },
+                "folder": {
+                    "label": "Folder",
+                    "hint": "Optional",
+                    "rootOption": "Root (No folder)",
+                    "searchPlaceholder": "Search folders..."
+                }
+            },
+            "validation": {
+                "nameRequired": "Query name is required",
+                "nameLength": "Query name must be within 100 characters",
+                "descriptionLength": "Description must be within 500 characters"
+            },
+            "actions": {
+                "cancel": "Cancel",
+                "save": "Save"
+            },
+            "toasts": {
+                "noConnection": "Connection not found",
+                "noConnectionDesc": "Please select a connection before saving",
+                "sqlEmpty": "SQL is empty",
+                "sqlEmptyDesc": "Please enter SQL to save",
+                "saveSuccess": "Query saved successfully",
+                "saveFailed": "Failed to save query",
+                "saveFailedDesc": "Please check your input",
+                "updateSuccess": "Query information updated successfully",
+                "updateFailed": "Failed to update query information"
+            },
+            "errors": {
+                "editTargetNotFound": "Query to edit was not found"
+            }
+        },
+        "tabs": {
+            "newTab": "New",
+            "closeTabAria": "Close tab",
+            "confirm": {
+                "title": "Unsaved Changes",
+                "description": "This tab has unsaved changes. What would you like to do?",
+                "actions": {
+                    "cancel": "Cancel",
+                    "discard": "Discard",
+                    "save": "Save"
+                }
+            },
+            "toasts": {
+                "saveFailed": "Failed to save query",
+                "saveFailedDesc": "Please try again later"
             }
         }
     },

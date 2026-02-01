@@ -38,19 +38,23 @@ export async function validateSavedQuery(
   currentConnectionId: string
 ): Promise<QueryValidationResult> {
   const tables = extractTablesFromQuery(savedQuery.query)
+  const hasConnectionId = savedQuery.connectionId !== null
+  const connectionMatches = !hasConnectionId || savedQuery.connectionId === currentConnectionId
+  const originalConnectionId = savedQuery.connectionId ?? undefined
+  const currentConnectionIdValue = hasConnectionId ? currentConnectionId : undefined
 
   // テーブルがない場合は有効とする
   if (tables.length === 0) {
     return {
       status: 'valid',
-      connectionMatches: savedQuery.connectionId === currentConnectionId,
+      connectionMatches,
       tables: [],
       missingTables: [],
     }
   }
 
   // 接続が同じ場合はバリデーション不要
-  if (savedQuery.connectionId === currentConnectionId) {
+  if (hasConnectionId && savedQuery.connectionId === currentConnectionId) {
     return {
       status: 'valid',
       connectionMatches: true,
@@ -68,12 +72,12 @@ export async function validateSavedQuery(
   if (missingTables.length === tables.length) {
     return {
       status: 'error',
-      connectionMatches: false,
+      connectionMatches,
       tables: validationResults,
       missingTables,
       message: 'このクエリのテーブルがすべて見つかりません',
-      originalConnectionId: savedQuery.connectionId,
-      currentConnectionId,
+      originalConnectionId,
+      currentConnectionId: currentConnectionIdValue,
     }
   }
 
@@ -81,23 +85,32 @@ export async function validateSavedQuery(
   if (missingTables.length > 0) {
     return {
       status: 'warning',
-      connectionMatches: false,
+      connectionMatches,
       tables: validationResults,
       missingTables,
       message: `${tables.length}テーブル中${missingTables.length}個が見つかりません`,
-      originalConnectionId: savedQuery.connectionId,
-      currentConnectionId,
+      originalConnectionId,
+      currentConnectionId: currentConnectionIdValue,
     }
   }
 
   // すべてのテーブルが存在するが、接続が異なる
+  if (hasConnectionId) {
+    return {
+      status: 'valid',
+      connectionMatches: false,
+      tables: validationResults,
+      missingTables: [],
+      message: `別の接続のクエリを開きました (${tables.length}テーブル)`,
+      originalConnectionId,
+      currentConnectionId,
+    }
+  }
+
   return {
     status: 'valid',
-    connectionMatches: false,
+    connectionMatches: true,
     tables: validationResults,
     missingTables: [],
-    message: `別の接続のクエリを開きました (${tables.length}テーブル)`,
-    originalConnectionId: savedQuery.connectionId,
-    currentConnectionId,
   }
 }

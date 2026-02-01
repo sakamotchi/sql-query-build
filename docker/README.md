@@ -64,6 +64,26 @@ postgresql://benchmark:benchmark@localhost:5433/postgres
 - `benchmark_small` - 10テーブル（小規模）
 - `benchmark_medium` - 100テーブル（中規模）
 - `benchmark_large` - 500テーブル（大規模）
+- `benchmark_xlarge` - 1000テーブル（超大規模）
+- `benchmark_xxlarge` - 2000テーブル（超々大規模）
+
+**ベンチマーク用データベース接続文字列**:
+```
+# 小規模 (10 tables)
+postgresql://benchmark:benchmark@localhost:5433/benchmark_small
+
+# 中規模 (100 tables)
+postgresql://benchmark:benchmark@localhost:5433/benchmark_medium
+
+# 大規模 (500 tables)
+postgresql://benchmark:benchmark@localhost:5433/benchmark_large
+
+# 超大規模 (1000 tables)
+postgresql://benchmark:benchmark@localhost:5433/benchmark_xlarge
+
+# 超々大規模 (2000 tables)
+postgresql://benchmark:benchmark@localhost:5433/benchmark_xxlarge
+```
 
 ### MySQL
 
@@ -85,6 +105,26 @@ mysql://benchmark:benchmark@localhost:3307/benchmark_small
 - `benchmark_small` - 10テーブル（小規模）
 - `benchmark_medium` - 100テーブル（中規模）
 - `benchmark_large` - 500テーブル（大規模）
+- `benchmark_xlarge` - 1000テーブル（超大規模）
+- `benchmark_xxlarge` - 2000テーブル（超々大規模）
+
+**ベンチマーク用データベース接続文字列**:
+```
+# 小規模 (10 tables)
+mysql://benchmark:benchmark@localhost:3307/benchmark_small
+
+# 中規模 (100 tables)
+mysql://benchmark:benchmark@localhost:3307/benchmark_medium
+
+# 大規模 (500 tables)
+mysql://benchmark:benchmark@localhost:3307/benchmark_large
+
+# 超大規模 (1000 tables)
+mysql://benchmark:benchmark@localhost:3307/benchmark_xlarge
+
+# 超々大規模 (2000 tables)
+mysql://benchmark:benchmark@localhost:3307/benchmark_xxlarge
+```
 
 ## デモ用データベース（スクリーンショット撮影用）
 
@@ -132,7 +172,9 @@ mysql://benchmark:benchmark@localhost:3307/demo_ecommerce
 postgresql/init/
 ├── 01-create-small.sql
 ├── 02-create-medium.sql
-└── 03-create-large.sql
+├── 03-create-large.sql
+├── 04-create-xlarge.sql
+└── 05-create-xxlarge.sql
 ```
 
 ### MySQL
@@ -143,7 +185,9 @@ postgresql/init/
 mysql/init/
 ├── 01-create-small.sql
 ├── 02-create-medium.sql
-└── 03-create-large.sql
+├── 03-create-large.sql
+├── 04-create-xlarge.sql
+└── 05-create-xxlarge.sql
 ```
 
 ## SQLスクリプトの例
