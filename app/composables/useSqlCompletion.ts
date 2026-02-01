@@ -70,12 +70,6 @@ export function useSqlCompletion() {
   ): monaco.languages.CompletionList {
     const context = createCompletionContext(model, position)
 
-    console.log('[useSqlCompletion] provideCompletionItems called', {
-      connectionId: context.connectionId,
-      currentWord: context.currentWord,
-      lineText: context.lineText,
-    })
-
     const items: monaco.languages.CompletionItem[] = []
 
     items.push(...getKeywordCompletions(context))
@@ -85,11 +79,8 @@ export function useSqlCompletion() {
     if (context.connectionId) {
       items.push(...getTableCompletions(context))
       items.push(...getColumnCompletions(context))
-    } else {
-      console.log('[useSqlCompletion] No connectionId - skipping table/column completions')
     }
 
-    console.log('[useSqlCompletion] Total suggestions:', items.length)
     return { suggestions: items }
   }
 
@@ -133,14 +124,6 @@ export function useSqlCompletion() {
       startColumn: position.column - currentWord.length,
       endColumn: position.column,
     }
-
-    console.log('[useSqlCompletion] createCompletionContext', {
-      connectionId,
-      databaseType,
-      selectedDatabase,
-      currentWord,
-      previousWord,
-    })
 
     return {
       connectionId,
@@ -205,30 +188,14 @@ export function useSqlCompletion() {
    * テーブル名の補完候補を取得
    */
   function getTableCompletions(context: CompletionContext): monaco.languages.CompletionItem[] {
-    // デバッグログ
-    console.log('[useSqlCompletion] getTableCompletions called', {
-      connectionId: context.connectionId,
-      currentWord: context.currentWord,
-      hasStructure: !!databaseStructureStore.structures[context.connectionId || ''],
-      structureKeys: Object.keys(databaseStructureStore.structures),
-    })
-
     if (!context.connectionId) {
-      console.log('[useSqlCompletion] No connectionId - returning empty')
       return []
     }
 
     const structure = databaseStructureStore.structures[context.connectionId]
     if (!structure) {
-      console.log('[useSqlCompletion] No structure found for connectionId:', context.connectionId)
       return []
     }
-
-    console.log('[useSqlCompletion] Structure found:', {
-      schemasCount: structure.schemas.length,
-      firstSchema: structure.schemas[0]?.name,
-      tablesCount: structure.schemas[0]?.tables?.length,
-    })
 
     const items: monaco.languages.CompletionItem[] = []
     let count = 0
@@ -240,14 +207,6 @@ export function useSqlCompletion() {
     if (dotIndex > 0) {
       targetSchema = context.currentWord.substring(0, dotIndex)
     }
-
-    console.log('[useSqlCompletion] getTableCompletions - Filtering logic', {
-      currentWord: context.currentWord,
-      dotIndex,
-      targetSchema,
-      selectedDatabase: context.selectedDatabase,
-      totalSchemas: structure.schemas.length,
-    })
 
     for (const schema of structure.schemas) {
       // 選択中のデータベースでフィルタリング
@@ -267,13 +226,6 @@ export function useSqlCompletion() {
           skipSchema = true
         }
       }
-
-      console.log('[useSqlCompletion] getTableCompletions - Schema filtering', {
-        schemaName: schema.name,
-        targetSchema,
-        selectedDatabase: context.selectedDatabase,
-        skipSchema,
-      })
 
       if (skipSchema) {
         continue
@@ -309,14 +261,6 @@ export function useSqlCompletion() {
         const label = `${table.name} (${schema.name})`
         const insertText = `${table.name} AS ${alias}`
 
-        console.log('[useSqlCompletion] getTableCompletions - Adding table', {
-          tableName: table.name,
-          schemaName: schema.name,
-          label,
-          currentWord: context.currentWord,
-          selectedDatabase: context.selectedDatabase,
-        })
-
         items.push({
           label,
           kind: COMPLETION_KIND_MAP.table,
@@ -332,11 +276,6 @@ export function useSqlCompletion() {
       }
     }
 
-    console.log('[useSqlCompletion] Returning table items:', {
-      count: items.length,
-      selectedDatabase: context.selectedDatabase,
-      items: items.map(item => ({ label: item.label, insertText: item.insertText })),
-    })
     return items
   }
 
@@ -367,13 +306,6 @@ export function useSqlCompletion() {
       if (!targetTableName) {
         targetTableName = aliasOrTable
       }
-
-      console.log('[useSqlCompletion] Alias detected:', {
-        aliasOrTable,
-        targetTableName,
-        columnPrefix,
-        allAliases: context.aliases,
-      })
 
       // ドットがある場合、補完範囲をドットの後に限定する
       completionRange = {
@@ -431,17 +363,6 @@ export function useSqlCompletion() {
             sortText: column.isPrimaryKey ? `3_${column.name}` : `4_${column.name}`,
             range: completionRange,
           })
-
-          // デバッグ用ログ（最初の1件のみ）
-          if (count === 0) {
-            console.log('[useSqlCompletion] First completion item:', {
-              label: `${column.name} (${table.name})`,
-              insertText: column.name,
-              range: completionRange,
-              currentWord: context.currentWord,
-              columnPrefix,
-            })
-          }
 
           count += 1
           if (count >= MAX_SUGGESTIONS_PER_CATEGORY) return items
