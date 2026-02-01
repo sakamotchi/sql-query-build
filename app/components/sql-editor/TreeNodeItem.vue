@@ -92,8 +92,8 @@ const handleMouseUp = (event: MouseEvent) => {
   if (element && draggedQueryId) {
     const folderElement = element.closest('[data-folder-path]') as HTMLElement
     if (folderElement) {
-      const targetPath = folderElement.dataset.folderPath
-      emit('move-query', { queryId: draggedQueryId, targetPath: targetPath === '' ? null : targetPath })
+      const targetPath = folderElement.dataset.folderPath ?? ''
+      emit('move-query', { queryId: draggedQueryId as string, targetPath: targetPath === '' ? null : targetPath })
     }
   }
 

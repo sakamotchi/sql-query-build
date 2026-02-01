@@ -90,11 +90,9 @@ pub async fn load_sql_query(
 
 #[tauri::command]
 pub async fn list_sql_queries(
-    connection_id: Option<String>,
     storage: State<'_, Arc<SqlEditorQueryStorage>>,
 ) -> Result<Vec<SqlEditorQueryMetadata>, String> {
-    // 接続非依存化のため、接続IDでのフィルタリングを削除
-    // 全クエリを返す
+    // 接続非依存化のため、全クエリを返す
     let queries = storage.list_queries()?;
 
     Ok(queries)

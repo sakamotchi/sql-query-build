@@ -255,7 +255,7 @@ describe('SqlEditorStore', () => {
     await store.loadSavedQueries()
 
     expect(store.savedQueries).toEqual(mockQueries)
-    expect(sqlEditorApi.listQueries).toHaveBeenCalledWith('conn-1')
+    expect(sqlEditorApi.listQueries).toHaveBeenCalled()
   })
 
   it('クエリを保存できる', async () => {
@@ -339,7 +339,7 @@ describe('SqlEditorStore', () => {
     await store.moveSavedQuery('q1', '/開発環境')
 
     expect(sqlEditorApi.moveQuery).toHaveBeenCalledWith('q1', '/開発環境')
-    expect(sqlEditorApi.listQueries).toHaveBeenCalledWith('conn-1')
+    expect(sqlEditorApi.listQueries).toHaveBeenCalled()
     expect(sqlEditorApi.listFolders).toHaveBeenCalled()
   })
 

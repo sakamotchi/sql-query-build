@@ -480,7 +480,7 @@ const handleConfirmMoveDialog = async (targetPath: string | null) => {
         @execute-query="handleExecute"
         @edit-query="handleEdit"
         @delete-query="handleDelete"
-        @move-query="handleMoveQuery"
+        @move-query="(event) => handleMoveQuery(event.queryId, event.targetPath)"
         @toggle-folder="handleToggleFolder"
         @open-context-menu="handleOpenContextMenu"
         @toggle-tag="toggleTagFilter"

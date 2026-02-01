@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'execute-query', id: string): void
   (e: 'edit-query', id: string): void
   (e: 'delete-query', id: string): void
-  (e: 'move-query', queryId: string, targetPath: string | null): void
+  (e: 'move-query', event: { queryId: string; targetPath: string | null }): void
   (e: 'toggle-folder', path: string): void
   (e: 'open-context-menu', payload: { type: 'folder' | 'query'; node: TreeNode; x: number; y: number }): void
   (e: 'toggle-tag', tag: string): void
@@ -47,7 +47,7 @@ const emit = defineEmits<{
         @execute-query="emit('execute-query', $event)"
         @edit-query="emit('edit-query', $event)"
         @delete-query="emit('delete-query', $event)"
-        @move-query="emit('move-query', $event.queryId, $event.targetPath)"
+        @move-query="emit('move-query', $event)"
         @toggle-folder="emit('toggle-folder', $event)"
         @open-context-menu="emit('open-context-menu', $event)"
         @toggle-tag="emit('toggle-tag', $event)"
