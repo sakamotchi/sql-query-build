@@ -68,6 +68,10 @@ export default defineNuxtConfig({
     plugins: [
       monacoEditorPlugin({
         languageWorkers: ['editorWorkerService'],
+        // Windowsのパス問題を回避するため、固定の相対パスを返す
+        customDistPath: () => {
+          return './monacoeditorwork'
+        },
       }),
     ],
     clearScreen: false,
