@@ -42,9 +42,7 @@ fn validate_save_request(request: &SaveSqlEditorQueryRequest) -> Result<(), Stri
         }
     }
 
-    if request.connection_id.trim().is_empty() {
-        return Err("接続IDが指定されていません".to_string());
-    }
+    // connectionIdのバリデーションを削除（接続非依存化のため）
 
     if request.sql.trim().is_empty() {
         return Err("SQLが空です".to_string());
@@ -95,11 +93,9 @@ pub async fn list_sql_queries(
     connection_id: Option<String>,
     storage: State<'_, Arc<SqlEditorQueryStorage>>,
 ) -> Result<Vec<SqlEditorQueryMetadata>, String> {
-    let mut queries = storage.list_queries()?;
-
-    if let Some(connection_id) = connection_id {
-        queries.retain(|q| q.connection_id == connection_id);
-    }
+    // 接続非依存化のため、接続IDでのフィルタリングを削除
+    // 全クエリを返す
+    let queries = storage.list_queries()?;
 
     Ok(queries)
 }

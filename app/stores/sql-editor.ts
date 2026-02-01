@@ -613,12 +613,13 @@ export const useSqlEditorStore = defineStore('sql-editor', {
      * 保存済みクエリ一覧を読み込み
      */
     async loadSavedQueries() {
-      if (!this.connectionId) return
+      // 接続IDのチェックを削除（接続非依存化のため、全クエリを取得）
       this.isSavedQueriesLoading = true
       this.savedQueryError = null
 
       try {
-        const queries = await sqlEditorApi.listQueries(this.connectionId)
+        // 接続IDを渡さずに全クエリを取得
+        const queries = await sqlEditorApi.listQueries()
         this.savedQueries = queries
         const validIds = new Set(queries.map((query) => query.id))
         Object.keys(this.savedQuerySqlCache).forEach((id) => {

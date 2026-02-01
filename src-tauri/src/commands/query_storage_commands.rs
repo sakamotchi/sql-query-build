@@ -51,12 +51,7 @@ fn validate_save_request(request: &SaveQueryRequest) -> Result<(), String> {
         }
     }
 
-    // 接続IDのチェック
-    if let Some(connection_id) = &request.connection_id {
-        if connection_id.is_empty() {
-            return Err("接続IDが指定されていません".to_string());
-        }
-    }
+    // 接続IDのバリデーションを削除（接続非依存化のため）
 
     // フォルダパスのチェック
     validate_folder_path(&request.folder_path)?;

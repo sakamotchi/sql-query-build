@@ -14,7 +14,6 @@ const {
   isSaveDialogOpen,
   editingQueryId,
   editingQuery,
-  connectionId,
   sql,
   savedQueryError,
   pendingCloseTabId,
@@ -91,15 +90,7 @@ const folderOptions = computed(() => [
 ])
 
 const handleSave = async () => {
-  if (!connectionId.value) {
-    toast.add({
-      title: t('sqlEditor.saveDialog.toasts.noConnection'),
-      description: t('sqlEditor.saveDialog.toasts.noConnectionDesc'),
-      color: 'error',
-      icon: 'i-heroicons-exclamation-circle',
-    })
-    return
-  }
+  // 接続非依存化のため、接続IDチェックを削除
 
   if (!isEditMode.value && sql.value.trim().length === 0) {
     toast.add({
@@ -128,7 +119,7 @@ const handleSave = async () => {
       const fullQuery = await sqlEditorStore.fetchSavedQuery(editingQuery.value.id)
       request = {
         id: editingQuery.value.id,
-        connectionId: fullQuery.connectionId,
+        connectionId: null, // 接続非依存化
         name: state.value.name.trim(),
         description: normalizedDescription,
         sql: fullQuery.sql,
@@ -144,7 +135,7 @@ const handleSave = async () => {
       })
     } else {
       request = {
-        connectionId: connectionId.value,
+        connectionId: null, // 接続非依存化
         name: state.value.name.trim(),
         description: normalizedDescription,
         sql: sql.value,

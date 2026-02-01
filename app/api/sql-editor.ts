@@ -26,9 +26,11 @@ export const sqlEditorApi = {
 
   /**
    * 保存クエリ一覧を取得
+   * 接続非依存化により、全クエリを取得
    */
-  async listQueries(connectionId?: string): Promise<SavedQueryMetadata[]> {
-    return await invoke<SavedQueryMetadata[]>('list_sql_queries', { connectionId })
+  async listQueries(_connectionId?: string): Promise<SavedQueryMetadata[]> {
+    // 互換性のためパラメータは残すが、使用しない（_プレフィックスで未使用を明示）
+    return await invoke<SavedQueryMetadata[]>('list_sql_queries', { connectionId: null })
   },
 
   /**

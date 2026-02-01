@@ -177,7 +177,7 @@ export interface TreeNode {
  */
 export interface SaveQueryRequest {
   id?: string
-  connectionId: string
+  connectionId: string | null // 接続非依存化のためnullableに変更
   name: string
   description?: string
   sql: string
