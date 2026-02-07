@@ -1,8 +1,8 @@
 # 技術仕様書
 
-**バージョン**: 1.1
+**バージョン**: 1.2
 **作成日**: 2025年12月29日
-**最終更新**: 2026年1月17日
+**最終更新**: 2026年2月7日
 
 ---
 
@@ -157,6 +157,7 @@ app/
 │   ├── query-storage.ts      # クエリ保存API
 │   ├── query-validation.ts   # クエリバリデーションAPI
 │   ├── safetyApi.ts          # 安全設定API
+│   ├── sql-editor.ts         # SQLエディタAPI（保存・履歴・フォルダ）
 │   └── window.ts             # ウィンドウ管理API
 │
 ├── assets/css/               # グローバルCSS
@@ -184,6 +185,21 @@ app/
 │   │   ├── UpdatePanel.vue
 │   │   ├── DeletePanel.vue
 │   │   └── ...
+│   ├── sql-editor/           # SQLエディタ
+│   │   ├── SqlEditorLayout.vue
+│   │   ├── EditorTabs.vue
+│   │   ├── SqlTextEditor.vue
+│   │   ├── SqlEditorToolbar.vue
+│   │   ├── SqlEditorResultPanel.vue
+│   │   ├── SqlEditorSavedPanel.vue
+│   │   ├── SqlEditorHistoryPanel.vue
+│   │   ├── SqlEditorSaveDialog.vue
+│   │   ├── SavedQueryTreeView.vue
+│   │   ├── TreeNodeItem.vue
+│   │   └── dialogs/
+│   │       ├── CreateFolderDialog.vue
+│   │       ├── RenameFolderDialog.vue
+│   │       └── MoveQueryDialog.vue
 │   ├── query-builder/        # クエリビルダー
 │   │   ├── DatabaseTree.vue
 │   │   ├── ResultPanel.vue
@@ -220,6 +236,7 @@ app/
 │   ├── useProviderSwitch.ts  # プロバイダー切替
 │   ├── useTableSelection.ts  # テーブル選択
 │   ├── useTauri.ts           # Tauri API ラッパー
+│   ├── useSqlCompletion.ts   # SQLコード補完
 │   ├── useTheme.ts           # テーマ管理
 │   └── useWindow.ts          # ウィンドウ操作
 │
@@ -228,6 +245,7 @@ app/
 │   ├── connection-form.vue   # 接続設定
 │   ├── mutation-builder.vue  # Mutation Builder
 │   ├── query-builder.vue     # クエリビルダー
+│   ├── sql-editor.vue        # SQLエディタ
 │   └── settings.vue          # 設定
 │
 ├── stores/                   # Pinia ストア
@@ -235,6 +253,7 @@ app/
 │   ├── database-structure.ts # DB構造
 │   ├── mutation-builder.ts   # Mutation状態
 │   ├── query-builder.ts      # クエリ状態
+│   ├── sql-editor.ts         # SQLエディタ状態
 │   ├── query-history.ts      # クエリ履歴
 │   ├── saved-query.ts        # 保存済みクエリ
 │   ├── safety.ts             # 安全設定
@@ -252,7 +271,9 @@ app/
 │   ├── query-model.ts        # クエリモデル型
 │   ├── query-result.ts       # クエリ結果型
 │   ├── query.ts              # クエリ関連型
-│   └── safety-settings.ts    # 安全設定型
+│   ├── safety-settings.ts    # 安全設定型
+│   ├── sql-editor.ts         # SQLエディタ型
+│   └── sql-completion.ts     # SQLコード補完型
 │
 ├── utils/                    # ユーティリティ
 │   ├── error-messages.ts     # エラーメッセージ
@@ -282,6 +303,7 @@ src-tauri/src/
 │   ├── safety.rs             # 安全設定コマンド
 │   ├── security.rs           # セキュリティ
 │   ├── settings.rs           # 設定
+│   ├── sql_editor.rs         # SQLエディタコマンド
 │   └── window.rs             # ウィンドウ管理
 │
 ├── connection/               # 接続管理モジュール
@@ -344,6 +366,8 @@ src-tauri/src/
 │   ├── query_result.rs       # クエリ結果モデル
 │   ├── safety_settings.rs    # 安全設定モデル
 │   ├── saved_query.rs        # 保存済みクエリモデル
+│   ├── sql_editor_query.rs   # SQLエディタ保存クエリモデル
+│   ├── sql_editor_history.rs # SQLエディタ履歴モデル
 │   └── window.rs
 │
 ├── query/                    # クエリモジュール
@@ -359,6 +383,8 @@ src-tauri/src/
 │   ├── query_history.rs      # クエリ履歴サービス
 │   ├── query_storage.rs      # クエリ保存サービス
 │   ├── safety_config.rs      # 安全設定サービス
+│   ├── sql_editor_query_storage.rs # SQLエディタクエリ保存
+│   ├── sql_editor_history.rs # SQLエディタ履歴サービス
 │   └── window_manager.rs
 │
 ├── sql_generator/            # SQL生成エンジン
@@ -438,8 +464,23 @@ src-tauri/src/
 | セキュリティ | `verify_master_password` | パスワード検証 |
 | 設定 | `get_settings` | 設定取得 |
 | 設定 | `save_settings` | 設定保存 |
+| SQLエディタ保存 | `save_sql_query` | SQLエディタクエリ保存 |
+| SQLエディタ保存 | `load_sql_query` | SQLエディタクエリ読込 |
+| SQLエディタ保存 | `list_sql_queries` | SQLエディタクエリ一覧取得 |
+| SQLエディタ保存 | `search_sql_queries` | SQLエディタクエリ検索 |
+| SQLエディタ保存 | `delete_sql_query` | SQLエディタクエリ削除 |
+| SQLエディタフォルダ | `list_sql_editor_folders` | フォルダ一覧取得 |
+| SQLエディタフォルダ | `create_sql_editor_folder` | フォルダ作成 |
+| SQLエディタフォルダ | `rename_sql_editor_folder` | フォルダ名変更 |
+| SQLエディタフォルダ | `delete_sql_editor_folder` | フォルダ削除 |
+| SQLエディタフォルダ | `move_sql_editor_query` | クエリのフォルダ移動 |
+| SQLエディタ履歴 | `add_sql_editor_history` | 実行履歴追加 |
+| SQLエディタ履歴 | `get_sql_editor_histories` | 実行履歴取得 |
+| SQLエディタ履歴 | `delete_sql_editor_history` | 実行履歴削除 |
+| DB構造 | `get_database_structure_summary` | DB構造サマリー取得（軽量） |
 | ウィンドウ | `open_query_builder_window` | ウィンドウ起動 |
 | ウィンドウ | `open_mutation_builder_window` | Mutation Builderウィンドウ起動 |
+| ウィンドウ | `open_sql_editor_window` | SQLエディタウィンドウ起動 |
 | ウィンドウ | `get_window_context` | コンテキスト取得 |
 
 ### 4.3 エラーハンドリング
@@ -476,8 +517,12 @@ pub enum AppError {
 ├── safety-settings.json      # 安全設定
 ├── window-states.json        # ウィンドウ状態
 ├── query-history.json        # クエリ履歴
-└── saved-queries/            # 保存済みクエリ
-    └── {query_id}.json
+├── saved-queries/            # 保存済みクエリ（クエリビルダー用）
+│   └── {query_id}.json
+├── sql-editor-queries/       # 保存済みクエリ（SQLエディタ用）
+│   └── {query_id}.json
+├── sql-editor-folders.json   # SQLエディタフォルダ構造
+└── sql-editor-history.json   # SQLエディタ実行履歴
 ```
 
 ### 5.2 主要データ構造
@@ -631,3 +676,4 @@ npm run tauri:build
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
 | 2026-01-17 | 1.1 | モジュール構成を最新化、Tauriコマンド一覧を拡充、Mutation Builder・エクスポート・履歴機能を反映 | - |
+| 2026-02-07 | 1.2 | SQLエディタ機能（Phase 7）のモジュール・コマンド・ストレージ構造を追加 | - |

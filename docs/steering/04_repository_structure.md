@@ -1,8 +1,8 @@
 # リポジトリ構造定義書
 
-**バージョン**: 1.1
+**バージョン**: 1.2
 **作成日**: 2025年12月29日
-**最終更新**: 2026年1月17日
+**最終更新**: 2026年2月7日
 
 ---
 
@@ -52,6 +52,7 @@ app/
 │   ├── query-storage.ts
 │   ├── query-validation.ts
 │   ├── safetyApi.ts
+│   ├── sql-editor.ts          # SQLエディタAPI
 │   └── window.ts
 │
 ├── assets/                   # 静的アセット
@@ -93,6 +94,21 @@ app/
 │   │   ├── SqlPreviewPanel.vue
 │   │   ├── TableSelector.vue
 │   │   └── UpdatePanel.vue
+│   ├── sql-editor/            # SQLエディタ関連
+│   │   ├── SqlEditorLayout.vue
+│   │   ├── EditorTabs.vue
+│   │   ├── SqlTextEditor.vue
+│   │   ├── SqlEditorToolbar.vue
+│   │   ├── SqlEditorResultPanel.vue
+│   │   ├── SqlEditorSavedPanel.vue
+│   │   ├── SqlEditorHistoryPanel.vue
+│   │   ├── SqlEditorSaveDialog.vue
+│   │   ├── SavedQueryTreeView.vue
+│   │   ├── TreeNodeItem.vue
+│   │   └── dialogs/
+│   │       ├── CreateFolderDialog.vue
+│   │       ├── RenameFolderDialog.vue
+│   │       └── MoveQueryDialog.vue
 │   ├── query-builder/        # クエリビルダー関連
 │   │   ├── dialog/           # ダイアログ
 │   │   │   ├── DangerousQueryDialog.vue
@@ -183,6 +199,7 @@ app/
 │   ├── useEnvironment.ts
 │   ├── useProviderChangeDialog.ts
 │   ├── useProviderSwitch.ts
+│   ├── useSqlCompletion.ts     # SQLコード補完
 │   ├── useSqlFormatter.ts
 │   ├── useSqlIdentifierInput.ts
 │   ├── useTableSelection.ts
@@ -198,6 +215,7 @@ app/
 │   ├── connection-form.vue   # 接続設定
 │   ├── mutation-builder.vue  # ミューテーションビルダー
 │   ├── query-builder.vue     # クエリビルダー
+│   ├── sql-editor.vue        # SQLエディタ
 │   └── settings.vue          # 設定
 │
 ├── stores/                   # Piniaストア
@@ -205,6 +223,7 @@ app/
 │   ├── database-structure.ts
 │   ├── mutation-builder.ts
 │   ├── query-builder.ts
+│   ├── sql-editor.ts          # SQLエディタ状態
 │   ├── query-history.ts
 │   ├── safety.ts
 │   ├── saved-query.ts
@@ -231,7 +250,9 @@ app/
 │   ├── query-result.ts
 │   ├── query-validation.ts
 │   ├── safety-settings.ts
-│   └── saved-query.ts
+│   ├── saved-query.ts
+│   ├── sql-editor.ts          # SQLエディタ型
+│   └── sql-completion.ts      # SQLコード補完型
 │
 ├── utils/                    # ユーティリティ関数
 │   ├── error-messages.ts
@@ -263,6 +284,7 @@ src-tauri/
 │   │   ├── safety.rs
 │   │   ├── security.rs
 │   │   ├── settings.rs
+│   │   ├── sql_editor.rs      # SQLエディタコマンド
 │   │   └── window.rs
 │   │
 │   ├── connection/           # 接続管理モジュール
@@ -324,6 +346,8 @@ src-tauri/
 │   │   ├── query_result.rs
 │   │   ├── safety_settings.rs
 │   │   ├── saved_query.rs
+│   │   ├── sql_editor_query.rs  # SQLエディタ保存クエリモデル
+│   │   ├── sql_editor_history.rs # SQLエディタ履歴モデル
 │   │   ├── window.rs
 │   │   └── window_test.rs
 │   │
@@ -344,6 +368,8 @@ src-tauri/
 │   │   ├── query_storage.rs
 │   │   ├── safety_config.rs
 │   │   ├── safety_config_test.rs
+│   │   ├── sql_editor_query_storage.rs # SQLエディタクエリ保存
+│   │   ├── sql_editor_history.rs # SQLエディタ履歴サービス
 │   │   └── window_manager.rs
 │   │
 │   ├── sql_generator/        # SQL生成エンジン
@@ -401,6 +427,7 @@ docs/
 │   └── features/                       # 機能詳細仕様
 │       ├── connection.md
 │       ├── query-builder.md
+│       ├── sql-editor.md
 │       ├── security.md
 │       ├── settings.md
 │       └── window.md
@@ -607,3 +634,4 @@ src-tauri/target/
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
 | 2026-01-17 | 1.1 | Phase 2-6実装に伴う構造更新（api/、components/、stores/、types/、src-tauri/の各モジュール追加）、docs/steering/への構造変更を反映 | - |
+| 2026-02-07 | 1.2 | SQLエディタ機能（Phase 7）のファイル構造を追加（components/sql-editor/、api/sql-editor.ts、stores/sql-editor.ts、types/sql-editor.ts等） | - |

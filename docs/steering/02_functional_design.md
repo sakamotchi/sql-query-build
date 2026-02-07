@@ -1,8 +1,8 @@
 # 機能設計書
 
-**バージョン**: 1.1
+**バージョン**: 1.2
 **作成日**: 2025年12月29日
-**最終更新**: 2026年1月17日
+**最終更新**: 2026年2月7日
 
 ---
 
@@ -14,6 +14,7 @@
 |---------|------|-----------------|
 | 接続管理 | DB接続の登録・編集・削除・起動 | [features/connection.md](features/connection.md) |
 | クエリビルダー | GUIによるSQL構築・実行・結果表示 | [features/query-builder.md](features/query-builder.md) |
+| SQLエディタ | フリーフォームSQL入力・実行・コード補完 | [features/sql-editor.md](features/sql-editor.md) |
 | Mutation Builder | GUIによるINSERT/UPDATE/DELETE構築 | - |
 | セキュリティ | 認証情報の暗号化・プロバイダー管理 | [features/security.md](features/security.md) |
 | 設定 | アプリケーション設定・安全設定管理 | [features/settings.md](features/settings.md) |
@@ -32,6 +33,7 @@
 | S003 | クエリビルダー画面 | `/query-builder` | GUIでのSELECTクエリ構築・実行・結果表示 |
 | S004 | 設定画面 | `/settings` | アプリケーション設定・安全設定 |
 | S005 | Mutation Builder画面 | `/mutation-builder` | GUIでのINSERT/UPDATE/DELETE構築・実行 |
+| S006 | SQLエディタ画面 | `/sql-editor` | フリーフォームSQL入力・実行 |
 
 ### 2.2 画面遷移図
 
@@ -71,6 +73,23 @@
 │  │DB構造  │ テーブル関係図     │  SQLプレビュー        │   │
 │  │ツリー  │ 条件設定タブ       │  クエリ情報           │   │
 │  └───────┴─────────────────────┴───────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│          SQLエディタ画面 [S006]（別ウィンドウ）               │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ 環境識別ヘッダー（環境色・接続名・警告バナー）        │   │
+│  ├─────────────────────────────────────────────────────┤   │
+│  │ ツールバー（実行・停止・整形・保存・DB/スキーマ選択）  │   │
+│  ├───────────┬─────────────────────────────────────────┤   │
+│  │ 左パネル   │          エディタエリア                  │   │
+│  │ 保存クエリ │  タブバー [Tab1] [Tab2] [+]             │   │
+│  │ ツリー     │  Monaco Editor                         │   │
+│  │            │  (シンタックスハイライト・コード補完)     │   │
+│  │ クエリ履歴 ├─────────────────────────────────────────┤   │
+│  │            │          結果パネル                      │   │
+│  │            │  実行結果テーブル / エラー表示            │   │
+│  └───────────┴─────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -114,7 +133,27 @@
 | JOIN提案 | 外部キーに基づくJOIN提案 | `JoinSuggestionList.vue` |
 | 危険クエリ確認 | UPDATE/DELETE時の確認ダイアログ | `DangerousQueryDialog.vue` |
 
-### 3.3 Mutation Builder機能
+### 3.3 SQLエディタ機能
+
+**状態**: ✅ 完了（Phase 7）
+
+| 機能 | 説明 | 対応コンポーネント |
+|------|------|------------------|
+| SQLテキストエディタ | Monaco Editorベースのフリーフォームエディタ | `SqlTextEditor.vue` |
+| マルチタブ | 複数のSQLタブを同時に開いて作業 | `EditorTabs.vue` |
+| シンタックスハイライト | SQL構文のカラーハイライト | `SqlTextEditor.vue` |
+| コード補完 | テーブル名・カラム名・キーワード・関数の自動補完 | `useSqlCompletion.ts` |
+| SQLフォーマッター | SQL文の自動整形 | `sql-formatter` |
+| クエリ実行 | 選択範囲または全文の実行 | `SqlEditorToolbar.vue` |
+| 結果表示 | 実行結果の表形式表示・エクスポート | `SqlEditorResultPanel.vue` |
+| 保存クエリ管理 | フォルダ構造での保存・検索・移動 | `SqlEditorSavedPanel.vue` |
+| クエリ履歴 | 実行済みクエリの履歴・検索 | `SqlEditorHistoryPanel.vue` |
+| データベース/スキーマ切替 | 実行対象のDB・スキーマを切替 | `SqlEditorToolbar.vue` |
+| エラーハイライト | エラー行・列のハイライト表示 | `SqlTextEditor.vue` |
+| キーボードショートカット | Ctrl+Enter（実行）、Ctrl+S（保存）、Ctrl+Shift+F（整形） | `SqlTextEditor.vue` |
+| 段階的DB構造取得 | 大量テーブルでの補完パフォーマンス最適化 | `database-structure.ts` |
+
+### 3.5 Mutation Builder機能
 
 **状態**: ✅ 完了（Phase 6）
 
@@ -127,7 +166,7 @@
 | SQLプレビュー | 生成されたSQLのプレビュー | `SqlPreviewPanel.vue` |
 | クエリ実行 | Mutation実行と結果表示 | `MutationBuilderToolbar.vue` |
 
-### 3.4 セキュリティ機能
+### 3.5 セキュリティ機能
 
 **状態**: ✅ 完了（Phase 1.5a）
 
@@ -138,7 +177,7 @@
 | Keychainプロバイダー | OSセキュアストレージ使用 | `SecuritySettings.vue` |
 | プロバイダー切替 | プロバイダー間の移行 | `FromSimpleDialog.vue`, `FromMasterPasswordDialog.vue` |
 
-### 3.5 ウィンドウ管理機能
+### 3.6 ウィンドウ管理機能
 
 **状態**: ✅ 完了（Phase 1.5）
 
@@ -346,6 +385,7 @@ Feature: セキュリティプロバイダー
 |------------|------|
 | [features/connection.md](features/connection.md) | 接続管理機能の詳細仕様 |
 | [features/query-builder.md](features/query-builder.md) | クエリビルダー機能の詳細仕様 |
+| [features/sql-editor.md](features/sql-editor.md) | SQLエディタ機能の詳細仕様 |
 | [features/security.md](features/security.md) | セキュリティ機能の詳細仕様 |
 | [features/settings.md](features/settings.md) | 設定機能の詳細仕様 |
 | [features/window.md](features/window.md) | ウィンドウ管理機能の詳細仕様 |
@@ -358,3 +398,4 @@ Feature: セキュリティプロバイダー
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
 | 2026-01-17 | 1.1 | Mutation Builder機能追加、クエリビルダー機能の実装完了を反映、画面一覧更新 | - |
+| 2026-02-07 | 1.2 | SQLエディタ機能（Phase 7）追加、画面一覧・機能カテゴリ・画面遷移図を更新 | - |

@@ -2,7 +2,7 @@
 
 **バージョン**: 1.0
 **作成日**: 2025年12月29日
-**最終更新**: 2026年01月25日
+**最終更新**: 2026年02月07日
 
 ---
 
@@ -103,6 +103,23 @@
 | ツリーノード | Tree Node | フォルダ/クエリを表すツリー構造のノード | `TreeNode` |
 | 展開状態 | Expansion State | フォルダの展開/折りたたみ状態 | `expandedFolders: Set<string>` |
 | クエリツリー | Query Tree | フォルダとクエリの階層ツリー | `queryTree` |
+
+### 2.8 SQLエディタ（SQL Editor）
+
+| 用語 | 英語表記 | 定義 | コード上の表現 |
+|------|---------|------|---------------|
+| SQLエディタ | SQL Editor | フリーフォームでSQLを入力・実行する機能・画面 | `SqlEditor` |
+| エディタタブ | Editor Tab | SQLエディタ内の1つの編集タブ | `SqlEditorTab` |
+| SQLテキストエディタ | SQL Text Editor | Monaco Editorベースのテキスト入力エリア | `SqlTextEditor` |
+| コード補完 | Code Completion | テーブル名・カラム名・キーワードの自動補完機能 | `useSqlCompletion` |
+| 補完コンテキスト | Completion Context | コード補完に必要なDB構造情報 | `CompletionContext` |
+| SQLフォーマッター | SQL Formatter | SQL文を読みやすく自動整形する機能 | `sql-formatter` |
+| 保存クエリ | Saved Query | SQLエディタで保存されたクエリ | `SavedQuery` |
+| クエリフォルダ | Query Folder | 保存クエリを整理するフォルダ | `folder` |
+| 実行履歴 | Execution History | 実行されたSQLの履歴記録 | `SqlEditorHistoryEntry` |
+| 段階的取得 | Progressive Loading | DB構造を軽量サマリー→詳細の順に段階的に取得する方式 | `fetchDatabaseStructureSummary` |
+| DB構造サマリー | Database Structure Summary | テーブル名のみの軽量なDB構造情報 | `DatabaseStructureSummary` |
+| ダーティフラグ | Dirty Flag | タブ内のSQLが未保存の変更を持つことを示すフラグ | `dirty: boolean` |
 
 ---
 
@@ -238,3 +255,4 @@
 | 日付 | バージョン | 変更内容 | 作成者 |
 |------|----------|---------|--------|
 | 2025-12-29 | 1.0 | 初版作成 | - |
+| 2026-02-07 | 1.1 | SQLエディタ関連の用語を追加（2.8節） | - |

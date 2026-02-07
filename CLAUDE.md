@@ -101,6 +101,7 @@
 |------------|------|
 | `docs/steering/features/connection.md` | 接続管理機能の詳細仕様 |
 | `docs/steering/features/query-builder.md` | クエリビルダー機能の詳細仕様 |
+| `docs/steering/features/sql-editor.md` | SQLエディタ機能の詳細仕様 |
 | `docs/steering/features/security.md` | セキュリティ機能の詳細仕様 |
 | `docs/steering/features/settings.md` | 設定機能の詳細仕様 |
 | `docs/steering/features/window.md` | ウィンドウ管理機能の詳細仕様 |

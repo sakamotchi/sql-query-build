@@ -10,6 +10,7 @@ A visual SQL query builder desktop application that lets you construct queries t
 - **Environment Safety**: Color-coded windows prevent accidental queries on production databases
 - **Real-time SQL Preview**: See the generated SQL as you build your query
 - **Multi-Database Support**: Works with PostgreSQL, MySQL, and SQLite
+- **SQL Editor**: Monaco Editor-based free-form SQL editing and execution with code completion and multi-tab support
 - **Secure Credential Storage**: Your database passwords are encrypted locally
 
 ![SQL Query Builder - Query Builder Screen](docs/images/querybuilder_en.png)
@@ -34,6 +35,17 @@ A visual SQL query builder desktop application that lets you construct queries t
 - LIMIT/OFFSET support
 - Subquery support in SELECT clause
 - Real-time SQL generation with syntax highlighting
+
+### SQL Editor
+
+- Free-form SQL editor powered by Monaco Editor
+- Multi-tab support (edit multiple SQL queries simultaneously)
+- Code completion for table names, column names, and SQL keywords
+- SQL formatter (auto-formatting)
+- Execute selected text only
+- Saved query management with folder organization
+- Searchable execution history
+- Keyboard shortcuts (Ctrl+Enter to execute, Ctrl+S to save)
 
 ### Data Mutation Builder (INSERT/UPDATE/DELETE)
 
