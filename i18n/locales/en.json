@@ -761,6 +761,10 @@
             "savedPanelTitle": "Saved Queries",
             "historyPanelTitle": "Execution History"
         },
+        "structureLoading": {
+            "summary": "Loading table metadata...",
+            "background": "Loading columns: {loaded}/{total}"
+        },
         "savedPanel": {
             "search": "Search queries...",
             "newFolder": "New Folder",

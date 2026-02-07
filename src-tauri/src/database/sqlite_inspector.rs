@@ -347,6 +347,48 @@ impl DatabaseInspector for SqliteInspector {
         Ok(all_fks)
     }
 
+    async fn get_table_summaries(&self) -> Result<Vec<SchemaSummary>, String> {
+        let query = r#"
+            SELECT name, type
+            FROM sqlite_master
+            WHERE type IN ('table', 'view')
+              AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+        "#;
+
+        let rows = sqlx::query(query)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get table summaries: {}", e))?;
+
+        let mut tables = Vec::new();
+        let mut views = Vec::new();
+
+        for row in rows {
+            let name: String = row.get("name");
+            let object_type: String = row.get("type");
+            let summary = TableSummary {
+                name,
+                schema: "main".to_string(),
+                comment: None,
+                estimated_row_count: None,
+            };
+
+            if object_type == "view" {
+                views.push(summary);
+            } else {
+                tables.push(summary);
+            }
+        }
+
+        Ok(vec![SchemaSummary {
+            name: "main".to_string(),
+            is_system: false,
+            tables,
+            views,
+        }])
+    }
+
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String> {
         let schemas = self.get_schemas().await?;
 

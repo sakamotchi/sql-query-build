@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import * as monaco from 'monaco-editor'
 import { useSqlEditorStore } from '~/stores/sql-editor'
+import { useDatabaseStructureStore } from '~/stores/database-structure'
 import { useSqlCompletion } from '~/composables/useSqlCompletion'
 
 const sqlEditorStore = useSqlEditorStore()
+const databaseStructureStore = useDatabaseStructureStore()
 const { sql: currentSql, error, formatRequestId, activeTabId } = storeToRefs(sqlEditorStore)
 const colorMode = useColorMode()
+const { t } = useI18n()
 const { provideCompletionItems } = useSqlCompletion()
 
 const editorElement = ref<HTMLElement | null>(null)
@@ -16,6 +19,14 @@ let decorations: string[] = []
 let completionDisposable: monaco.IDisposable | null = null
 
 const resolveTheme = () => (colorMode.value === 'dark' ? 'vs-dark' : 'vs')
+const summaryLoading = computed(() => {
+  if (!sqlEditorStore.connectionId) return false
+  return databaseStructureStore.isSummaryLoading(sqlEditorStore.connectionId)
+})
+const backgroundProgress = computed(() => {
+  if (!sqlEditorStore.connectionId) return null
+  return databaseStructureStore.getBackgroundProgress(sqlEditorStore.connectionId)
+})
 
 onMounted(() => {
   if (!editorElement.value) return
@@ -222,7 +233,37 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="editorElement" class="h-full w-full" />
+  <div class="relative h-full w-full">
+    <div ref="editorElement" class="h-full w-full" />
+
+    <div
+      v-if="summaryLoading || backgroundProgress"
+      class="pointer-events-none absolute top-2 right-2 z-10 flex flex-col gap-1"
+    >
+      <div
+        v-if="summaryLoading"
+        class="flex items-center gap-1 rounded bg-white/90 px-2 py-1 text-xs text-gray-700 shadow-sm dark:bg-gray-900/90 dark:text-gray-200"
+      >
+        <UIcon name="i-heroicons-arrow-path" class="h-3.5 w-3.5 animate-spin" />
+        <span>{{ t('sqlEditor.structureLoading.summary') }}</span>
+      </div>
+
+      <div
+        v-if="backgroundProgress"
+        class="flex items-center gap-1 rounded bg-white/90 px-2 py-1 text-xs text-gray-700 shadow-sm dark:bg-gray-900/90 dark:text-gray-200"
+      >
+        <UIcon name="i-heroicons-circle-stack" class="h-3.5 w-3.5" />
+        <span>
+          {{
+            t('sqlEditor.structureLoading.background', {
+              loaded: backgroundProgress.loaded,
+              total: backgroundProgress.total,
+            })
+          }}
+        </span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>

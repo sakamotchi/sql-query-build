@@ -695,6 +695,93 @@ impl DatabaseInspector for PostgresqlInspector {
         Ok(all_fks)
     }
 
+    async fn get_table_summaries(&self) -> Result<Vec<SchemaSummary>, String> {
+        let schemas_query = r#"
+            SELECT
+                schema_name,
+                CASE
+                    WHEN schema_name IN ('pg_catalog', 'information_schema', 'pg_toast')
+                    THEN true
+                    ELSE false
+                END as is_system
+            FROM information_schema.schemata
+            WHERE schema_name NOT LIKE 'pg_temp_%'
+              AND schema_name NOT LIKE 'pg_toast_temp_%'
+            ORDER BY
+                CASE WHEN schema_name = 'public' THEN 0 ELSE 1 END,
+                schema_name
+        "#;
+
+        let schema_rows = sqlx::query_as::<_, (String, bool)>(schemas_query)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get schema summaries: {}", e))?;
+
+        let mut schemas: Vec<SchemaSummary> = schema_rows
+            .into_iter()
+            .map(|(name, is_system)| SchemaSummary {
+                name,
+                is_system,
+                tables: Vec::new(),
+                views: Vec::new(),
+            })
+            .collect();
+
+        let mut schema_index = HashMap::new();
+        for (idx, schema) in schemas.iter().enumerate() {
+            schema_index.insert(schema.name.clone(), idx);
+        }
+
+        let tables_query = r#"
+            SELECT
+                t.table_schema,
+                t.table_name,
+                t.table_type,
+                obj_description(
+                    (quote_ident(t.table_schema) || '.' || quote_ident(t.table_name))::regclass
+                ) as comment,
+                c.reltuples::bigint as estimated_rows
+            FROM information_schema.tables t
+            LEFT JOIN pg_class c
+              ON c.relname = t.table_name
+             AND c.relnamespace = (
+                SELECT oid
+                FROM pg_namespace
+                WHERE nspname = t.table_schema
+             )
+            WHERE t.table_schema NOT LIKE 'pg_temp_%'
+              AND t.table_schema NOT LIKE 'pg_toast_temp_%'
+              AND t.table_type IN ('BASE TABLE', 'VIEW')
+            ORDER BY t.table_schema, t.table_name
+        "#;
+
+        let table_rows = sqlx::query(tables_query)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get table summaries: {}", e))?;
+
+        for row in table_rows {
+            let schema_name: String = row.get("table_schema");
+            let table_type: String = row.get("table_type");
+            let summary = TableSummary {
+                name: row.get("table_name"),
+                schema: schema_name.clone(),
+                comment: row.get("comment"),
+                estimated_row_count: row.get("estimated_rows"),
+            };
+
+            if let Some(idx) = schema_index.get(&schema_name) {
+                if table_type == "VIEW" {
+                    schemas[*idx].views.push(summary);
+                } else {
+                    schemas[*idx].tables.push(summary);
+                }
+            }
+        }
+
+        Ok(schemas)
+    }
+
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String> {
         let schemas = self.get_schemas().await?;
 

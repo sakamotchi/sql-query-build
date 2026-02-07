@@ -220,6 +220,7 @@ pub fn run() {
             connection::commands::mark_connection_used,
             connection::commands::test_connection,
             commands::database_structure::get_database_structure,
+            commands::database_structure::get_database_structure_summary,
             commands::database_structure::get_schemas,
             commands::database_structure::get_tables,
             commands::database_structure::get_columns,

@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
   DatabaseStructure,
+  DatabaseStructureSummary,
   Schema,
   Table,
   Column,
@@ -15,6 +16,13 @@ export const databaseStructureApi = {
    */
   async getDatabaseStructure(connectionId: string): Promise<DatabaseStructure> {
     return invoke('get_database_structure', { connectionId });
+  },
+
+  /**
+   * データベース構造サマリーを取得（軽量）
+   */
+  async getDatabaseStructureSummary(connectionId: string): Promise<DatabaseStructureSummary> {
+    return invoke('get_database_structure_summary', { connectionId });
   },
 
   /**

@@ -11,6 +11,37 @@ pub struct DatabaseStructure {
     pub fetched_at: String,
 }
 
+/// テーブル一覧取得用の軽量構造体
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DatabaseStructureSummary {
+    pub connection_id: String,
+    pub database_name: String,
+    pub database_type: String,
+    pub schemas: Vec<SchemaSummary>,
+    pub fetched_at: String,
+}
+
+/// スキーマ情報（サマリー）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SchemaSummary {
+    pub name: String,
+    pub is_system: bool,
+    pub tables: Vec<TableSummary>,
+    pub views: Vec<TableSummary>,
+}
+
+/// テーブル情報（サマリー）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TableSummary {
+    pub name: String,
+    pub schema: String,
+    pub comment: Option<String>,
+    pub estimated_row_count: Option<i64>,
+}
+
 /// スキーマ情報
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

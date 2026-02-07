@@ -33,6 +33,47 @@ pub async fn get_database_structure(
     Ok(structure)
 }
 
+/// データベース構造サマリーを取得（軽量）
+#[tauri::command]
+pub async fn get_database_structure_summary(
+    connection_id: String,
+    connection_service: State<'_, ConnectionService>,
+) -> Result<DatabaseStructureSummary, String> {
+    let connection = connection_service
+        .get_by_id(&connection_id, true)
+        .await
+        .map_err(|e| format!("Failed to get connection: {}", e))?
+        .ok_or_else(|| format!("Connection not found: {}", connection_id))?;
+
+    let password = match &connection.connection {
+        ConnectionConfig::Network(cfg) => cfg.encrypted_password.clone(),
+        _ => None,
+    };
+
+    let inspector = DatabaseInspectorFactory::create(&connection, password.as_deref()).await?;
+    let schemas = inspector.get_table_summaries().await?;
+
+    let database_name = match &connection.connection {
+        ConnectionConfig::Network(cfg) => cfg.database.clone(),
+        ConnectionConfig::File(cfg) => cfg.file_path.clone(),
+    };
+
+    let database_type = match connection.database_type {
+        crate::connection::DatabaseType::PostgreSQL => "postgresql",
+        crate::connection::DatabaseType::MySQL => "mysql",
+        crate::connection::DatabaseType::SQLite => "sqlite",
+    }
+    .to_string();
+
+    Ok(DatabaseStructureSummary {
+        connection_id,
+        database_name,
+        database_type,
+        schemas,
+        fetched_at: chrono::Utc::now().to_rfc3339(),
+    })
+}
+
 /// スキーマ一覧のみ取得
 #[tauri::command]
 pub async fn get_schemas(

@@ -19,17 +19,30 @@ const connection = computed<Connection | null>(() => {
   return connectionStore.getConnectionById(currentConnectionId.value) || null
 })
 
-watch(connection, async (value) => {
+watch(connection, async (value, oldValue) => {
+  if (oldValue?.id && oldValue.id !== value?.id) {
+    databaseStructureStore.cancelBackgroundFetch(oldValue.id)
+  }
+
   if (value) {
     windowStore.setConnectionContext(value.id, value.environment)
     sqlEditorStore.setConnection(value.id)
 
-    // スキーマ情報を自動取得（補完機能のため）
+    // Phase 1: 軽量サマリーを取得
     try {
-      await databaseStructureStore.fetchDatabaseStructure(value.id)
-      console.log('[SqlEditor] Database structure loaded for connection:', value.id)
+      await databaseStructureStore.fetchDatabaseStructureSummary(value.id)
+      console.log('[SqlEditor] Database structure summary loaded for connection:', value.id)
+      void databaseStructureStore.startBackgroundFetch(value.id)
     } catch (error) {
-      console.warn('[SqlEditor] Failed to load database structure:', error)
+      console.warn('[SqlEditor] Failed to load database structure summary:', error)
+
+      // 互換性のため、サマリー取得失敗時は従来の全取得へフォールバック
+      try {
+        await databaseStructureStore.fetchDatabaseStructure(value.id)
+        console.log('[SqlEditor] Fallback full structure loaded for connection:', value.id)
+      } catch (fallbackError) {
+        console.warn('[SqlEditor] Failed to load fallback full structure:', fallbackError)
+      }
     }
   }
 }, { immediate: true })
@@ -56,6 +69,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+  if (sqlEditorStore.connectionId) {
+    databaseStructureStore.cancelBackgroundFetch(sqlEditorStore.connectionId)
+  } else {
+    databaseStructureStore.cancelBackgroundFetch()
+  }
 })
 
 definePageMeta({
