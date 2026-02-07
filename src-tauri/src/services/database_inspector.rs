@@ -44,6 +44,9 @@ pub trait DatabaseInspector: Send + Sync {
         schema: Option<&str>,
     ) -> Result<Vec<TableForeignKey>, String>;
 
+    /// テーブル一覧サマリーを取得（軽量）
+    async fn get_table_summaries(&self) -> Result<Vec<SchemaSummary>, String>;
+
     /// データベース構造全体を取得
     async fn get_database_structure(&self) -> Result<DatabaseStructure, String>;
 }

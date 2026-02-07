@@ -761,6 +761,10 @@
             "savedPanelTitle": "保存クエリ",
             "historyPanelTitle": "実行履歴"
         },
+        "structureLoading": {
+            "summary": "テーブル情報を取得中...",
+            "background": "カラム情報を取得中: {loaded}/{total}"
+        },
         "savedPanel": {
             "search": "クエリを検索...",
             "newFolder": "新規フォルダ",

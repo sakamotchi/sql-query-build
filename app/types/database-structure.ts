@@ -15,6 +15,50 @@ export interface DatabaseStructure {
 }
 
 /**
+ * データベース構造サマリー（軽量）
+ */
+export interface DatabaseStructureSummary {
+  /** 接続ID */
+  connectionId: string;
+  /** データベース名 */
+  databaseName: string;
+  /** データベース種別 */
+  databaseType: 'postgresql' | 'mysql' | 'sqlite';
+  /** スキーマ一覧 */
+  schemas: SchemaSummary[];
+  /** 取得日時 */
+  fetchedAt: string;
+}
+
+/**
+ * スキーマ情報（サマリー）
+ */
+export interface SchemaSummary {
+  /** スキーマ名 */
+  name: string;
+  /** システムスキーマかどうか */
+  isSystem: boolean;
+  /** テーブル一覧 */
+  tables: TableSummary[];
+  /** ビュー一覧 */
+  views: TableSummary[];
+}
+
+/**
+ * テーブル情報（サマリー）
+ */
+export interface TableSummary {
+  /** テーブル名 */
+  name: string;
+  /** スキーマ名 */
+  schema: string;
+  /** コメント/説明 */
+  comment: string | null;
+  /** 推定行数 */
+  estimatedRowCount: number | null;
+}
+
+/**
  * スキーマ情報
  */
 export interface Schema {

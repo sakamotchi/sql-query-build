@@ -346,3 +346,38 @@ fn test_column_default_value_types() {
     assert_eq!(col2.default_value, Some("'active'".to_string()));
     assert_eq!(col3.default_value, Some("CURRENT_TIMESTAMP".to_string()));
 }
+
+#[test]
+fn test_database_structure_summary_serialization() {
+    let summary = DatabaseStructureSummary {
+        connection_id: "conn-summary-1".to_string(),
+        database_name: "sample_db".to_string(),
+        database_type: "postgresql".to_string(),
+        schemas: vec![SchemaSummary {
+            name: "public".to_string(),
+            is_system: false,
+            tables: vec![TableSummary {
+                name: "users".to_string(),
+                schema: "public".to_string(),
+                comment: Some("users table".to_string()),
+                estimated_row_count: Some(42),
+            }],
+            views: vec![TableSummary {
+                name: "active_users".to_string(),
+                schema: "public".to_string(),
+                comment: None,
+                estimated_row_count: None,
+            }],
+        }],
+        fetched_at: "2026-02-07T00:00:00Z".to_string(),
+    };
+
+    let json = serde_json::to_string(&summary).unwrap();
+    let deserialized: DatabaseStructureSummary = serde_json::from_str(&json).unwrap();
+
+    assert_eq!(summary.connection_id, deserialized.connection_id);
+    assert_eq!(summary.database_name, deserialized.database_name);
+    assert_eq!(summary.schemas.len(), 1);
+    assert_eq!(summary.schemas[0].tables[0].name, "users");
+    assert_eq!(summary.schemas[0].views[0].name, "active_users");
+}

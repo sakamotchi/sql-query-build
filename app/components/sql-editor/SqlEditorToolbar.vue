@@ -54,9 +54,11 @@ const availableDatabases = computed(() => {
   if (!connectionId) return []
 
   const structure = databaseStructureStore.structures[connectionId]
-  if (!structure) return []
+  const summary = databaseStructureStore.summaries[connectionId]
+  const schemas = structure?.schemas || summary?.schemas
+  if (!schemas) return []
 
-  return structure.schemas
+  return schemas
     .filter(schema => !schema.isSystem)
     .map(schema => ({
       label: schema.name,

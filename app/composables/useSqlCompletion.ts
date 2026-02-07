@@ -4,8 +4,22 @@ import { useSqlEditorStore } from '~/stores/sql-editor'
 import { SQL_KEYWORDS, COMPLETION_KIND_MAP } from '~/constants/sql-keywords'
 import { getFunctionCatalog } from '~/data/function-catalog'
 import type { CompletionContext } from '~/types/sql-completion'
+import type { Column } from '~/types/database-structure'
 
 const MAX_SUGGESTIONS_PER_CATEGORY = 100
+
+interface CompletionTable {
+  name: string
+  comment: string | null
+  estimatedRowCount: number | null
+  columns: Column[]
+}
+
+interface CompletionSchema {
+  name: string
+  isSystem: boolean
+  tables: CompletionTable[]
+}
 
 /**
  * テーブル名からエイリアスを自動生成
@@ -188,14 +202,10 @@ export function useSqlCompletion() {
    * テーブル名の補完候補を取得
    */
   function getTableCompletions(context: CompletionContext): monaco.languages.CompletionItem[] {
-    if (!context.connectionId) {
-      return []
-    }
+    if (!context.connectionId) return []
 
-    const structure = databaseStructureStore.structures[context.connectionId]
-    if (!structure) {
-      return []
-    }
+    const schemas = getSchemasForCompletion(context.connectionId)
+    if (schemas.length === 0) return []
 
     const items: monaco.languages.CompletionItem[] = []
     let count = 0
@@ -208,7 +218,7 @@ export function useSqlCompletion() {
       targetSchema = context.currentWord.substring(0, dotIndex)
     }
 
-    for (const schema of structure.schemas) {
+    for (const schema of schemas) {
       // 選択中のデータベースでフィルタリング
       // 1. 完全修飾名が入力されている場合は、そのスキーマのみ
       // 2. 選択中のデータベースがある場合は、そのスキーマのみ
@@ -284,13 +294,13 @@ export function useSqlCompletion() {
    */
   function getColumnCompletions(context: CompletionContext): monaco.languages.CompletionItem[] {
     if (!context.connectionId) return []
-
-    const structure = databaseStructureStore.structures[context.connectionId]
-    if (!structure) return []
+    const schemas = getSchemasForCompletion(context.connectionId)
+    if (schemas.length === 0) return []
 
     // エイリアス.カラム名 の形式かチェック（例: us.user_id）
     const dotIndex = context.currentWord.lastIndexOf('.')
     let targetTableName: string | null = null
+    let targetSchemaName: string | null = null
     let columnPrefix = context.currentWord.toLowerCase()
     let completionRange = context.range
 
@@ -304,7 +314,13 @@ export function useSqlCompletion() {
 
       // エイリアスでなければテーブル名として扱う
       if (!targetTableName) {
-        targetTableName = aliasOrTable
+        if (aliasOrTable.includes('.')) {
+          const [schemaName = '', tableName = ''] = aliasOrTable.split('.', 2)
+          targetSchemaName = schemaName || null
+          targetTableName = tableName || null
+        } else {
+          targetTableName = aliasOrTable
+        }
       }
 
       // ドットがある場合、補完範囲をドットの後に限定する
@@ -318,25 +334,41 @@ export function useSqlCompletion() {
 
     const items: monaco.languages.CompletionItem[] = []
     let count = 0
+    let triggeredOnDemand = false
 
-    for (const schema of structure.schemas) {
+    for (const schema of schemas) {
       // エイリアス/テーブル名指定がない場合は、選択中のデータベースでフィルタリング
-      if (!targetTableName && context.selectedDatabase) {
-        if (schema.name !== context.selectedDatabase) {
-          continue
-        }
-      }
+      if (targetSchemaName && schema.name !== targetSchemaName) continue
+      if (!targetTableName && context.selectedDatabase && schema.name !== context.selectedDatabase) continue
+      if (targetTableName && !targetSchemaName && context.selectedDatabase && schema.name !== context.selectedDatabase) continue
 
       for (const table of schema.tables) {
         // エイリアス指定がある場合は、そのテーブルのカラムのみ表示
-        if (targetTableName && table.name !== targetTableName) {
-          continue
+        if (targetTableName && table.name !== targetTableName) continue
+
+        let columns = table.columns
+        if (columns.length === 0) {
+          columns = databaseStructureStore.getCachedColumns(context.connectionId, schema.name, table.name) || []
         }
 
-        for (const column of table.columns) {
-          if (!column.name.toLowerCase().startsWith(columnPrefix)) {
-            continue
+        if (columns.length === 0 && targetTableName) {
+          if (!databaseStructureStore.isColumnLoading(context.connectionId, schema.name, table.name)) {
+            triggeredOnDemand = true
+            void databaseStructureStore
+              .fetchColumnsForTable(context.connectionId, schema.name, table.name)
+              .catch((error) => {
+                console.warn(
+                  `[SqlCompletion] Failed to fetch columns: ${schema.name}.${table.name}`,
+                  error,
+                )
+              })
+          } else {
+            triggeredOnDemand = true
           }
+        }
+
+        for (const column of columns) {
+          if (!column.name.toLowerCase().startsWith(columnPrefix)) continue
 
           const constraints: string[] = []
           if (column.isPrimaryKey) constraints.push('PK')
@@ -369,13 +401,58 @@ export function useSqlCompletion() {
         }
 
         // エイリアス指定時は特定テーブルのみなので、見つかったら終了
-        if (targetTableName && items.length > 0) break
+        if (targetTableName) {
+          if (items.length > 0) return items
+          break
+        }
       }
+    }
 
-      if (targetTableName && items.length > 0) break
+    if (targetTableName && items.length === 0 && triggeredOnDemand) {
+      return [{
+        label: 'Loading columns...',
+        kind: monaco.languages.CompletionItemKind.Text,
+        insertText: '',
+        detail: 'Loading columns...',
+        sortText: '0_loading_columns',
+        range: completionRange,
+      }]
     }
 
     return items
+  }
+
+  /**
+   * 補完に利用するスキーマ一覧（全構造優先、なければサマリー）
+   */
+  function getSchemasForCompletion(connectionId: string): CompletionSchema[] {
+    const structure = databaseStructureStore.structures[connectionId]
+    if (structure) {
+      return structure.schemas.map((schema) => ({
+        name: schema.name,
+        isSystem: schema.isSystem,
+        tables: schema.tables.map((table) => ({
+          name: table.name,
+          comment: table.comment,
+          estimatedRowCount: table.estimatedRowCount,
+          columns: table.columns,
+        })),
+      }))
+    }
+
+    const summary = databaseStructureStore.summaries[connectionId]
+    if (!summary) return []
+
+    return summary.schemas.map((schema) => ({
+      name: schema.name,
+      isSystem: schema.isSystem,
+      tables: schema.tables.map((table) => ({
+        name: table.name,
+        comment: table.comment,
+        estimatedRowCount: table.estimatedRowCount,
+        columns: [],
+      })),
+    }))
   }
 
   /**
