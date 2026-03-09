@@ -158,10 +158,30 @@ impl MysqlExecutor {
                                 .or_else(|| row.try_get::<i64, _>(i).ok().map(QueryValue::Int))
                                 .unwrap_or(QueryValue::Null)
                         }
-                        "SMALLINT" | "INT" | "INTEGER" | "BIGINT" => row
+                        "TINYINT UNSIGNED" => row
+                            .try_get::<u8, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::Int(v as i64))
+                            .unwrap_or(QueryValue::Null),
+                        "SMALLINT" | "INT" | "INTEGER" | "BIGINT" | "MEDIUMINT" => row
                             .try_get::<i64, _>(i)
                             .ok()
                             .map(QueryValue::Int)
+                            .unwrap_or(QueryValue::Null),
+                        "SMALLINT UNSIGNED" => row
+                            .try_get::<u16, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::Int(v as i64))
+                            .unwrap_or(QueryValue::Null),
+                        "MEDIUMINT UNSIGNED" | "INT UNSIGNED" | "INTEGER UNSIGNED" => row
+                            .try_get::<u32, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::Int(v as i64))
+                            .unwrap_or(QueryValue::Null),
+                        "BIGINT UNSIGNED" => row
+                            .try_get::<u64, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::Int(v as i64))
                             .unwrap_or(QueryValue::Null),
                         "FLOAT" | "DOUBLE" | "REAL" => row
                             .try_get::<f64, _>(i)
