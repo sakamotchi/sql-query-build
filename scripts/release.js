@@ -115,7 +115,7 @@ console.log('🚀 リリースを実行中...')
 console.log('')
 
 try {
-  execSync(`npm version ${versionArg} -m "release: v%s [skip ci]"`, {
+  execSync(`npm version ${versionArg} -m "release: v%s"`, {
     cwd: rootDir,
     stdio: 'inherit'
   })
