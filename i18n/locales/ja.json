@@ -763,7 +763,9 @@
         },
         "structureLoading": {
             "summary": "テーブル情報を取得中...",
-            "background": "カラム情報を取得中: {loaded}/{total}"
+            "summarySubtitle": "しばらくお待ちください",
+            "backgroundTitle": "カラム情報を取得中...",
+            "background": "{loaded} / {total} テーブル完了"
         },
         "savedPanel": {
             "search": "クエリを検索...",

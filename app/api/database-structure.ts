@@ -49,4 +49,14 @@ export const databaseStructureApi = {
   ): Promise<Column[]> {
     return invoke('get_columns', { connectionId, schema, table });
   },
+
+  /**
+   * スキーマ内の全テーブルのカラムを一括取得
+   */
+  async getColumnsBySchema(
+    connectionId: string,
+    schema: string
+  ): Promise<Record<string, Column[]>> {
+    return invoke('get_columns_by_schema', { connectionId, schema });
+  },
 };

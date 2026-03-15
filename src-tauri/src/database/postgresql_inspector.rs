@@ -695,6 +695,13 @@ impl DatabaseInspector for PostgresqlInspector {
         Ok(all_fks)
     }
 
+    async fn get_columns_by_schema(
+        &self,
+        schema: &str,
+    ) -> Result<HashMap<String, Vec<Column>>, String> {
+        self.get_all_columns_in_schema(schema).await
+    }
+
     async fn get_table_summaries(&self) -> Result<Vec<SchemaSummary>, String> {
         let schemas_query = r#"
             SELECT

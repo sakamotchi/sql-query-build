@@ -4,6 +4,7 @@ use crate::services::database_inspector::{DatabaseInspector, TableForeignKey};
 use async_trait::async_trait;
 use sqlx::sqlite::SqlitePool;
 use sqlx::Row;
+use std::collections::HashMap;
 
 pub struct SqliteInspector {
     pool: SqlitePool,
@@ -345,6 +346,33 @@ impl DatabaseInspector for SqliteInspector {
         }
 
         Ok(all_fks)
+    }
+
+    async fn get_columns_by_schema(
+        &self,
+        _schema: &str,
+    ) -> Result<HashMap<String, Vec<Column>>, String> {
+        let query = r#"
+            SELECT name
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name NOT LIKE 'sqlite_%'
+            ORDER BY name
+        "#;
+
+        let rows = sqlx::query(query)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to get table names: {}", e))?;
+
+        let mut result = HashMap::new();
+        for row in rows {
+            let table_name: String = row.get("name");
+            let columns = self.get_columns("main", &table_name).await?;
+            result.insert(table_name, columns);
+        }
+
+        Ok(result)
     }
 
     async fn get_table_summaries(&self) -> Result<Vec<SchemaSummary>, String> {

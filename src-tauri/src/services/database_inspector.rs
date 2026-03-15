@@ -1,6 +1,7 @@
 use crate::connection::ConnectionInfo;
 use crate::models::database_structure::*;
 use async_trait::async_trait;
+use std::collections::HashMap;
 
 /// テーブルに紐づく外部キー情報
 #[derive(Debug, Clone)]
@@ -43,6 +44,12 @@ pub trait DatabaseInspector: Send + Sync {
         &self,
         schema: Option<&str>,
     ) -> Result<Vec<TableForeignKey>, String>;
+
+    /// スキーマ内の全テーブルのカラムを一括取得（キー: テーブル名）
+    async fn get_columns_by_schema(
+        &self,
+        schema: &str,
+    ) -> Result<HashMap<String, Vec<Column>>, String>;
 
     /// テーブル一覧サマリーを取得（軽量）
     async fn get_table_summaries(&self) -> Result<Vec<SchemaSummary>, String>;

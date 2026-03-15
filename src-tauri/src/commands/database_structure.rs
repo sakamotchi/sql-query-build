@@ -2,6 +2,7 @@ use crate::connection::{ConnectionConfig, ConnectionService};
 use crate::models::database_structure::*;
 use crate::services::database_inspector::DatabaseInspectorFactory;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use tauri::State;
 
 /// データベース構造を取得
@@ -138,6 +139,28 @@ pub async fn get_columns(
 
     let inspector = DatabaseInspectorFactory::create(&connection, password.as_deref()).await?;
     inspector.get_columns(&schema, &table).await
+}
+
+/// スキーマ内の全テーブルのカラムを一括取得
+#[tauri::command]
+pub async fn get_columns_by_schema(
+    connection_id: String,
+    schema: String,
+    connection_service: State<'_, ConnectionService>,
+) -> Result<HashMap<String, Vec<Column>>, String> {
+    let connection = connection_service
+        .get_by_id(&connection_id, true)
+        .await
+        .map_err(|e| format!("Failed to get connection: {}", e))?
+        .ok_or_else(|| format!("Connection not found: {}", connection_id))?;
+
+    let password = match &connection.connection {
+        ConnectionConfig::Network(cfg) => cfg.encrypted_password.clone(),
+        _ => None,
+    };
+
+    let inspector = DatabaseInspectorFactory::create(&connection, password.as_deref()).await?;
+    inspector.get_columns_by_schema(&schema).await
 }
 
 /// テーブル存在チェック用のリクエスト

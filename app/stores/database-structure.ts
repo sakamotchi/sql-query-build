@@ -232,7 +232,7 @@ export const useDatabaseStructureStore = defineStore('database-structure', {
     },
 
     /**
-     * バックグラウンドでカラムを順次取得（Phase 2）
+     * バックグラウンドでカラムをスキーマ単位で一括取得（Phase 2）
      */
     async startBackgroundFetch(connectionId: string): Promise<void> {
       const summary = this.summaries[connectionId]
@@ -241,49 +241,52 @@ export const useDatabaseStructureStore = defineStore('database-structure', {
       const token = Date.now()
       this.backgroundFetchTokens[connectionId] = token
 
-      const tableTargets = summary.schemas
-        .filter((schema) => !schema.isSystem)
-        .flatMap((schema) =>
-          schema.tables.map((table) => ({
-            schema: schema.name,
-            table: table.name,
-          }))
-        )
+      const nonSystemSchemas = summary.schemas.filter((schema) => !schema.isSystem)
+      const totalTables = nonSystemSchemas.reduce((sum, schema) => sum + schema.tables.length, 0)
 
-      if (tableTargets.length === 0) {
+      if (totalTables === 0) {
         delete this.backgroundProgress[connectionId]
         return
       }
 
-      const pendingTargets = tableTargets.filter(
-        (target) => !this.getCachedColumns(connectionId, target.schema, target.table)
-      )
-      let loaded = tableTargets.length - pendingTargets.length
+      let loaded = 0
+      this.backgroundProgress[connectionId] = { loaded, total: totalTables }
 
-      this.backgroundProgress[connectionId] = {
-        loaded,
-        total: tableTargets.length,
-      }
+      for (const schema of nonSystemSchemas) {
+        if (this.backgroundFetchTokens[connectionId] !== token) return
 
-      for (const target of pendingTargets) {
-        if (this.backgroundFetchTokens[connectionId] !== token) {
-          return
+        // 全テーブルがキャッシュ済みならスキップ
+        const uncachedTables = schema.tables.filter(
+          (t) => !this.getCachedColumns(connectionId, schema.name, t.name)
+        )
+        if (uncachedTables.length === 0) {
+          loaded += schema.tables.length
+          this.backgroundProgress[connectionId] = { loaded, total: totalTables }
+          continue
         }
 
         try {
-          await this.fetchColumnsForTable(connectionId, target.schema, target.table)
+          // スキーマ内の全テーブルのカラムを1回のRustコマンドで取得
+          const columnsMap = await databaseStructureApi.getColumnsBySchema(connectionId, schema.name)
+
+          if (!this.columnCache[connectionId]) {
+            this.columnCache[connectionId] = {}
+          }
+          for (const table of schema.tables) {
+            const columns = columnsMap[table.name] ?? []
+            const cacheKey = buildColumnCacheKey(schema.name, table.name)
+            this.columnCache[connectionId][cacheKey] = columns
+            this.applyColumnsToStructure(connectionId, schema.name, table.name, columns)
+          }
         } catch (error) {
           console.warn(
-            `[database-structure store] Background column fetch failed: ${target.schema}.${target.table}`,
+            `[database-structure store] Background column fetch failed for schema: ${schema.name}`,
             error
           )
         }
 
-        loaded += 1
-        this.backgroundProgress[connectionId] = {
-          loaded,
-          total: tableTargets.length,
-        }
+        loaded += schema.tables.length
+        this.backgroundProgress[connectionId] = { loaded, total: totalTables }
 
         // UIのブロッキングを避ける
         await new Promise((resolve) => setTimeout(resolve, 10))
