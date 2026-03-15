@@ -231,7 +231,7 @@ VALUES (
 
 - `inet_val` の値が `"192.168.1.1"` として表示される
 - `cidr_val` の値が `"192.168.1.0/24"` として表示される
-- `interval_val` の値が文字列として表示される（例: `"1 year 2 mons 3 days"`）
+- `interval_val` の値が文字列として表示される（例: `"1 years 2 months 3 days"`）
 - `oid_val` の値が整数（`1234`）として表示される
 
 **確認結果:**
@@ -270,11 +270,31 @@ VALUES (
 
 **期待結果:**
 
-- `int_val`: `1`（整数）
-- `str_val`: `"text"`（文字列）
-- `float_val`: `3.14`（浮動小数点）
-- `bool_val`: `true`（ブール）
+- `int_val`: `1`（整数、型: bigint）
+- `str_val`: `"text"`（文字列、型: varchar）
+- `float_val`: `"3.14"`（文字列表示、型: decimal）※MySQL リテラルは DECIMAL 型になるため bigdecimal 経由で文字列として返す
+- `bool_val`: `1`（整数、型: bigint）※MySQL の `true` は tinyint/bigint で返る
 - `null_val`: NULL
+
+**確認結果:**
+
+- [x] OK / NG
+
+---
+
+### ケース 10: MySQL DECIMAL の表示確認（T-10）
+
+**手順:**
+
+1. MySQL 接続で以下を実行：
+   ```sql
+   SELECT 3.14 AS float_val, 1234.5678 AS dec_val;
+   ```
+
+**期待結果:**
+
+- `float_val` の値が `"3.14"` として表示される（型: decimal、NULL ではない）
+- `dec_val` の値が `"1234.5678"` として表示される
 
 **確認結果:**
 
