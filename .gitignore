@@ -42,3 +42,6 @@ src-tauri/Cargo.lock
 # Local documents (not tracked)
 docs/local/*
 !docs/local/.gitkeep
+
+# Obsidian
+.obsidian
