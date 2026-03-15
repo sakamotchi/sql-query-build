@@ -763,7 +763,9 @@
         },
         "structureLoading": {
             "summary": "Loading table metadata...",
-            "background": "Loading columns: {loaded}/{total}"
+            "summarySubtitle": "Please wait a moment",
+            "backgroundTitle": "Loading column information...",
+            "background": "{loaded} / {total} tables done"
         },
         "savedPanel": {
             "search": "Search queries...",
