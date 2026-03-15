@@ -1,6 +1,6 @@
 ---
 name: generate-testing
-description: 開発作業のテスト手順書（testing.md）を生成します。このスキルは単独で使用することも、generate-working-docsから呼び出されることもあります。
+description: 開発作業のテスト手順書（testing.md）を単体で生成・再生成します。全ドキュメントの一括生成には generate-working-docs（新規機能開発）または generate-performance-docs（パフォーマンス改善）を使用してください。
 ---
 
 # テスト手順書生成スキル
@@ -79,7 +79,8 @@ description: 開発作業のテスト手順書（testing.md）を生成します
 
 ## 関連スキル
 
-- `generate-working-docs` - 全ドキュメントを生成するメインスキル
-- `generate-requirements` - 要件定義書生成スキル
-- `generate-design` - 設計書生成スキル
-- `generate-tasklist` - タスクリスト生成スキル
+- `generate-working-docs` - 新規機能開発の全ドキュメントを一括生成するスキル
+- `generate-performance-docs` - パフォーマンス改善の全ドキュメントを一括生成するスキル
+- `generate-requirements` - 要件定義書を単体再生成するスキル
+- `generate-design` - 設計書を単体再生成するスキル
+- `generate-tasklist` - タスクリストを単体再生成するスキル

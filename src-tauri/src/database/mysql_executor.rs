@@ -188,15 +188,68 @@ impl MysqlExecutor {
                             .ok()
                             .map(QueryValue::Float)
                             .unwrap_or(QueryValue::Null),
-                        "VARCHAR" | "CHAR" | "TEXT" | "LONGTEXT" => row
+                        "DECIMAL" | "NUMERIC" | "NEWDECIMAL" => row
+                            .try_get::<bigdecimal::BigDecimal, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::String(v.to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "VARCHAR" | "CHAR" | "TEXT" | "LONGTEXT" | "TINYTEXT" | "MEDIUMTEXT"
+                        | "ENUM" | "SET" => row
                             .try_get::<String, _>(i)
                             .ok()
                             .map(QueryValue::String)
                             .unwrap_or(QueryValue::Null),
-                        "BLOB" | "LONGBLOB" | "BINARY" | "VARBINARY" => row
+                        "BLOB" | "LONGBLOB" | "TINYBLOB" | "MEDIUMBLOB" | "BINARY"
+                        | "VARBINARY" => row
                             .try_get::<Vec<u8>, _>(i)
                             .ok()
                             .map(QueryValue::Bytes)
+                            .unwrap_or(QueryValue::Null),
+                        "DATE" => row
+                            .try_get::<chrono::NaiveDate, _>(i)
+                            .ok()
+                            .map(|d| QueryValue::String(d.format("%Y-%m-%d").to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "TIME" => row
+                            .try_get::<chrono::NaiveTime, _>(i)
+                            .ok()
+                            .map(|t| QueryValue::String(t.format("%H:%M:%S").to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "DATETIME" => row
+                            .try_get::<chrono::NaiveDateTime, _>(i)
+                            .ok()
+                            .map(|dt| {
+                                QueryValue::String(
+                                    dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                )
+                            })
+                            .unwrap_or(QueryValue::Null),
+                        "TIMESTAMP" => row
+                            .try_get::<chrono::DateTime<chrono::Utc>, _>(i)
+                            .ok()
+                            .map(|dt| {
+                                QueryValue::String(
+                                    dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                )
+                            })
+                            .unwrap_or(QueryValue::Null),
+                        "YEAR" => row
+                            .try_get::<u16, _>(i)
+                            .ok()
+                            .map(|y| QueryValue::Int(y as i64))
+                            .unwrap_or(QueryValue::Null),
+                        "JSON" => row
+                            .try_get::<serde_json::Value, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::String(v.to_string()))
+                            .or_else(|| {
+                                row.try_get::<String, _>(i).ok().map(QueryValue::String)
+                            })
+                            .unwrap_or(QueryValue::Null),
+                        "BIT" => row
+                            .try_get::<u64, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::String(format!("{:#b}", v)))
                             .unwrap_or(QueryValue::Null),
                         _ => row
                             .try_get::<String, _>(i)

@@ -196,7 +196,17 @@ impl PostgresExecutor {
                             .ok()
                             .map(QueryValue::Bool)
                             .unwrap_or(QueryValue::Null),
-                        "INT2" | "INT4" | "INT8" => row
+                        "INT2" => row
+                            .try_get::<i16, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::Int(v as i64))
+                            .unwrap_or(QueryValue::Null),
+                        "INT4" => row
+                            .try_get::<i32, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::Int(v as i64))
+                            .unwrap_or(QueryValue::Null),
+                        "INT8" => row
                             .try_get::<i64, _>(i)
                             .ok()
                             .map(QueryValue::Int)
@@ -206,6 +216,36 @@ impl PostgresExecutor {
                             .ok()
                             .map(QueryValue::Float)
                             .unwrap_or(QueryValue::Null),
+                        "NUMERIC" => row
+                            .try_get::<bigdecimal::BigDecimal, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::String(v.to_string()))
+                            .unwrap_or(QueryValue::Null),
+                        "MONEY" => {
+                            // MONEY はバイナリプロトコルで 8 バイト big-endian i64（1/100 通貨単位）
+                            // try_get::<String> は失敗するため raw bytes からデコードする
+                            if let Ok(bytes) = val.as_bytes() {
+                                if bytes.len() == 8 {
+                                    let cents = i64::from_be_bytes([
+                                        bytes[0], bytes[1], bytes[2], bytes[3],
+                                        bytes[4], bytes[5], bytes[6], bytes[7],
+                                    ]);
+                                    let is_negative = cents < 0;
+                                    let abs_cents = cents.unsigned_abs();
+                                    let dollars = abs_cents / 100;
+                                    let remaining_cents = abs_cents % 100;
+                                    let sign = if is_negative { "-" } else { "" };
+                                    QueryValue::String(format!(
+                                        "{}{}.{:02}",
+                                        sign, dollars, remaining_cents
+                                    ))
+                                } else {
+                                    QueryValue::Null
+                                }
+                            } else {
+                                QueryValue::Null
+                            }
+                        }
                         "TEXT" | "VARCHAR" | "CHAR" | "BPCHAR" | "NAME" => row
                             .try_get::<String, _>(i)
                             .ok()
@@ -241,6 +281,217 @@ impl PostgresExecutor {
                             .ok()
                             .map(|t| QueryValue::String(t.to_string()))
                             .unwrap_or(QueryValue::Null),
+                        "JSON" | "JSONB" => row
+                            .try_get::<serde_json::Value, _>(i)
+                            .ok()
+                            .map(|v| QueryValue::String(v.to_string()))
+                            .or_else(|| {
+                                row.try_get::<String, _>(i).ok().map(QueryValue::String)
+                            })
+                            .unwrap_or(QueryValue::Null),
+                        "INET" | "CIDR" => {
+                            if let Ok(bytes) = val.as_bytes() {
+                                if bytes.len() >= 8 && bytes[3] == 4 {
+                                    // IPv4: [family, bits, is_cidr, nb=4, b0, b1, b2, b3]
+                                    let addr = format!(
+                                        "{}.{}.{}.{}",
+                                        bytes[4], bytes[5], bytes[6], bytes[7]
+                                    );
+                                    let bits = bytes[1];
+                                    let is_cidr_flag = bytes[2] != 0;
+                                    if is_cidr_flag || bits < 32 {
+                                        QueryValue::String(format!("{}/{}", addr, bits))
+                                    } else {
+                                        QueryValue::String(addr)
+                                    }
+                                } else if bytes.len() >= 20 && bytes[3] == 16 {
+                                    // IPv6: [family, bits, is_cidr, nb=16, 16 addr bytes]
+                                    let groups: Vec<String> = (0..8)
+                                        .map(|j| {
+                                            format!(
+                                                "{:x}",
+                                                u16::from_be_bytes([
+                                                    bytes[4 + j * 2],
+                                                    bytes[4 + j * 2 + 1]
+                                                ])
+                                            )
+                                        })
+                                        .collect();
+                                    let addr = groups.join(":");
+                                    let bits = bytes[1];
+                                    let is_cidr_flag = bytes[2] != 0;
+                                    if is_cidr_flag || bits < 128 {
+                                        QueryValue::String(format!("{}/{}", addr, bits))
+                                    } else {
+                                        QueryValue::String(addr)
+                                    }
+                                } else {
+                                    QueryValue::String("[inet]".to_string())
+                                }
+                            } else {
+                                QueryValue::Null
+                            }
+                        }
+                        "MACADDR" | "MACADDR8" => row
+                            .try_get::<String, _>(i)
+                            .ok()
+                            .map(QueryValue::String)
+                            .unwrap_or(QueryValue::Null),
+                        "INTERVAL" => {
+                            row.try_get::<sqlx::postgres::types::PgInterval, _>(i)
+                                .ok()
+                                .map(|v| {
+                                    let mut parts: Vec<String> = Vec::new();
+                                    if v.months != 0 {
+                                        let years = v.months / 12;
+                                        let months = v.months % 12;
+                                        if years != 0 {
+                                            parts.push(format!("{} years", years));
+                                        }
+                                        if months != 0 {
+                                            parts.push(format!("{} months", months));
+                                        }
+                                    }
+                                    if v.days != 0 {
+                                        parts.push(format!("{} days", v.days));
+                                    }
+                                    if v.microseconds != 0 {
+                                        let total_secs = v.microseconds / 1_000_000;
+                                        let micros = v.microseconds.abs() % 1_000_000;
+                                        let hours = total_secs / 3600;
+                                        let mins = (total_secs % 3600) / 60;
+                                        let secs = total_secs % 60;
+                                        if micros != 0 {
+                                            parts.push(format!(
+                                                "{:02}:{:02}:{:02}.{:06}",
+                                                hours, mins, secs, micros
+                                            ));
+                                        } else {
+                                            parts.push(format!(
+                                                "{:02}:{:02}:{:02}",
+                                                hours, mins, secs
+                                            ));
+                                        }
+                                    }
+                                    QueryValue::String(if parts.is_empty() {
+                                        "00:00:00".to_string()
+                                    } else {
+                                        parts.join(" ")
+                                    })
+                                })
+                                .unwrap_or(QueryValue::Null)
+                        }
+                        "XML" | "BIT" | "VARBIT" | "TSVECTOR" | "TSQUERY" => row
+                            .try_get::<String, _>(i)
+                            .ok()
+                            .map(QueryValue::String)
+                            .unwrap_or(QueryValue::Null),
+                        "OID" => {
+                            if let Ok(bytes) = val.as_bytes() {
+                                if bytes.len() == 4 {
+                                    let v = u32::from_be_bytes([
+                                        bytes[0], bytes[1], bytes[2], bytes[3],
+                                    ]);
+                                    QueryValue::Int(v as i64)
+                                } else {
+                                    QueryValue::Null
+                                }
+                            } else {
+                                QueryValue::Null
+                            }
+                        }
+                        "POINT" | "LINE" | "LSEG" | "BOX" | "PATH" | "POLYGON" | "CIRCLE" => row
+                            .try_get::<String, _>(i)
+                            .ok()
+                            .map(QueryValue::String)
+                            .unwrap_or_else(|| {
+                                QueryValue::String("[geometry]".to_string())
+                            }),
+                        name if name.ends_with("[]") => {
+                            // PostgreSQL 配列型: sqlx の display_name() は "INT4[]", "TEXT[]" 形式で返す
+                            let element_type = &name[..name.len() - 2];
+                            match element_type {
+                                "INT2" => row
+                                    .try_get::<Vec<Option<i16>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "INT4" => row
+                                    .try_get::<Vec<Option<i32>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "INT8" => row
+                                    .try_get::<Vec<Option<i64>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "FLOAT4" | "FLOAT8" => row
+                                    .try_get::<Vec<Option<f64>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "TEXT" | "VARCHAR" | "CHAR" | "NAME" => row
+                                    .try_get::<Vec<Option<String>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| {
+                                                x.as_deref()
+                                                    .map_or("null".to_string(), |s| format!("\"{}\"", s))
+                                            })
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "BOOL" => row
+                                    .try_get::<Vec<Option<bool>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |b| b.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                other => QueryValue::String(format!(
+                                    "[array<{}>]",
+                                    other.to_lowercase().trim_end_matches("[]")
+                                )),
+                            }
+                        }
                         _ => {
                             // 未対応の型は文字列として取得を試みる
                             row.try_get::<String, _>(i)
