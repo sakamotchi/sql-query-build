@@ -407,6 +407,91 @@ impl PostgresExecutor {
                             .unwrap_or_else(|| {
                                 QueryValue::String("[geometry]".to_string())
                             }),
+                        name if name.ends_with("[]") => {
+                            // PostgreSQL 配列型: sqlx の display_name() は "INT4[]", "TEXT[]" 形式で返す
+                            let element_type = &name[..name.len() - 2];
+                            match element_type {
+                                "INT2" => row
+                                    .try_get::<Vec<Option<i16>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "INT4" => row
+                                    .try_get::<Vec<Option<i32>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "INT8" => row
+                                    .try_get::<Vec<Option<i64>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "FLOAT4" | "FLOAT8" => row
+                                    .try_get::<Vec<Option<f64>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |n| n.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "TEXT" | "VARCHAR" | "CHAR" | "NAME" => row
+                                    .try_get::<Vec<Option<String>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| {
+                                                x.as_deref()
+                                                    .map_or("null".to_string(), |s| format!("\"{}\"", s))
+                                            })
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                "BOOL" => row
+                                    .try_get::<Vec<Option<bool>>, _>(i)
+                                    .ok()
+                                    .map(|v| {
+                                        let s = v
+                                            .iter()
+                                            .map(|x| x.map_or("null".to_string(), |b| b.to_string()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ");
+                                        QueryValue::String(format!("[{}]", s))
+                                    })
+                                    .unwrap_or(QueryValue::Null),
+                                other => QueryValue::String(format!(
+                                    "[array<{}>]",
+                                    other.to_lowercase().trim_end_matches("[]")
+                                )),
+                            }
+                        }
                         _ => {
                             // 未対応の型は文字列として取得を試みる
                             row.try_get::<String, _>(i)
