@@ -221,11 +221,31 @@ impl PostgresExecutor {
                             .ok()
                             .map(|v| QueryValue::String(v.to_string()))
                             .unwrap_or(QueryValue::Null),
-                        "MONEY" => row
-                            .try_get::<String, _>(i)
-                            .ok()
-                            .map(QueryValue::String)
-                            .unwrap_or(QueryValue::Null),
+                        "MONEY" => {
+                            // MONEY はバイナリプロトコルで 8 バイト big-endian i64（1/100 通貨単位）
+                            // try_get::<String> は失敗するため raw bytes からデコードする
+                            if let Ok(bytes) = val.as_bytes() {
+                                if bytes.len() == 8 {
+                                    let cents = i64::from_be_bytes([
+                                        bytes[0], bytes[1], bytes[2], bytes[3],
+                                        bytes[4], bytes[5], bytes[6], bytes[7],
+                                    ]);
+                                    let is_negative = cents < 0;
+                                    let abs_cents = cents.unsigned_abs();
+                                    let dollars = abs_cents / 100;
+                                    let remaining_cents = abs_cents % 100;
+                                    let sign = if is_negative { "-" } else { "" };
+                                    QueryValue::String(format!(
+                                        "{}{}.{:02}",
+                                        sign, dollars, remaining_cents
+                                    ))
+                                } else {
+                                    QueryValue::Null
+                                }
+                            } else {
+                                QueryValue::Null
+                            }
+                        }
                         "TEXT" | "VARCHAR" | "CHAR" | "BPCHAR" | "NAME" => row
                             .try_get::<String, _>(i)
                             .ok()
