@@ -26,6 +26,21 @@ const backgroundProgressPercent = computed(() => {
   const { loaded, total } = backgroundProgress.value
   return total > 0 ? Math.round((loaded / total) * 100) : 0
 })
+const structureError = computed(() => {
+  if (!sqlEditorStore.connectionId) return null
+  if (summaryLoading.value || backgroundProgress.value) return null
+  return databaseStructureStore.getError(sqlEditorStore.connectionId)
+})
+
+const retryLoad = async () => {
+  if (!sqlEditorStore.connectionId) return
+  try {
+    await databaseStructureStore.fetchDatabaseStructureSummary(sqlEditorStore.connectionId)
+    void databaseStructureStore.startBackgroundFetch(sqlEditorStore.connectionId)
+  } catch {
+    // エラーはストアに格納される
+  }
+}
 
 const mainPanelRef = ref<HTMLElement | null>(null)
 const isResizing = ref(false)
@@ -160,6 +175,29 @@ onBeforeUnmount(() => {
             </div>
             <p class="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">{{ backgroundProgressPercent }}%</p>
           </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- エラーオーバーレイ（DB構造取得失敗時） -->
+    <Transition name="fade">
+      <div
+        v-if="structureError"
+        class="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-gray-900/80"
+      >
+        <div class="flex w-80 flex-col items-center gap-4 rounded-2xl bg-white px-10 py-8 shadow-xl dark:bg-gray-800">
+          <UIcon name="i-heroicons-exclamation-circle" class="h-10 w-10 text-red-500" />
+          <div class="w-full text-center">
+            <p class="font-semibold text-gray-800 dark:text-gray-100">
+              {{ t('sqlEditor.structureError.title') }}
+            </p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 break-all">
+              {{ structureError }}
+            </p>
+          </div>
+          <UButton color="primary" variant="soft" @click="retryLoad">
+            {{ t('sqlEditor.structureError.retry') }}
+          </UButton>
         </div>
       </div>
     </Transition>
