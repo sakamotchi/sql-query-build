@@ -5,10 +5,12 @@ import { useSqlEditorStore } from '~/stores/sql-editor'
 import ResultTable from '~/components/query-builder/result/ResultTable.vue'
 import ExportDialog from '~/components/query-builder/dialog/ExportDialog.vue'
 import { getErrorHint, getErrorIcon, getErrorMessage } from '~/utils/error-messages'
+import { useResultClipboard, type CopyFormat } from '~/composables/useResultClipboard'
 
 const sqlEditorStore = useSqlEditorStore()
 const { result, error, isExecuting, activeTabId, executingTabId } = storeToRefs(sqlEditorStore)
 const { t } = useI18n()
+const { copyResultAs } = useResultClipboard()
 
 const hasResult = computed(() => result.value !== null)
 const isSelectResult = computed(() => (result.value?.columns.length ?? 0) > 0)
@@ -68,6 +70,31 @@ const openExportDialog = () => {
   if (!hasResult.value) return
   isExportDialogOpen.value = true
 }
+
+const copyMenuItems = computed(() => [
+  [
+    {
+      label: t('common.copyTo.csv'),
+      icon: 'i-heroicons-clipboard-document',
+      onSelect: () => handleCopy('csv'),
+    },
+    {
+      label: t('common.copyTo.tsv'),
+      icon: 'i-heroicons-clipboard-document',
+      onSelect: () => handleCopy('tsv'),
+    },
+    {
+      label: t('common.copyTo.markdown'),
+      icon: 'i-heroicons-clipboard-document-list',
+      onSelect: () => handleCopy('markdown'),
+    },
+  ],
+])
+
+function handleCopy(format: CopyFormat) {
+  if (!result.value) return
+  copyResultAs(format, result.value, { sql: sqlEditorStore.sql || undefined })
+}
 </script>
 
 <template>
@@ -95,15 +122,27 @@ const openExportDialog = () => {
         </template>
       </div>
 
-      <UButton
-        icon="i-heroicons-arrow-down-tray"
-        :label="$t('sqlEditor.resultPanel.export')"
-        size="sm"
-        variant="outline"
-        :disabled="!hasResult"
-        data-testid="export-button"
-        @click="openExportDialog"
-      />
+      <div class="flex items-center gap-2">
+        <UDropdownMenu :items="copyMenuItems">
+          <UButton
+            icon="i-heroicons-clipboard-document"
+            size="sm"
+            variant="ghost"
+            color="neutral"
+            :title="$t('common.copyTo.label')"
+            :disabled="!hasResult || !isSelectResult"
+          />
+        </UDropdownMenu>
+        <UButton
+          icon="i-heroicons-arrow-down-tray"
+          :label="$t('sqlEditor.resultPanel.export')"
+          size="sm"
+          variant="outline"
+          :disabled="!hasResult"
+          data-testid="export-button"
+          @click="openExportDialog"
+        />
+      </div>
     </div>
 
     <div class="flex-1 overflow-hidden flex flex-col">

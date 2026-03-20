@@ -81,6 +81,14 @@
         "units": {
             "bytes": "バイト"
         },
+        "copyTo": {
+            "label": "コピー",
+            "csv": "CSV としてコピー",
+            "tsv": "TSV としてコピー",
+            "markdown": "Markdown としてコピー",
+            "success": "{format} でクリップボードにコピーしました",
+            "error": "クリップボードへのコピーに失敗しました"
+        },
         "theme": {
             "light": "ライト",
             "dark": "ダーク"
