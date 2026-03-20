@@ -1,5 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 
+/** フロントエンド側のinvokeタイムアウト（ミリ秒）。Rustのタイムアウト（30秒）より長く設定 */
+const INVOKE_TIMEOUT_MS = 35_000
+
 /**
  * Tauri IPC通信を抽象化するComposable
  */
@@ -23,7 +26,15 @@ export const useTauri = () => {
     if (!isAvailable.value) {
       throw new Error('Tauri is not available. Running in browser mode.')
     }
-    return invoke<T>(command, args)
+
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Command "${command}" timed out after ${INVOKE_TIMEOUT_MS / 1000}s`)),
+        INVOKE_TIMEOUT_MS
+      )
+    )
+
+    return Promise.race([invoke<T>(command, args), timeoutPromise])
   }
 
   /**

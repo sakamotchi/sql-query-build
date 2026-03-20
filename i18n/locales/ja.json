@@ -775,6 +775,10 @@
             "backgroundTitle": "カラム情報を取得中...",
             "background": "{loaded} / {total} テーブル完了"
         },
+        "structureError": {
+            "title": "データベース構造の取得に失敗しました",
+            "retry": "再試行"
+        },
         "savedPanel": {
             "search": "クエリを検索...",
             "newFolder": "新規フォルダ",

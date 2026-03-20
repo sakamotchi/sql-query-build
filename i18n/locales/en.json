@@ -775,6 +775,10 @@
             "backgroundTitle": "Loading column information...",
             "background": "{loaded} / {total} tables done"
         },
+        "structureError": {
+            "title": "Failed to load database structure",
+            "retry": "Retry"
+        },
         "savedPanel": {
             "search": "Search queries...",
             "newFolder": "New Folder",

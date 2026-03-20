@@ -35,14 +35,7 @@ watch(connection, async (value, oldValue) => {
       void databaseStructureStore.startBackgroundFetch(value.id)
     } catch (error) {
       console.warn('[SqlEditor] Failed to load database structure summary:', error)
-
-      // 互換性のため、サマリー取得失敗時は従来の全取得へフォールバック
-      try {
-        await databaseStructureStore.fetchDatabaseStructure(value.id)
-        console.log('[SqlEditor] Fallback full structure loaded for connection:', value.id)
-      } catch (fallbackError) {
-        console.warn('[SqlEditor] Failed to load fallback full structure:', fallbackError)
-      }
+      // エラーはストアに格納済み。SqlEditorLayout がエラーオーバーレイを表示する
     }
   }
 }, { immediate: true })
