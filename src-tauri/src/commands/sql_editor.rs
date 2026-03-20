@@ -66,7 +66,7 @@ pub async fn save_sql_query(
 
     let query = SqlEditorQuery {
         id: request.id.unwrap_or_default(),
-        connection_id: request.connection_id,
+        connection_id: request.connection_id.unwrap_or_default(),
         name: request.name,
         description: request.description.unwrap_or_default(),
         sql: request.sql,
