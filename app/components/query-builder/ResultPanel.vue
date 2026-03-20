@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useQueryBuilderStore } from '@/stores/query-builder'
 import ResultTable from './result/ResultTable.vue'
 import ResultPagination from './result/ResultPagination.vue'
 import QueryErrorDisplay from './error/QueryErrorDisplay.vue'
 import ExportDialog from './dialog/ExportDialog.vue'
-import { ref } from 'vue'
+import { useResultClipboard, type CopyFormat } from '@/composables/useResultClipboard'
 
 const store = useQueryBuilderStore()
 const { t } = useI18n()
+const { copyResultAs } = useResultClipboard()
 
 const emit = defineEmits<{
   (e: 'close'): void
@@ -44,6 +45,31 @@ const retryQuery = () => {
 }
 
 const showExportDialog = ref(false)
+
+const copyMenuItems = computed(() => [
+  [
+    {
+      label: t('common.copyTo.csv'),
+      icon: 'i-heroicons-clipboard-document',
+      onSelect: () => handleCopy('csv'),
+    },
+    {
+      label: t('common.copyTo.tsv'),
+      icon: 'i-heroicons-clipboard-document',
+      onSelect: () => handleCopy('tsv'),
+    },
+    {
+      label: t('common.copyTo.markdown'),
+      icon: 'i-heroicons-clipboard-document-list',
+      onSelect: () => handleCopy('markdown'),
+    },
+  ],
+])
+
+function handleCopy(format: CopyFormat) {
+  if (!store.queryResult) return
+  copyResultAs(format, store.queryResult, { sql: store.generatedSql || undefined })
+}
 </script>
 
 <template>
@@ -66,6 +92,16 @@ const showExportDialog = ref(false)
         </template>
       </div>
       <div class="flex items-center gap-2">
+        <UDropdownMenu :items="copyMenuItems">
+          <UButton
+            icon="i-heroicons-clipboard-document"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            :title="t('common.copyTo.label')"
+            :disabled="!hasResult"
+          />
+        </UDropdownMenu>
         <UButton
           icon="i-heroicons-arrow-down-tray"
           size="xs"

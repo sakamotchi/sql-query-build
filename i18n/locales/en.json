@@ -81,6 +81,14 @@
         "units": {
             "bytes": "bytes"
         },
+        "copyTo": {
+            "label": "Copy",
+            "csv": "Copy as CSV",
+            "tsv": "Copy as TSV",
+            "markdown": "Copy as Markdown",
+            "success": "Copied to clipboard as {format}",
+            "error": "Failed to copy to clipboard"
+        },
         "theme": {
             "light": "Light",
             "dark": "Dark"
