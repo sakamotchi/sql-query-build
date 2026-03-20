@@ -34,7 +34,7 @@ pub struct SqlEditorQueryMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct SaveSqlEditorQueryRequest {
     pub id: Option<String>,
-    pub connection_id: String,
+    pub connection_id: Option<String>,
     pub name: String,
     pub description: Option<String>,
     pub sql: String,
